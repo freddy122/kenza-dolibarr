@@ -1,0 +1,51 @@
+# Copyright (C) 2021 SuperAdmin
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+#
+# Générique
+#
+
+# Module label 'ModuleKenzaCustomizationName'
+ModuleKenzaCustomizationName = KenzaCustomization
+# Module description 'ModuleKenzaCustomizationDesc'
+ModuleKenzaCustomizationDesc = Description de KenzaCustomization
+
+#
+# Page d'administration
+#
+KenzaCustomizationSetup = Configuration du module KenzaCustomization
+Settings = Réglages
+KenzaCustomizationSetupPage = Page de configuration du module KenzaCustomization
+
+#
+# Page À propos
+#
+About = À propos
+KenzaCustomizationAbout = À propos de KenzaCustomization
+KenzaCustomizationAboutPage = Page à propos de KenzaCustomization
+
+#
+# Page d'exemple
+#
+MyPageName = Nom de ma page
+
+#
+# Box d'exemple
+#
+MyWidget = Mon widget
+MyWidgetDescription = Description de mon widget
+CustomFreeLineOfType=Ligne libre de type
+CreateProductFromCommande=Nouveau produit
+DefaultTitlekenza=Module de customozation dans le dolibarr de kenza

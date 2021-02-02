@@ -1,0 +1,21 @@
+# Language file - en_US - Cyberoffice
+CHARSET=UTF-8
+OrderValidatedInDolibarrFromCyberoffice=OrderValidatedInDolibarrFromCyberoffice
+Name=Naam
+Value=Value
+ShopAddress=Shopadres
+StockSynchronization=Voorraad synchronisatie
+InvoiceSynchronization=Factuur synchronisatie
+Save=Bewaren
+cyberofficeSetup=cyberoffice Setup
+shoplist=shoplijst
+Action=Gebeurtenis
+Synchronization with Prestashop=Synchronisatie van Prestashop naar Dolibarr ERP/CRM
+cyberoffice=CyberOffice
+genererlacle=Klik hier om een webservices key te genereren
+Associationmodedereglementcomptebancaire=bankrekening <-> betaling associatie
+infocyberpaiement=Note: Standaard wordt er een bankrekening per betalingsmodus aangemaakt
+cyberbank=bank id
+banklabel=Bank
+KeyForWebServicesAccess=Key voor Web Services (parameter "dolibarrkey" in webservices)
+Synchronization from Prestashop to Dolibarr ERP/CRM=Synchronisatie van Prestashop naar Dolibarr ERP/CRM
