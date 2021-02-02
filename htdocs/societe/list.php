@@ -470,6 +470,11 @@ if (strlen($search_idprof6)) $sql .= natural_search("s.idprof6", $search_idprof6
 if (strlen($search_vat))     $sql .= natural_search("s.tva_intra", $search_vat);
 // Filter on type of thirdparty
 if ($search_type > 0 && in_array($search_type, array('1,3', '2,3'))) $sql .= " AND s.client IN (".$db->escape($search_type).")";
+/* Modification Fréderic insinium dev */
+if ($contextpage == "poslist") {
+    $sql .= " AND s.client IN (1,3)";
+}
+/* Fin Modification Fréderic*/
 if ($search_type > 0 && in_array($search_type, array('4')))         $sql .= " AND s.fournisseur = 1";
 if ($search_type == '0') $sql .= " AND s.client = 0 AND s.fournisseur = 0";
 if ($search_status != '' && $search_status >= 0) $sql .= natural_search("s.status", $search_status, 2);
