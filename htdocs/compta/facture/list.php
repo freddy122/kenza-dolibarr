@@ -539,6 +539,12 @@ if ($search_user > 0)
 {
 	$sql .= " AND ec.fk_c_type_contact = tc.rowid AND tc.element='facture' AND tc.source='internal' AND ec.element_id = f.rowid AND ec.fk_socpeople = ".$search_user;
 }
+/* Modification Fréderic */
+if ($contextpage == 'poslist')
+{
+    $sql .= " AND u.rowid = ".$user->id;
+}
+/* fin modification Fréderic */
 // Add where from extra fields
 include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_search_sql.tpl.php';
 // Add where from hooks
@@ -705,7 +711,7 @@ if ($resql)
 	print '<input type="hidden" name="contextpage" value="'.$contextpage.'">';
 
 	print_barre_liste($langs->trans('BillsCustomers').' '.($socid ? ' '.$soc->name : ''), $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder, $massactionbutton, $num, $nbtotalofrecords, 'bill', 0, $newcardbutton, '', $limit, 0, 0, 1);
-
+        
 	$topicmail = "SendBillRef";
 	$modelmail = "facture_send";
 	$objecttmp = new Facture($db);
