@@ -542,7 +542,7 @@ if ($search_user > 0)
 /* Modification Fréderic */
 if ($contextpage == 'poslist')
 {
-    $sql .= " AND u.rowid = ".$user->id;
+    $sql .= " AND f.pos_source = ".$_SESSION["takeposterminal"];
 }
 /* fin modification Fréderic */
 // Add where from extra fields
