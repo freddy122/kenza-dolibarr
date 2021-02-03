@@ -216,6 +216,18 @@ if (empty($reshook))
             $action = "create";
             $error++;
         }
+        if (empty(GETPOST('nombre_produit_en_stock')) && GETPOST('dataPopupNewProduct') == 1)
+        {
+            setEventMessages($langs->trans('ErrorFieldRequired', $langs->transnoentities('NombreProduitEnStock')), null, 'errors');
+            $action = "create";
+            $error++;
+        }
+        if (empty(GETPOST('price')))
+        {
+            setEventMessages($langs->trans('ErrorFieldRequired', $langs->transnoentities('Prix de vente')), null, 'errors');
+            $action = "create";
+            $error++;
+        }
         if (!empty($duration_value) && empty($duration_unit))
         {
             setEventMessages($langs->trans('ErrorFieldRequired', $langs->transnoentities('Unit')), null, 'errors');
@@ -369,22 +381,44 @@ if (empty($reshook))
 
             if ($id > 0)
             {
-				// Category association
-				$categories = GETPOST('categories', 'array');
-				$object->setCategories($categories);
+                        // Category association
+                        $categories = GETPOST('categories', 'array');
+                        $object->setCategories($categories);
 
-				if (!empty($backtopage))
-				{
-					$backtopage = preg_replace('/--IDFORBACKTOPAGE--/', $object->id, $backtopage); // New method to autoselect project after a New on another form object creation
-					if (preg_match('/\?/', $backtopage)) $backtopage .= '&socid='.$object->id; // Old method
-					header("Location: ".$backtopage);
-					exit;
-				}
-				else
-				{
-                	header("Location: ".$_SERVER['PHP_SELF']."?id=".$id);
-                	exit;
-				}
+                        if (!empty($backtopage))
+                        {
+                            $backtopage = preg_replace('/--IDFORBACKTOPAGE--/', $object->id, $backtopage); // New method to autoselect project after a New on another form object creation
+                            if (preg_match('/\?/', $backtopage)) $backtopage .= '&socid='.$object->id; // Old method
+                            header("Location: ".$backtopage);
+                            exit;
+                        }
+                        else
+                        {
+                            if(GETPOST('dataPopupNewProduct') == 1) {
+                                $httpCmdUrl = explode('?',$_SERVER['HTTP_REFERER']);
+                                $pageCommande = GETPOST('pageCommande');
+                                $cmdUrlstr = str_replace("product", $pageCommande, $httpCmdUrl[0]);
+                                $cmdUrl = $cmdUrlstr."?id=".GETPOST('commandeIdDraft');
+                                $date = new DateTime();
+                                $inventoryCode = $date->format('ymdHis');
+                                
+                                $sqlInsertInProductStock = "INSERT INTO ".MAIN_DB_PREFIX."product_stock (`rowid`, `tms`, `fk_product`, `fk_entrepot`, `reel`, `import_key`)  VALUES (NULL, CURRENT_TIMESTAMP, ".$id.", '1', ".intval(GETPOST("nombre_produit_en_stock")).", NULL); ";
+                                $sqlInsertInStockMouvement = "INSERT INTO ".MAIN_DB_PREFIX."stock_mouvement (`rowid`, `tms`, `datem`, `fk_product`, `batch`, `eatby`, `sellby`, `fk_entrepot`, `value`, `price`, `type_mouvement`, `fk_user_author`, `label`, `inventorycode`, `fk_project`, `fk_origin`, `origintype`, `model_pdf`, `fk_projet`)  "
+                                        . "VALUES (NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ".$id.", NULL, NULL, NULL, ".$user->id.", 1, '0.00000000', '0', ".intval(GETPOST("nombre_produit_en_stock")).", 'Correction du stock pour le produit traitre-m', ".$inventoryCode.", NULL, '0', NULL, NULL, '0'); ";
+                                $sqlUpdateProduct = "UPDATE ".MAIN_DB_PREFIX."product set stock = ".intval(GETPOST("nombre_produit_en_stock"))." where rowid = ".$id;
+                                $db->query($sqlInsertInProductStock);
+                                $db->query($sqlInsertInStockMouvement);
+                                $db->query($sqlUpdateProduct);
+                                ?>
+                                <script type="text/javascript">
+                                    window.parent.location.reload()
+                                </script>    
+                                <?php
+                            } else {
+                                header("Location: ".$_SERVER['PHP_SELF']."?id=".$id);
+                            }
+                            exit;
+                        }
             }
             else
 			{
@@ -971,7 +1005,10 @@ else
         }
 
         dol_set_focus('input[name="ref"]');
-
+        // target="_parent"
+        // $ref = GETPOST('ref', 'alpha');
+        // GETPOST('label', $label_security_check)
+        // GETPOST('nombre_produit_en_stock')
         print '<form action="'.$_SERVER["PHP_SELF"].'" method="POST">';
         print '<input type="hidden" name="token" value="'.newToken().'">';
         print '<input type="hidden" name="action" value="add">';
@@ -989,6 +1026,36 @@ else
 		else {
 			$picto = 'product';
 			$title = $langs->trans("NewProduct");
+                        $datapopup = GETPOST('dataPopupNewProduct');
+                        $commandeIdDraft = GETPOST('commandeIdDraft');
+                        $pageCommande = GETPOST('pageCommande');
+                        print '<input type="hidden" name="dataPopupNewProduct" value="'.$datapopup.'">';
+                        print '<input type="hidden" name="commandeIdDraft" value="'.$commandeIdDraft.'">';
+                        print '<input type="hidden" name="pageCommande" value="'.$pageCommande.'">';
+                        if($datapopup == 1) {
+                            print '<input type="hidden" name="datapopup" value="'.$datapopup.'">';
+                            print '<input type="hidden" name="commandeIdDraft" value="'.$commandeIdDraft.'">';
+                            print '<input type="hidden" name="pageCommande" value="'.$pageCommande.'">';
+                        ?>
+                        <style>
+                            #tmenu_tooltip {
+                                display:none!important;
+                            }
+                            .side-nav{
+                                display:none!important;
+                            }
+                            #topmenu-login-dropdown {
+                                display:none!important
+                            }
+                            .login_block_other {
+                                display:none!important
+                            }
+                            .table-fiche-title{
+                                display:none!important
+                            }
+                        </style>
+                        <?php
+                        }
 		}
         $linkback = "";
         print load_fiche_titre($title, $linkback, $picto);
@@ -999,7 +1066,7 @@ else
 
         print '<tr>';
         $tmpcode = '';
-		if (!empty($modCodeProduct->code_auto)) $tmpcode = $modCodeProduct->getNextValue($object, $type);
+	if (!empty($modCodeProduct->code_auto)) $tmpcode = $modCodeProduct->getNextValue($object, $type);
 		print '<td class="titlefieldcreate fieldrequired">'.$langs->trans("Ref").'</td><td colspan="3"><input id="ref" name="ref" class="maxwidth200" maxlength="128" value="'.dol_escape_htmltag(GETPOSTISSET('ref') ? GETPOST('ref', 'alphanohtml') : $tmpcode).'">';
         if ($refalreadyexists)
         {
@@ -1009,7 +1076,11 @@ else
 
         // Label
         print '<tr><td class="fieldrequired">'.$langs->trans("Label").'</td><td colspan="3"><input name="label" class="minwidth300 maxwidth400onsmartphone" maxlength="255" value="'.dol_escape_htmltag(GETPOST('label', $label_security_check)).'"></td></tr>';
-
+        
+        if($datapopup == 1)
+        {
+            print '<tr><td class="fieldrequired">Nombre produit en stock</td><td colspan="3"><input name="nombre_produit_en_stock" type class="minwidth300 maxwidth400onsmartphone" maxlength="255" value="'.GETPOST('nombre_produit_en_stock').'"></td></tr>';
+        }
         // On sell
         print '<tr><td class="fieldrequired">'.$langs->trans("Status").' ('.$langs->trans("Sell").')</td><td colspan="3">';
         $statutarray = array('1' => $langs->trans("OnSell"), '0' => $langs->trans("NotOnSell"));
@@ -1384,7 +1455,9 @@ else
 		print '<div class="center">';
 		print '<input type="submit" class="button" value="'.$langs->trans("Create").'">';
 		print ' &nbsp; &nbsp; ';
-		print '<input type="button" class="button" value="'.$langs->trans("Cancel").'" onClick="javascript:history.go(-1)">';
+                if($datapopup != 1) {
+                    print '<input type="button" class="button" value="'.$langs->trans("Cancel").'" onClick="javascript:history.go(-1)">';
+                }
 		print '</div>';
 
 		print '</form>';

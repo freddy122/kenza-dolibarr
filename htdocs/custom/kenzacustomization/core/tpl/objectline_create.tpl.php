@@ -199,7 +199,43 @@ if ($nolinesbefore) {
 				}
 			}
 			echo $form->select_type_of_lines(GETPOSTISSET("type") ? GETPOST("type", 'alpha', 2) : -1, 'type', 1, 1, $forceall);
-			echo '<a href="'.DOL_URL_ROOT.'/product/card.php?leftmenu=product&action=create&type=0" target="_blank" class="custom_link_new_product">'.$langs->trans("CreateProductFromCommande").'</a> ';
+			//echo '<a class="custom_link_new_product" id="customProductclick">'.$langs->trans("CreateProductFromCommande").'</a> ';
+                        $uriContainDraft = "";
+                        if(strpos($_SERVER['PHP_SELF'], 'commande')){
+                            $uriContainDraft = 'commande';
+                        }elseif(strpos($_SERVER['PHP_SELF'], 'supplier_proposal')) {
+                            $uriContainDraft = 'supplier_proposal';
+                        }elseif(strpos($_SERVER['PHP_SELF'], 'contrat')) {
+                            $uriContainDraft = 'contrat';
+                        }
+                        
+			echo '<a class="custom_link_new_product" id="customProductclick" href="'.DOL_URL_ROOT.'/product/card.php?leftmenu=product&action=create&type=0&dataPopupNewProduct=1&commandeIdDraft='.GETPOST("id").'&pageCommande='.$uriContainDraft.'" title="'.$langs->trans("CreateProductFromCommande").'" >'.$langs->trans("CreateProductFromCommande").'</a> ';
+                        ?>
+                        <script type="text/javascript">
+                            $(document).ready(function(){
+                                $('a#customProductclick').click(function (e) {
+                                    e.preventDefault();
+                                    var page = $(this).attr("href")
+                                    var pagetitle = $(this).attr("title")
+                                    var $dialog = $('<div></div>')
+                                    .html('<iframe style="border: 0px; " src="' + page + '" width="100%" height="100%" id="newProductIframe"></iframe>')
+                                    .dialog({
+                                        autoOpen: false,
+                                        modal: true,
+                                        height: 800,
+                                        width: 900,
+                                        resizable: true,
+                                        title: pagetitle,
+                                        open: function(event, ui) {
+                                            $("#newProductIframe").contents().find("#tmenu_tooltip").hide();
+                                            console.log($("#newProductIframe").contents().find(".tmenudiv").css("display","none"));
+                                        }
+                                    });
+                                    $dialog.dialog('open');
+                                });
+                            });
+			</script>
+                        <?php
 			echo '</span>';
 		}
 		// Predefined product/service
@@ -242,16 +278,16 @@ if ($nolinesbefore) {
 					?>
 				<script type="text/javascript">
 					$(document).ready(function(){
-						// On first focus on a select2 combo, auto open the menu (this allow to use the keyboard only)
-						$(document).on('focus', '.select2-selection.select2-selection--single', function (e) {
-							console.log('focus on a select2');
-							if ($(this).attr('aria-labelledby') == 'select2-idprod-container')
-							{
-								console.log('open combo');
-								$('#idprod').select2('open');
-							}
-						});
-					});
+                                            // On first focus on a select2 combo, auto open the menu (this allow to use the keyboard only)
+                                            $(document).on('focus', '.select2-selection.select2-selection--single', function (e) {
+                                                    console.log('focus on a select2');
+                                                    if ($(this).attr('aria-labelledby') == 'select2-idprod-container')
+                                                    {
+                                                            console.log('open combo');
+                                                            $('#idprod').select2('open');
+                                                    }
+                                            });
+                                        });
 				</script>
 					<?php
 				}
@@ -289,6 +325,9 @@ if ($nolinesbefore) {
 								$('#idprodfournprice').select2('open');
 							}
 						});
+                                                $("#customProductclick").click(function(){
+                                                    alert('aaaaa');
+                                                });
 					});
 				</script>
 					<?php
