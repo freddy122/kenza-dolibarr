@@ -228,7 +228,7 @@ if ($nolinesbefore) {
                                         title: pagetitle,
                                         open: function(event, ui) {
                                             $("#newProductIframe").contents().find("#tmenu_tooltip").hide();
-                                            console.log($("#newProductIframe").contents().find(".tmenudiv").css("display","none"));
+                                            $("#ui-id-1").css('overflow', 'hidden');
                                         }
                                     });
                                     $dialog.dialog('open');
@@ -325,9 +325,6 @@ if ($nolinesbefore) {
 								$('#idprodfournprice').select2('open');
 							}
 						});
-                                                $("#customProductclick").click(function(){
-                                                    alert('aaaaa');
-                                                });
 					});
 				</script>
 					<?php
