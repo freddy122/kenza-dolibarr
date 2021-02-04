@@ -53,6 +53,7 @@ $contextpage = GETPOST('contextpage', 'aZ') ?GETPOST('contextpage', 'aZ') : 'pri
 
 $socid = GETPOST('socid', 'int');
 $cost_price = GETPOST('cost_price', 'alpha');
+$transport_coefficient = GETPOST('transport_coefficient', 'alpha');
 $backtopage = GETPOST('backtopage', 'alpha');
 $error = 0;
 
@@ -135,6 +136,28 @@ if (empty($reshook))
 			}
 		}
 	}
+        
+        if($action  == 'settransport_coefficient')
+        {
+            if($id)
+            {
+                $result = $object->fetch($id);
+                $object->transport_coefficient = round(price2num($transport_coefficient),2);
+                $object->transport_coast = round($object->transport_coefficient*$object->cost_price,2);
+                
+                $result = $object->update($object->id, $user);
+                if ($result > 0)
+                {
+                        setEventMessages($langs->trans("RecordSaved"), null, 'mesgs');
+                $action = '';
+                }
+                else
+                {
+                        $error++;
+                        setEventMessages($object->error, $object->errors, 'errors');
+                }
+            }
+        }
 
 	if ($action == 'confirm_remove_pf')
 	{
@@ -440,7 +463,25 @@ if ($id > 0 || $ref)
             	else print $langs->trans("NotDefined");
             }
             print '</td></tr>';
-
+            print '<tr>';
+            print '<td>';
+            $textdescs = $langs->trans("TransportCoefficientDescription");
+			$texts = $form->textwithpicto($langs->trans("TransportCoefficient"), $textdescs, 1, 'help', '');
+			print $form->editfieldkey($texts, 'transport_coefficient', $object->transport_coefficient, $object, $usercancreate, 'amount:2');
+            print '</td>';
+            print '<td>';
+            print $form->editfieldval($langs->trans("TransportCoefficient"), 'transport_coefficient', str_replace('.',",",$object->transport_coefficient), $object, $usercancreate, 'string');
+            print '</td>';
+            print '</tr>';
+            
+            print '<tr>';
+            print '<td>';
+            print $langs->trans("TransportCost");
+            print '</td>';
+            print '<td colspan="2">';
+            print $form->editfieldval($text, 'transport_coast', $object->transport_coast, $object, $usercancreate, 'amount:2');
+            print '</td>';
+            print '</tr>';
             print '</table>';
 
             print '</div>';

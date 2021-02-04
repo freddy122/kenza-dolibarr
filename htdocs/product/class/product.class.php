@@ -198,6 +198,20 @@ class Product extends CommonObject
      * @var float
      */
     public $cost_price;
+    
+    /**
+     * Transport coefficient
+     *
+     * @var float
+     */
+    public $transport_coefficient;
+    
+    /**
+     * Transport coast
+     *
+     * @var float
+     */
+    public $transport_coast;
 
     //! Average price value for product entry into stock (PMP)
     public $pmp;
@@ -1031,6 +1045,8 @@ class Product extends CommonObject
             $sql .= ", accountancy_code_sell_export= '".$this->db->escape($this->accountancy_code_sell_export)."'";
             $sql .= ", desiredstock = ".((isset($this->desiredstock) && is_numeric($this->desiredstock)) ? (int) $this->desiredstock : "null");
             $sql .= ", cost_price = ".($this->cost_price != '' ? $this->db->escape($this->cost_price) : 'null');
+            $sql .= ", transport_coefficient = ".($this->transport_coefficient != '' ? $this->db->escape($this->transport_coefficient) : 'null');
+            $sql .= ", transport_coast = ".($this->transport_coast != '' ? $this->db->escape($this->transport_coast) : 'null');
             $sql .= ", fk_unit= ".(!$this->fk_unit ? 'NULL' : (int) $this->fk_unit);
             $sql .= ", price_autogen = ".(!$this->price_autogen ? 0 : 1);
             $sql .= ", fk_price_expression = ".($this->fk_price_expression != 0 ? (int) $this->fk_price_expression : 'NULL');
@@ -2107,7 +2123,7 @@ class Product extends CommonObject
         $sql .= " accountancy_code_buy, accountancy_code_buy_intra, accountancy_code_buy_export,";
         $sql .= " accountancy_code_sell, accountancy_code_sell_intra, accountancy_code_sell_export, stock, pmp,";
         $sql .= " datec, tms, import_key, entity, desiredstock, tobatch, fk_unit,";
-        $sql .= " fk_price_expression, price_autogen";
+        $sql .= " fk_price_expression, price_autogen, transport_coefficient, transport_coast";
         $sql .= " FROM ".MAIN_DB_PREFIX."product";
         if ($id) {
             $sql .= " WHERE rowid = ".(int) $id;
@@ -2152,6 +2168,8 @@ class Product extends CommonObject
                 $this->price_min_ttc                = $obj->price_min_ttc;
                 $this->price_base_type = $obj->price_base_type;
                 $this->cost_price                    = $obj->cost_price;
+                $this->transport_coefficient         = $obj->transport_coefficient;
+                $this->transport_coast               = $obj->transport_coast;
                 $this->default_vat_code = $obj->default_vat_code;
                 $this->tva_tx                        = $obj->tva_tx;
                 //! French VAT NPR

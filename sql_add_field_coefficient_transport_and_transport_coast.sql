@@ -1,0 +1,1 @@
+alter table llx_product add transport_coefficient double(24,2) DEFAULT NULL,  add transport_coast double(24,2) DEFAULT NULL after fk_project
