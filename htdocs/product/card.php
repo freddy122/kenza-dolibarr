@@ -216,7 +216,7 @@ if (empty($reshook))
             $action = "create";
             $error++;
         }
-        if (empty(GETPOST('nombre_produit_en_stock')) && GETPOST('dataPopupNewProduct') == 1)
+        if (empty(GETPOST('nombre_produit_en_stock')))
         {
             setEventMessages($langs->trans('ErrorFieldRequired', $langs->transnoentities('NombreProduitEnStock')), null, 'errors');
             $action = "create";
@@ -231,6 +231,19 @@ if (empty($reshook))
         if (!empty($duration_value) && empty($duration_unit))
         {
             setEventMessages($langs->trans('ErrorFieldRequired', $langs->transnoentities('Unit')), null, 'errors');
+            $action = "create";
+            $error++;
+        }
+        
+        if ( (!empty(GETPOST("ref_prod_fourn")) || !empty(GETPOST("best_purchase_price")) || !empty(GETPOST("coefficient_of_return"))) &&  GETPOST("id_fourn") == -1 )
+        {
+            setEventMessages("Le champ fournisseur est réquis si l\'un de champs Référence prod fournisseur,Meilleur prix d'achat,Coefficient de révient sont renseigné", null, 'errors');
+            $action = "create";
+            $error++;
+        }
+        
+        if(GETPOST("id_fourn") != -1 && (empty(GETPOST("ref_prod_fourn")) || empty(GETPOST("best_purchase_price")) || empty(GETPOST("coefficient_of_return")))) {
+            setEventMessages("Le champ Référence prod fournisseur,Meilleur prix d'achat,Coefficient de révient  sont réquises si le champ fournisseur est renseigné", null, 'errors');
             $action = "create";
             $error++;
         }
@@ -381,6 +394,68 @@ if (empty($reshook))
 
             if ($id > 0)
             {
+                        $supplier = new Fournisseur($db);
+                        $result = $supplier->fetch(intval(GETPOST("id_fourn")));
+                        
+                        $productFournisseur = new ProductFournisseur($db);
+                        $productFournisseur->fetch($id);
+                        
+                        if(!empty(GETPOST("id_fourn")) && !empty(GETPOST("best_purchase_price", 'alpha')) && !empty(GETPOST("ref_prod_fourn"))) {
+                            $ret = $productFournisseur->update_buyprice(1, GETPOST("best_purchase_price"), $user, $_POST["price_base_type_prd_frs"], $supplier, $_POST["oselDispo"], GETPOST("ref_prod_fourn", 'alpha'), $tva_tx, $_POST["charges"], 0, 0, 0, 0, "", array(), '', 0, 'HT', 1, '', "", GETPOST('barcode'), "");
+                        }
+                        
+                        if(!empty(GETPOST("coefficient_of_return"))) {
+                            $object->coef_revient = GETPOST("coefficient_of_return");
+                        }
+                        
+                        if(!empty(GETPOST("cost_of_return"))) {
+                            $object->cout_revient = GETPOST("cost_of_return");
+                        }
+                        
+                        if(!empty(GETPOST("price_of_return"))) {
+                            $object->cost_price = GETPOST("price_of_return");
+                        }
+                        
+                        if(!empty(GETPOST("average_price_weighted"))) {
+                            $sqlUpdatePmp = 'update '.MAIN_DB_PREFIX.'product set pmp = '.GETPOST("average_price_weighted").' where rowid='.$id;
+                            $db->query($sqlUpdatePmp);
+                        }
+                        
+                        if(!empty(GETPOST("margin_product"))) {
+                            $object->margin_product = GETPOST("margin_product");
+                        }
+                        
+                        if(!empty(GETPOST("suggest_price"))) {
+                            $object->suggest_price = GETPOST("suggest_price");
+                        }
+                        
+                        if(!empty(GETPOST("coeff_vente_ttc"))) {
+                            $object->coeff_vente_ttc = GETPOST("coeff_vente_ttc");
+                        }
+                        
+                        if(!empty(GETPOST("margin_rate_as_percentage"))) {
+                            $object->margin_rate_as_percentage = GETPOST("margin_rate_as_percentage");
+                        }
+                        
+                        if(!empty(GETPOST("margin_ttc"))) {
+                            $object->margin_ttc = GETPOST("margin_ttc");
+                        }
+                        
+                        if(!empty(GETPOST("brand_rate_in_percent"))) {
+                            $object->brand_rate_in_percent = GETPOST("brand_rate_in_percent");
+                        }
+                        
+                        if(!empty(GETPOST("selling_price_excl_tax"))) {
+                            $object->selling_price_excl_tax = GETPOST("selling_price_excl_tax");
+                        }
+                        
+                        if(!empty(GETPOST("vat_price"))) {
+                            $object->vat_price = GETPOST("vat_price");
+                        }
+                        
+                        
+			$object->update($id, $user);
+                        
                         // Category association
                         $categories = GETPOST('categories', 'array');
                         $object->setCategories($categories);
@@ -394,21 +469,23 @@ if (empty($reshook))
                         }
                         else
                         {
-                            if(GETPOST('dataPopupNewProduct') == 1) {
+                            if(!empty(GETPOST("nombre_produit_en_stock"))) {
                                 $httpCmdUrl = explode('?',$_SERVER['HTTP_REFERER']);
                                 $pageCommande = GETPOST('pageCommande');
                                 $cmdUrlstr = str_replace("product", $pageCommande, $httpCmdUrl[0]);
                                 $cmdUrl = $cmdUrlstr."?id=".GETPOST('commandeIdDraft');
                                 $date = new DateTime();
                                 $inventoryCode = $date->format('ymdHis');
-                                
+
                                 $sqlInsertInProductStock = "INSERT INTO ".MAIN_DB_PREFIX."product_stock (`rowid`, `tms`, `fk_product`, `fk_entrepot`, `reel`, `import_key`)  VALUES (NULL, CURRENT_TIMESTAMP, ".$id.", '1', ".intval(GETPOST("nombre_produit_en_stock")).", NULL); ";
                                 $sqlInsertInStockMouvement = "INSERT INTO ".MAIN_DB_PREFIX."stock_mouvement (`rowid`, `tms`, `datem`, `fk_product`, `batch`, `eatby`, `sellby`, `fk_entrepot`, `value`, `price`, `type_mouvement`, `fk_user_author`, `label`, `inventorycode`, `fk_project`, `fk_origin`, `origintype`, `model_pdf`, `fk_projet`)  "
-                                        . "VALUES (NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ".$id.", NULL, NULL, NULL, ".$user->id.", 1, '0.00000000', '0', ".intval(GETPOST("nombre_produit_en_stock")).", 'Correction du stock pour le produit traitre-m', ".$inventoryCode.", NULL, '0', NULL, NULL, '0'); ";
+                                        . "VALUES (NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ".$id.", NULL, NULL, NULL, ".$user->id.", 1, '0.00000000', '0', ".intval(GETPOST("nombre_produit_en_stock")).", 'Correction du stock', ".$inventoryCode.", NULL, '0', NULL, NULL, '0'); ";
                                 $sqlUpdateProduct = "UPDATE ".MAIN_DB_PREFIX."product set stock = ".intval(GETPOST("nombre_produit_en_stock"))." where rowid = ".$id;
                                 $db->query($sqlInsertInProductStock);
                                 $db->query($sqlInsertInStockMouvement);
                                 $db->query($sqlUpdateProduct);
+                            }
+                            if(GETPOST('dataPopupNewProduct') == 1) {
                                 ?>
                                 <script type="text/javascript">
                                     window.parent.location.reload()
@@ -1066,8 +1143,12 @@ else
 
         print '<tr>';
         $tmpcode = '';
-	if (!empty($modCodeProduct->code_auto)) $tmpcode = $modCodeProduct->getNextValue($object, $type);
-		print '<td class="titlefieldcreate fieldrequired">'.$langs->trans("Ref").'</td><td colspan="3"><input id="ref" name="ref" class="maxwidth200" maxlength="128" value="'.dol_escape_htmltag(GETPOSTISSET('ref') ? GETPOST('ref', 'alphanohtml') : $tmpcode).'">';
+        $isDisabled = "";
+	if (!empty($modCodeProduct->code_auto)) {
+            $tmpcode = $modCodeProduct->getNextValue($object, $type);
+            $isDisabled = "readonly";
+        }
+	print '<td class="titlefieldcreate fieldrequired">'.$langs->trans("Ref").'</td><td colspan="3"><input id="ref" name="ref" class="maxwidth200" maxlength="128" value="'.dol_escape_htmltag(GETPOSTISSET('ref') ? GETPOST('ref', 'alphanohtml') : $tmpcode).'" '.$isDisabled.'>';
         if ($refalreadyexists)
         {
             print $langs->trans("RefAlreadyExists");
@@ -1077,10 +1158,10 @@ else
         // Label
         print '<tr><td class="fieldrequired">'.$langs->trans("Label").'</td><td colspan="3"><input name="label" class="minwidth300 maxwidth400onsmartphone" maxlength="255" value="'.dol_escape_htmltag(GETPOST('label', $label_security_check)).'"></td></tr>';
         
-        if($datapopup == 1)
-        {
-            print '<tr><td class="fieldrequired">Nombre produit en stock</td><td colspan="3"><input name="nombre_produit_en_stock" type class="minwidth300 maxwidth400onsmartphone" maxlength="255" value="'.GETPOST('nombre_produit_en_stock').'"></td></tr>';
-        }
+        /*if($datapopup == 1)
+        {*/
+        print '<tr><td class="fieldrequired">Nombre produit en stock</td><td colspan="3"><input name="nombre_produit_en_stock" type class="minwidth300 maxwidth400onsmartphone" maxlength="255" value="'.GETPOST('nombre_produit_en_stock').'"></td></tr>';
+        //}
         // On sell
         print '<tr><td class="fieldrequired">'.$langs->trans("Status").' ('.$langs->trans("Sell").')</td><td colspan="3">';
         $statutarray = array('1' => $langs->trans("OnSell"), '0' => $langs->trans("NotOnSell"));
@@ -1124,7 +1205,7 @@ else
 	        print '<td>'.$langs->trans("BarcodeValue").'</td><td>';
 	        $tmpcode = isset($_POST['barcode']) ?GETPOST('barcode') : $object->barcode;
 	        if (empty($tmpcode) && !empty($modBarCodeProduct->code_auto)) $tmpcode = $modBarCodeProduct->getNextValue($object, $type);
-	        print '<input class="maxwidth100" type="text" name="barcode" value="'.dol_escape_htmltag($tmpcode).'">';
+	        print '<input class="maxwidth100" type="text" name="barcode" value="'.dol_escape_htmltag($tmpcode).'" '.$isDisabled.'>';
 	        print '</td></tr>';
         }
 
@@ -1301,10 +1382,95 @@ else
 		{
             print '<table class="border centpercent">';
 
+            // Fournisseur
+            print '<tr><td class="fieldrequired">'.$langs->trans("SupplierOfProduct").'</td><td>';
+            print $form->select_company(GETPOST("id_fourn", 'alpha'), 'id_fourn', 'fournisseur=1', 'SelectThirdParty', 0, 0);
+            print '</td></tr>';
+            
+            if (!empty($conf->global->FOURN_PRODUCT_AVAILABILITY))
+            {
+                    $langs->load("propal");
+                    print '<tr><td>'.$langs->trans("Availability").'</td><td>';
+                    $form->selectAvailabilityDelay($productFournisseur->fk_availability, "oselDispo", 1);
+                    print '</td></tr>'."\n";
+            }
+            
+            // Option to define a transport cost on supplier price
+            if ($conf->global->PRODUCT_CHARGES)
+            {
+                if (!empty($conf->margin->enabled))
+                {
+                    print '<tr>';
+                    print '<td>'.$langs->trans("Charges").'</td>';
+                    print '<td><input class="flat" name="charges" size="8" value="'.(GETPOST('charges') ?price(GETPOST('charges')) : (isset($productFournisseur->fourn_charges) ?price($productFournisseur->fourn_charges) : '')).'">';
+                    print '</td>';
+                    print '</tr>';
+                }
+            }
+            
+            // Ref produit fournisseur
+            $refProdParDefaut = "";
+            if (!empty($modCodeProduct->code_auto)) {
+                $refProdParDefaut = $modCodeProduct->getNextValue($object, $type);
+            }
+            $refProdFourn = !empty(GETPOST("ref_prod_fourn", 'alpha'))?GETPOST("ref_prod_fourn", 'alpha'):$refProdParDefaut;
+            print '<tr><td  class="fieldrequired">'.$langs->trans("RefProduitFournisseur").'</td>';
+            print '<td><input name="ref_prod_fourn" class="maxwidth60" value="'.$refProdFourn.'">';
+            print '</td></tr>';
+            
+            // best purchase price
+            print '<tr><td  class="fieldrequired">'.$langs->trans("BestPurchasePrice").'</td>';
+            print '<td> <input id="best_purchase_price_hidden" type="hidden"/>'
+            . ' <input id="best_purchase_price" onInput="doCalcul()" name="best_purchase_price" class="maxwidth50" value="'.GETPOST("best_purchase_price", 'alpha').'">&nbsp';
+            print $form->selectPriceBaseType("HT", "price_base_type_prd_frs");
+            print '</td></tr>';
+
+            // coefficient of return
+            print '<tr><td  class="fieldrequired">'.$langs->trans("CoefficientOfReturn").'</td>';
+            print '<td> <input type="hidden" id="coefficient_of_return_hidden">'
+            . '<input id="coefficient_of_return" onInput="doCalcul()" name="coefficient_of_return" class="maxwidth50" value="'.GETPOST("coefficient_of_return", 'alpha').'">';
+            print '</td></tr>';
+            
+            print '<tr><td><hr></td></tr>';
+            
+            
+            // Cout de revient
+            print '<tr><td>'.$langs->trans("CostOfReturn").'</td>';
+            print '<td><input id="cost_of_return" name="cost_of_return" class="maxwidth50" value="'.GETPOST("cost_of_return", 'alpha').'" readonly>';
+            print '</td></tr>';
+            
+            // Prix de revient
+            print '<tr><td>'.$langs->trans("PriceOfReturn").'</td>';
+            print '<td><input id="price_of_return" name="price_of_return" class="maxwidth50" value="'.GETPOST("price_of_return", 'alpha').'" readonly>';
+            print '</td></tr>';
+            
+            // Prix moyen pondéré (pmp)
+            print '<tr><td>'.$langs->trans("AveragePriceWeighted").'</td>';
+            print '<td><input id="average_price_weighted" name="average_price_weighted" class="maxwidth50" value="'.GETPOST("average_price_weighted", 'alpha').'" readonly>';
+            print '</td></tr>';
+            
+            print '<tr><td><hr></td></tr>';
+            // Coef vente
+            print '<tr><td>'.$langs->trans("CoeffVente").'</td>';
+            print '<td><input id="coef_vente" name="coef_vente" class="maxwidth50" value="'.$conf->global->COEFFICIENT_VENTE.'" readonly>';
+            print '</td></tr>';
+            
+            // Marge
+            print '<tr><td>'.$langs->trans("Margin").'</td>';
+            print '<td><input id="margin_product" name="margin_product" class="maxwidth50" value="'.GETPOST("margin_product", 'alpha').'" readonly>';
+            print '</td></tr>';
+            
+            // Prix suggeré
+            print '<tr><td>'.$langs->trans("SuggestPrice").'</td>';
+            print '<td><input id="suggest_price" name="suggest_price" class="maxwidth50" value="'.GETPOST("suggest_price", 'alpha').'" readonly>';
+            print '</td></tr>';
+            
+            print '<tr><td><hr></td></tr>';
+             
             // Price
-            print '<tr><td class="titlefieldcreate">'.$langs->trans("SellingPrice").'</td>';
-            print '<td><input name="price" class="maxwidth50" value="'.$object->price.'">';
-            print $form->selectPriceBaseType($object->price_base_type, "price_base_type");
+            print '<tr><td class="titlefieldcreate fieldrequired">'.$langs->trans("SellingPrice").'(TTC)</td>';
+            print '<td><input name="price" class="maxwidth50" value="'.GETPOST("price", 'alpha').'" onInput="doCalcul()" id="price_ttc">';
+            print $form->selectPriceBaseType('TTC', "price_base_type");
             print '</td></tr>';
 
             // Min price
@@ -1315,11 +1481,179 @@ else
             // VAT
             print '<tr><td>'.$langs->trans("VATRate").'</td><td>';
             $defaultva = get_default_tva($mysoc, $mysoc);
+            
+            $sqlTauxTva = "SELECT t.taux as vat_rate, t.code as default_vat_code "
+                    . " FROM llx_c_tva as t, llx_c_country as c "
+                    . " WHERE t.active=1 AND t.fk_pays = c.rowid AND c.code='".$mysoc->country_code."' "
+                    . " ORDER BY t.taux DESC, t.code ASC, t.recuperableonly ASC "
+                    . " LIMIT 1";
+            $resqlTauxTva = $db->query($sqlTauxTva);
+            if ($resqlTauxTva)
+            {
+                $objTauxTva = $db->fetch_object($resqlTauxTva);
+                print '<input type="hidden" value="'.$objTauxTva->vat_rate.'" id="default_taux_tva">';
+            }
             print $form->load_tva("tva_tx", $defaultva, $mysoc, $mysoc, 0, 0, '', false, 1);
             print '</td></tr>';
+            
+            print '<tr><td><hr></td></tr>';
+            // Coefficient de vente TTC
+            print '<tr><td>'.$langs->trans("CoeffVenteTTC").'</td>';
+            print '<td><input id="coeff_vente_ttc" name="coeff_vente_ttc" class="maxwidth50" value="'.GETPOST("coeff_vente_ttc", 'alpha').'" readonly>';
+            print '</td></tr>';
+            
+            
+            // Taux de marge en %
+            print '<tr><td>'.$langs->trans("MarginRateAsPercentage").'</td>';
+            print '<td><input id="margin_rate_as_percentage" name="margin_rate_as_percentage" class="maxwidth50" value="'.GETPOST("margin_rate_as_percentage", 'alpha').'" readonly>';
+            print '</td></tr>';
+            
+            // Marge TTC
+            print '<tr><td>'.$langs->trans("MarginTTC").'</td>';
+            print '<td><input id="margin_ttc" name="margin_ttc" class="maxwidth50" value="'.GETPOST("margin_ttc", 'alpha').'" readonly>';
+            print '</td></tr>';
+            
+            // Taux de marque %
+            print '<tr><td>'.$langs->trans("BrandRateInPercent").'</td>';
+            print '<td><input id="brand_rate_in_percent" name="brand_rate_in_percent" class="maxwidth50" value="'.GETPOST("brand_rate_in_percent", 'alpha').'" readonly>';
+            print '</td></tr>';
+            
+            // Prix de vente HT
+            print '<tr><td>'.$langs->trans("SellingPriceExclTax").'</td>';
+            print '<td><input id="selling_price_excl_tax" name="selling_price_excl_tax" class="maxwidth50" value="'.GETPOST("selling_price_excl_tax", 'alpha').'" readonly>';
+            print '</td></tr>';
+            
+            // TVA
+            print '<tr><td>'.$langs->trans("Vat").'(8,5%)</td>';
+            print '<td><input id="vat_price" name="vat_price" class="maxwidth50" value="'.GETPOST("vat_price", 'alpha').'" readonly>';
+            print '</td></tr>';
+            
+            
 
             print '</table>';
-
+            ?> 
+                <script type="text/javascript">
+                    jQuery(document).ready(function () {
+                        $("#select_price_base_type option:contains('HT')").attr("disabled","disabled").hide();
+                    });
+                    function doCalcul() {
+                        /*best price edit*/
+                        var best_purchase_price = parseFloat(document.getElementById("best_purchase_price").value);
+                        var coefficient_of_return = parseFloat(document.getElementById("coefficient_of_return").value);
+                        var coef_vente = parseFloat(document.getElementById("coef_vente").value);
+                        var cost_of_return = (best_purchase_price*20)/100;
+                        var price_of_return = coefficient_of_return*best_purchase_price;
+                        var margin_product = coefficient_of_return*best_purchase_price;
+                        var average_price_weighted = coefficient_of_return*best_purchase_price;
+                        var suggest_price = coefficient_of_return*best_purchase_price*coef_vente;
+                        
+                        if(isNaN(cost_of_return)) {
+                            document.getElementById("cost_of_return").value = "";
+                        }else {
+                            document.getElementById("cost_of_return").value = parseFloat(cost_of_return).toFixed(2);
+                            document.getElementById("cost_of_return").style.color = "grey";
+                        }
+                        
+                        if(isNaN(price_of_return)) {
+                            document.getElementById("price_of_return").value = "";
+                        } else {
+                            document.getElementById("price_of_return").value = parseFloat(price_of_return).toFixed(2);
+                            document.getElementById("price_of_return").style.color = "grey";
+                        }
+                        
+                        if(isNaN(average_price_weighted)) {
+                            document.getElementById("average_price_weighted").value = "";
+                        }else{
+                            document.getElementById("average_price_weighted").value = parseFloat(average_price_weighted).toFixed(2);
+                            document.getElementById("average_price_weighted").style.color = "grey";
+                        }
+                        
+                        if(isNaN(margin_product)) {
+                            document.getElementById("margin_product").value = "";
+                        }else{
+                            document.getElementById("margin_product").value = parseFloat(margin_product).toFixed(2);
+                            document.getElementById("margin_product").style.color = "grey";
+                        }
+                        
+                        if(isNaN(suggest_price)) {
+                            document.getElementById("suggest_price").value = "";
+                        }else{
+                            document.getElementById("suggest_price").value = parseFloat(suggest_price).toFixed(2);
+                            document.getElementById("suggest_price").style.color = "grey";
+                        }
+                        
+                        if(isNaN(best_purchase_price)) {
+                            document.getElementById("best_purchase_price_hidden").value = "";
+                        }else{
+                            document.getElementById("best_purchase_price_hidden").value = parseFloat(best_purchase_price).toFixed(2);
+                            document.getElementById("best_purchase_price_hidden").style.color = "grey";
+                        }
+                        
+                        if(isNaN(coefficient_of_return)) {
+                            document.getElementById("coefficient_of_return_hidden").value = "";
+                        }else{
+                            document.getElementById("coefficient_of_return_hidden").value = parseFloat(coefficient_of_return).toFixed(2);
+                            document.getElementById("coefficient_of_return_hidden").style.color = "grey";
+                        }
+                        
+                        
+                        /* price ttc edit */
+                        var default_taux_tva =  parseFloat(document.getElementById("default_taux_tva").value);
+                        var price_ttc =  parseFloat(document.getElementById("price_ttc").value);
+                        var price_of_return =  parseFloat(document.getElementById("price_of_return").value);
+                        var coefficient_of_return =  parseFloat(document.getElementById("coefficient_of_return_hidden").value);
+                        var best_purchase_price =  parseFloat(document.getElementById("best_purchase_price_hidden").value);
+                        var tva_calculated = (price_ttc/((default_taux_tva+100)/100))*(default_taux_tva/100);
+                        var price_ht_calculated = price_ttc-tva_calculated;
+                        var brand_rate_in_percent = ((price_ttc-price_of_return)/price_ttc)*100;
+                        var margin_ttc = price_ttc-price_of_return;
+                        var coeff_vente_ttc = ((price_ttc/coefficient_of_return)*best_purchase_price)/100;
+                        var margin_rate_as_percentage = (margin_ttc*100/price_of_return);
+                        
+                        if(isNaN(tva_calculated)) {
+                            document.getElementById("vat_price").value ="";
+                        }else{
+                            document.getElementById("vat_price").value = parseFloat(tva_calculated).toFixed(2);
+                            document.getElementById("vat_price").style.color = "grey";
+                        }
+                        
+                        if(isNaN(price_ht_calculated) || price_ht_calculated<0) {
+                            document.getElementById("selling_price_excl_tax").value = "";
+                        }else{
+                            document.getElementById("selling_price_excl_tax").value = parseFloat(price_ht_calculated).toFixed(2);
+                            document.getElementById("selling_price_excl_tax").style.color = "grey";
+                        }
+                        
+                        if(isNaN(brand_rate_in_percent) || brand_rate_in_percent<0) {
+                            document.getElementById("brand_rate_in_percent").value = "";
+                        }else{
+                            document.getElementById("brand_rate_in_percent").value = parseFloat(brand_rate_in_percent).toFixed(2);
+                            document.getElementById("brand_rate_in_percent").style.color = "grey";
+                        }
+                        
+                        if(isNaN(margin_ttc) || margin_ttc<0) {
+                            document.getElementById("margin_ttc").value = "";
+                        }else{
+                            document.getElementById("margin_ttc").value = parseFloat(margin_ttc).toFixed(2);
+                            document.getElementById("margin_ttc").style.color = "grey";
+                        }
+                        
+                        if(isNaN(coeff_vente_ttc)) {
+                            document.getElementById("coeff_vente_ttc").value = "";
+                        }else{
+                            document.getElementById("coeff_vente_ttc").value = parseFloat(coeff_vente_ttc).toFixed(2);
+                            document.getElementById("coeff_vente_ttc").style.color = "grey";
+                        }
+                        
+                        if(isNaN(margin_rate_as_percentage)) {
+                            document.getElementById("margin_rate_as_percentage").value = "";
+                        }else{
+                            document.getElementById("margin_rate_as_percentage").value = parseFloat(margin_rate_as_percentage).toFixed(2);
+                            document.getElementById("margin_rate_as_percentage").style.color = "grey";
+                        }
+                    }
+                </script>  
+        <?php
             print '<br>';
         }
 

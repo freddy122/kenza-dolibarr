@@ -207,6 +207,74 @@ class Product extends CommonObject
     public $transport_coefficient;
     
     /**
+     *  coef_revient
+     *
+     * @var float
+     */
+    public $coef_revient;
+    
+    /**
+     *  cout_revient
+     *
+     * @var float
+     */
+    public $cout_revient;
+    
+    /**
+     *  margin_product
+     *
+     * @var float
+     */
+    public $margin_product;
+    
+    /**
+     *  suggest_price
+     *
+     * @var float
+     */
+    public $suggest_price;
+    
+    /**
+     *  coeff_vente_ttc
+     *
+     * @var float
+     */
+    public $coeff_vente_ttc;
+    
+    /**
+     *  margin_rate_as_percentage
+     *
+     * @var float
+     */
+    public $margin_rate_as_percentage;
+    
+    /**
+     *  margin_ttc
+     *
+     * @var float
+     */
+    public $margin_ttc;
+    
+    /**
+     *  brand_rate_in_percent
+     *
+     * @var float
+     */
+    public $brand_rate_in_percent;
+    /**
+     * selling_price_excl_tax
+     *
+     * @var float
+     */
+    public $selling_price_excl_tax;
+    /**
+     *  vat_price
+     *
+     * @var float
+     */
+    public $vat_price;
+    
+    /**
      * Transport coast
      *
      * @var float
@@ -1046,6 +1114,17 @@ class Product extends CommonObject
             $sql .= ", desiredstock = ".((isset($this->desiredstock) && is_numeric($this->desiredstock)) ? (int) $this->desiredstock : "null");
             $sql .= ", cost_price = ".($this->cost_price != '' ? $this->db->escape($this->cost_price) : 'null');
             $sql .= ", transport_coefficient = ".($this->transport_coefficient != '' ? $this->db->escape($this->transport_coefficient) : 'null');
+            $sql .= ", coef_revient = ".($this->coef_revient != '' ? $this->db->escape($this->coef_revient) : 'null');
+            $sql .= ", cout_revient = ".($this->cout_revient != '' ? $this->db->escape($this->cout_revient) : 'null');
+            
+            $sql .= ", margin_product = ".($this->margin_product != '' ? $this->db->escape($this->margin_product) : 'null');
+            $sql .= ", suggest_price = ".($this->suggest_price != '' ? $this->db->escape($this->suggest_price) : 'null');
+            $sql .= ", coeff_vente_ttc = ".($this->coeff_vente_ttc != '' ? $this->db->escape($this->coeff_vente_ttc) : 'null');
+            $sql .= ", margin_rate_as_percentage = ".($this->margin_rate_as_percentage != '' ? $this->db->escape($this->margin_rate_as_percentage) : 'null');
+            $sql .= ", margin_ttc = ".($this->margin_ttc != '' ? $this->db->escape($this->margin_ttc) : 'null');
+            $sql .= ", brand_rate_in_percent = ".($this->brand_rate_in_percent != '' ? $this->db->escape($this->brand_rate_in_percent) : 'null');
+            $sql .= ", selling_price_excl_tax = ".($this->selling_price_excl_tax != '' ? $this->db->escape($this->selling_price_excl_tax) : 'null');
+            $sql .= ", vat_price = ".($this->vat_price != '' ? $this->db->escape($this->vat_price) : 'null');
             $sql .= ", transport_coast = ".($this->transport_coast != '' ? $this->db->escape($this->transport_coast) : 'null');
             $sql .= ", fk_unit= ".(!$this->fk_unit ? 'NULL' : (int) $this->fk_unit);
             $sql .= ", price_autogen = ".(!$this->price_autogen ? 0 : 1);
@@ -2123,7 +2202,9 @@ class Product extends CommonObject
         $sql .= " accountancy_code_buy, accountancy_code_buy_intra, accountancy_code_buy_export,";
         $sql .= " accountancy_code_sell, accountancy_code_sell_intra, accountancy_code_sell_export, stock, pmp,";
         $sql .= " datec, tms, import_key, entity, desiredstock, tobatch, fk_unit,";
-        $sql .= " fk_price_expression, price_autogen, transport_coefficient, transport_coast";
+        $sql .= " fk_price_expression, price_autogen, transport_coefficient, transport_coast, coef_revient, cout_revient, ";
+        $sql .= " margin_product, suggest_price, coeff_vente_ttc, margin_rate_as_percentage, margin_ttc, brand_rate_in_percent, selling_price_excl_tax, vat_price";
+        
         $sql .= " FROM ".MAIN_DB_PREFIX."product";
         if ($id) {
             $sql .= " WHERE rowid = ".(int) $id;
@@ -2169,6 +2250,17 @@ class Product extends CommonObject
                 $this->price_base_type = $obj->price_base_type;
                 $this->cost_price                    = $obj->cost_price;
                 $this->transport_coefficient         = $obj->transport_coefficient;
+                $this->coef_revient                  = $obj->coef_revient;
+                $this->cout_revient                  = $obj->cout_revient;
+                
+                $this->margin_product                = $obj->margin_product;
+                $this->suggest_price                 = $obj->suggest_price;
+                $this->coeff_vente_ttc               = $obj->coeff_vente_ttc;
+                $this->margin_rate_as_percentage     = $obj->margin_rate_as_percentage;
+                $this->margin_ttc                    = $obj->margin_ttc;
+                $this->brand_rate_in_percent         = $obj->brand_rate_in_percent;
+                $this->selling_price_excl_tax        = $obj->selling_price_excl_tax;
+                $this->vat_price                     = $obj->vat_price;
                 $this->transport_coast               = $obj->transport_coast;
                 $this->default_vat_code = $obj->default_vat_code;
                 $this->tva_tx                        = $obj->tva_tx;

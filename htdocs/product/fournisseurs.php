@@ -343,14 +343,14 @@ if (empty($reshook))
 				{
 					if (!empty($conf->dynamicprices->enabled) && $price_expression !== '')
 					{
-						//Check the expression validity by parsing it
-                        $priceparser = new PriceParser($db);
-                        $object->fk_supplier_price_expression = $price_expression;
-                        $price_result = $priceparser->parseProductSupplier($object);
-						if ($price_result < 0) { //Expression is not valid
-							$error++;
-							setEventMessages($priceparser->translatedError(), null, 'errors');
-						}
+                                            //Check the expression validity by parsing it
+                                            $priceparser = new PriceParser($db);
+                                            $object->fk_supplier_price_expression = $price_expression;
+                                            $price_result = $priceparser->parseProductSupplier($object);
+                                            if ($price_result < 0) { //Expression is not valid
+                                                    $error++;
+                                                    setEventMessages($priceparser->translatedError(), null, 'errors');
+                                            }
 					}
 					if (!$error && !empty($conf->dynamicprices->enabled))
 					{
@@ -463,6 +463,17 @@ if ($id > 0 || $ref)
             	else print $langs->trans("NotDefined");
             }
             print '</td></tr>';
+            
+            // coefficient de révient
+            print '<tr><td class="titlefield">'.$langs->trans("CoefficientOfReturn").'</td>';
+            print '<td>'.$object->coef_revient.'</td>';
+            print '</tr>';
+            
+            // Prix de révient
+            print '<tr><td class="titlefield">'.$langs->trans("CostOfReturn").'</td>';
+            print '<td>'.$object->cout_revient.'</td>';
+            print '</tr>';
+            
             print '<tr>';
             print '<td>';
             $textdescs = $langs->trans("TransportCoefficientDescription");
@@ -547,12 +558,12 @@ if ($id > 0 || $ref)
 				print '<tr><td class="fieldrequired">'.$langs->trans("SupplierRef").'</td><td>';
 				if ($rowid)
 				{
-                    print '<input type="hidden" name="ref_fourn_old" value="'.$object->ref_supplier.'">';
-                    print '<input class="flat" name="ref_fourn" size="12" value="'.$object->ref_supplier.'">';
+                                    print '<input type="hidden" name="ref_fourn_old" value="'.$object->ref_supplier.'">';
+                                    print '<input class="flat" name="ref_fourn" size="12" value="'.$object->ref_supplier.'">';
 				}
 				else
 				{
-					print '<input class="flat" name="ref_fourn" size="12" value="'.(GETPOST("ref_fourn") ?GETPOST("ref_fourn") : '').'">';
+                                    print '<input class="flat" name="ref_fourn" size="12" value="'.(GETPOST("ref_fourn") ?GETPOST("ref_fourn") : '').'">';
 				}
 				print '</td>';
 				print '</tr>';
@@ -580,13 +591,13 @@ if ($id > 0 || $ref)
 				{
 					print '<input class="flat" name="qty" size="5" value="'.$quantity.'">';
 				}
-                // Units
-                if ($conf->global->PRODUCT_USE_UNITS) {
-                    $unit = $object->getLabelOfUnit();
-                    if ($unit !== '') {
-                        print '&nbsp;&nbsp;'.$langs->trans($unit);
-                    }
-                }
+                                // Units
+                                if ($conf->global->PRODUCT_USE_UNITS) {
+                                    $unit = $object->getLabelOfUnit();
+                                    if ($unit !== '') {
+                                        print '&nbsp;&nbsp;'.$langs->trans($unit);
+                                    }
+                                }
 				print '</td></tr>';
 
 				// Vat rate
@@ -613,10 +624,10 @@ if ($id > 0 || $ref)
 				}
 				else
 				{
-                    if (empty($default_vat))
-                    {
-                        $default_vat = $object->tva_tx;
-                    }
+                                    if (empty($default_vat))
+                                    {
+                                        $default_vat = $object->tva_tx;
+                                    }
 				}
 				$vattosuggest = (GETPOST("tva_tx") ?vatrate(GETPOST("tva_tx")) : ($default_vat != '' ?vatrate($default_vat) : ''));
 				$vattosuggest = preg_replace('/\s*\(.*\)$/', '', $vattosuggest);
@@ -793,7 +804,7 @@ SCRIPT;
 						print '<tr>';
 						print '<td>'.$langs->trans("Charges").'</td>';
 						print '<td><input class="flat" name="charges" size="8" value="'.(GETPOST('charges') ?price(GETPOST('charges')) : (isset($object->fourn_charges) ?price($object->fourn_charges) : '')).'">';
-		        		print '</td>';
+                                                print '</td>';
 						print '</tr>';
 					}
 				}

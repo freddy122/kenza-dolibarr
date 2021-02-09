@@ -1004,7 +1004,34 @@ else
 		print price($object->price_min).' '.$langs->trans($object->price_base_type);
 	}
 	print '</td></tr>';
-
+        
+	// Coefficient de vente
+	print '<tr><td>'.$langs->trans("CoeffVente").'</td><td>'.$conf->global->COEFFICIENT_VENTE.'</td></tr>';
+        
+        // Marge vente
+	print '<tr><td>'.$langs->trans("Margin").'</td><td>'.$object->margin_product.'</td></tr>';
+        
+	// Prix suggeré
+	print '<tr><td>'.$langs->trans("SuggestPrice").'</td><td>'.$object->suggest_price.'</td></tr>';
+        
+	// Coefficient vente TTC
+	print '<tr><td>'.$langs->trans("CoeffVenteTTC").'</td><td>'.$object->coeff_vente_ttc.'</td></tr>';
+        
+	// Margin Rate As Percentage
+	print '<tr><td>'.$langs->trans("MarginRateAsPercentage").'</td><td>'.$object->margin_rate_as_percentage.'</td></tr>';
+        
+	// margin_ttc
+	print '<tr><td>'.$langs->trans("MarginTTC").'</td><td>'.$object->margin_ttc.'</td></tr>';
+        
+	// brand_rate_in_percent
+	print '<tr><td>'.$langs->trans("BrandRateInPercent").'</td><td>'.$object->brand_rate_in_percent.'</td></tr>';
+        
+	// selling_price_excl_tax
+	print '<tr><td>'.$langs->trans("SellingPriceExclTax").'</td><td>'.$object->selling_price_excl_tax.'</td></tr>';
+        
+	// Vat
+	print '<tr><td>'.$langs->trans("Vat").'(8.5%)</td><td>'.$object->vat_price.'</td></tr>';
+        
 	// Price by quantity
 	if (!empty($conf->global->PRODUIT_CUSTOMER_PRICES_BY_QTY) || !empty($conf->global->PRODUIT_CUSTOMER_PRICES_BY_QTY_MULTIPRICES))    // TODO Fix the form inside tr instead of td
 	{
