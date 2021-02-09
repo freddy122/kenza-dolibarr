@@ -1617,21 +1617,21 @@ else
                             document.getElementById("vat_price").style.color = "grey";
                         }
                         
-                        if(isNaN(price_ht_calculated) || price_ht_calculated<0) {
+                        if(isNaN(price_ht_calculated) /*|| price_ht_calculated<0*/) {
                             document.getElementById("selling_price_excl_tax").value = "";
                         }else{
                             document.getElementById("selling_price_excl_tax").value = parseFloat(price_ht_calculated).toFixed(2);
                             document.getElementById("selling_price_excl_tax").style.color = "grey";
                         }
                         
-                        if(isNaN(brand_rate_in_percent) || brand_rate_in_percent<0) {
+                        if(isNaN(brand_rate_in_percent) /*|| brand_rate_in_percent<0*/) {
                             document.getElementById("brand_rate_in_percent").value = "";
                         }else{
                             document.getElementById("brand_rate_in_percent").value = parseFloat(brand_rate_in_percent).toFixed(2);
                             document.getElementById("brand_rate_in_percent").style.color = "grey";
                         }
                         
-                        if(isNaN(margin_ttc) || margin_ttc<0) {
+                        if(isNaN(margin_ttc) /*|| margin_ttc<0*/) {
                             document.getElementById("margin_ttc").value = "";
                         }else{
                             document.getElementById("margin_ttc").value = parseFloat(margin_ttc).toFixed(2);
