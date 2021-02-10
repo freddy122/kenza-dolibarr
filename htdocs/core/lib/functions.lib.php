@@ -1680,6 +1680,9 @@ function dol_banner_tab($object, $paramid, $morehtml = '', $shownav = 1, $fieldi
 	print '<div class="'.($onlybanner ? 'arearefnobottom ' : 'arearef ').'heightref valignmiddle centpercent">';
 	print $form->showrefnav($object, $paramid, $morehtml, $shownav, $fieldid, $fieldref, $morehtmlref, $moreparam, $nodbprefix, $morehtmlleft, $morehtmlstatus, $morehtmlright);
 	print '</div>';
+        
+        if ($showbarcode) print "<div style='margin:auto' ><a class='butAction' href='".DOL_URL_ROOT."/barcode/printsheet.php?codebare=".$object->barcode."' target='_blank'>Imprimer code bare</a> </div><br>";
+        
 	print '<div class="underrefbanner clearboth"></div>';
 }
 

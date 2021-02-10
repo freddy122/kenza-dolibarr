@@ -309,7 +309,7 @@ class TCPDFBarcode {
 				break;
 			}
 			case 'EAN8': { // EAN 8
-				$arrcode = $this->barcode_eanupc($code, 9);
+				$arrcode = $this->barcode_eanupc($code, 8);
 				break;
 			}
 			case 'EAN13': { // EAN 13

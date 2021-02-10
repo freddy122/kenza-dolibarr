@@ -416,7 +416,7 @@ print $langs->trans("BarcodeType").' &nbsp; ';
 print '</div><div class="tagtd" style="overflow: hidden; white-space: nowrap; max-width: 300px;">';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formbarcode.class.php';
 $formbarcode = new FormBarCode($db);
-print $formbarcode->selectBarcodeType($fk_barcode_type, 'fk_barcode_type', 1);
+print $formbarcode->selectBarcodeType("6", 'fk_barcode_type', 1);
 print '</div></div>';
 
 // Barcode value
@@ -424,7 +424,11 @@ print '	<div class="tagtr">';
 print '	<div class="tagtd" style="overflow: hidden; white-space: nowrap; max-width: 300px;">';
 print $langs->trans("BarcodeValue").' &nbsp; ';
 print '</div><div class="tagtd" style="overflow: hidden; white-space: nowrap; max-width: 300px;">';
-print '<input size="16" type="text" name="forbarcode" id="forbarcode" value="'.$forbarcode.'">';
+$barCodes = $forbarcode;
+if(!empty(GETPOST('codebare'))) {
+    $barCodes = GETPOST('codebare');
+}
+print '<input size="16" type="text" name="forbarcode" id="forbarcode" value="'.$barCodes.'">';
 print '</div></div>';
 
 /*

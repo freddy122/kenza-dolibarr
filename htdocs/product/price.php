@@ -71,6 +71,55 @@ if ($id > 0 || !empty($ref))
 	$object->fetch($id, $ref);
 }
 
+
+$productFournisseur = new ProductFournisseur($db);
+$productFournisseur->fetch($object->id);
+$supplier = new Fournisseur($db);
+$supplier->fetch($productFournisseur->fourn_id);
+if(!empty(GETPOST("id_fourn")) && !empty(GETPOST("best_purchase_price", 'alpha')) && !empty(GETPOST("ref_prod_fourn"))) {
+    $ret = $productFournisseur->update_buyprice(1, GETPOST("best_purchase_price"), $user, $_POST["price_base_type_prd_frs"], $supplier, $_POST["oselDispo"], GETPOST("ref_prod_fourn", 'alpha'), $tva_tx, $_POST["charges"], 0, 0, 0, 0, "", array(), '', 0, 'HT', 1, '', "", GETPOST('barcode'), "");
+}
+if(!empty(GETPOST("coefficient_of_return"))) {
+    $object->coef_revient = GETPOST("coefficient_of_return");
+}
+if(!empty(GETPOST("cost_of_return"))) {
+    $object->cout_revient = GETPOST("cost_of_return");
+}
+if(!empty(GETPOST("price_of_return"))) {
+    $object->cost_price = GETPOST("price_of_return");
+}
+if(!empty(GETPOST("average_price_weighted"))) {
+    $sqlUpdatePmp = 'update '.MAIN_DB_PREFIX.'product set pmp = '.GETPOST("average_price_weighted").' where rowid='.$id;
+    $db->query($sqlUpdatePmp);
+}
+if(!empty(GETPOST("margin_product"))) {
+    $object->margin_product = GETPOST("margin_product");
+}
+if(!empty(GETPOST("suggest_price"))) {
+    $object->suggest_price = GETPOST("suggest_price");
+}
+if(!empty(GETPOST("coeff_vente_ttc"))) {
+    $object->coeff_vente_ttc = GETPOST("coeff_vente_ttc");
+}
+if(!empty(GETPOST("margin_rate_as_percentage"))) {
+    $object->margin_rate_as_percentage = GETPOST("margin_rate_as_percentage");
+}
+
+if(!empty(GETPOST("margin_ttc"))) {
+    $object->margin_ttc = GETPOST("margin_ttc");
+}
+
+if(!empty(GETPOST("brand_rate_in_percent"))) {
+    $object->brand_rate_in_percent = GETPOST("brand_rate_in_percent");
+}
+if(!empty(GETPOST("selling_price_excl_tax"))) {
+    $object->selling_price_excl_tax = GETPOST("selling_price_excl_tax");
+}
+if(!empty(GETPOST("vat_price"))) {
+    $object->vat_price = GETPOST("vat_price");
+}
+$object->update($object->id, $user);
+
 // Clean param
 if ((!empty($conf->global->PRODUIT_MULTIPRICES) || !empty($conf->global->PRODUIT_CUSTOMER_PRICES_BY_QTY_MULTIPRICES)) && empty($conf->global->PRODUIT_MULTIPRICES_LIMIT)) $conf->global->PRODUIT_MULTIPRICES_LIMIT = 5;
 
@@ -384,7 +433,7 @@ if (empty($reshook))
 		}
 	}
 
-
+        
 	if ($action == 'delete' && $user->rights->produit->supprimer)
 	{
 		$result = $object->log_price_delete($user, GETPOST('lineid', 'int'));
@@ -1291,15 +1340,163 @@ if ($action == 'edit_price' && $object->getRights()->creer)
 		$product->fetch($id, $ref, '', 1); //Ignore the math expression when getting the price
 		print '<tr id="price_numeric"><td>';
 		$text = $langs->trans('SellingPrice');
+                $product_fourn = new ProductFournisseur($db);
+                $product_fourn->find_min_price_product_fournisseur($object->id);
+                $sqlTauxTva = "SELECT t.taux as vat_rate, t.code as default_vat_code "
+                    . " FROM llx_c_tva as t, llx_c_country as c "
+                    . " WHERE t.active=1 AND t.fk_pays = c.rowid AND c.code='".$mysoc->country_code."' "
+                    . " ORDER BY t.taux DESC, t.code ASC, t.recuperableonly ASC "
+                    . " LIMIT 1";
+                $resqlTauxTva = $db->query($sqlTauxTva);
+                if ($resqlTauxTva)
+                {
+                    $objTauxTva = $db->fetch_object($resqlTauxTva);
+                    print '<input type="hidden" value="'.$objTauxTva->vat_rate.'" id="default_taux_tva">';
+                }
+                print '<input id="best_purchase_price_hidden" type="hidden"/>';
+                print '<input type="hidden" id="coefficient_of_return_hidden">';
+                print "<input type='hidden' value='".$conf->global->COEFFICIENT_VENTE."' id='coef_vente' name='coef_vente' >";
+                print "<input type='hidden' value='".$product_fourn->fourn_price."' id='best_purchase_price' name='best_purchase_price'>";
+                print "<input type='hidden' value='".$product->cost_price."' id='price_of_return' name='price_of_return'>";
+                print "<input type='hidden' value='".$product->pmp."' id='average_price_weighted' name='average_price_weighted'>";
+                print "<input type='hidden' value='".$product->coef_revient."' id='coefficient_of_return' name='coefficient_of_return'>";
+                print "<input type='hidden' value='".$product->cout_revient."' id='cost_of_return' name='cost_of_return'>";
+                print "<input type='hidden' value='".$product->margin_product."' id='margin_product' name='margin_product'>";
+                print "<input type='hidden' value='".$product->suggest_price."' id='suggest_price' name='suggest_price'>";
+                print "<input type='hidden' value='".$product->coeff_vente_ttc."' id='coeff_vente_ttc' name='coeff_vente_ttc'>";
+                print "<input type='hidden' value='".$product->margin_rate_as_percentage."' id='margin_rate_as_percentage' name='margin_rate_as_percentage'>";
+                print "<input type='hidden' value='".$product->margin_ttc."' id='margin_ttc' name='margin_ttc'>";
+                print "<input type='hidden' value='".$product->brand_rate_in_percent."' id='brand_rate_in_percent' name='brand_rate_in_percent'>";
+                print "<input type='hidden' value='".$product->selling_price_excl_tax."' id='selling_price_excl_tax' name='selling_price_excl_tax'>";
+                print "<input type='hidden' value='".$product->vat_price."' id='vat_price' name='vat_price'>";
 		print $form->textwithpicto($text, $langs->trans("PrecisionUnitIsLimitedToXDecimals", $conf->global->MAIN_MAX_DECIMALS_UNIT), 1, 1);
 		print '</td><td>';
 		if ($object->price_base_type == 'TTC') {
-			print '<input name="price" size="10" value="'.price($product->price_ttc).'">';
+                    print '<input name="price" size="10" value="'. str_replace(",",".",price($product->price_ttc)).'" onInput="doCalcul()" id="price_ttc">';
 		} else {
-			print '<input name="price" size="10" value="'.price($product->price).'">';
+                    print '<input name="price" size="10" value="'.price($product->price).'" onInput="doCalcul()">';
 		}
 		print '</td></tr>';
+                ?>
+                <script>
+                    function doCalcul() {
+                        /*best price edit*/
+                        var best_purchase_price = parseFloat(document.getElementById("best_purchase_price").value);
+                        var coefficient_of_return = parseFloat(document.getElementById("coefficient_of_return").value);
+                        var coef_vente = parseFloat(document.getElementById("coef_vente").value);
+                        var cost_of_return = (best_purchase_price*20)/100;
+                        var price_of_return = coefficient_of_return*best_purchase_price;
+                        var margin_product = coefficient_of_return*best_purchase_price;
+                        var average_price_weighted = coefficient_of_return*best_purchase_price;
+                        var suggest_price = coefficient_of_return*best_purchase_price*coef_vente;
 
+                        if(isNaN(cost_of_return)) {
+                            document.getElementById("cost_of_return").value = "";
+                        }else {
+                            document.getElementById("cost_of_return").value = parseFloat(cost_of_return).toFixed(2);
+                            document.getElementById("cost_of_return").style.color = "grey";
+                        }
+
+                        if(isNaN(price_of_return)) {
+                            document.getElementById("price_of_return").value = "";
+                        } else {
+                            document.getElementById("price_of_return").value = parseFloat(price_of_return).toFixed(2);
+                            document.getElementById("price_of_return").style.color = "grey";
+                        }
+
+                        if(isNaN(average_price_weighted)) {
+                            document.getElementById("average_price_weighted").value = "";
+                        }else{
+                            document.getElementById("average_price_weighted").value = parseFloat(average_price_weighted).toFixed(2);
+                            document.getElementById("average_price_weighted").style.color = "grey";
+                        }
+
+                        if(isNaN(margin_product)) {
+                            document.getElementById("margin_product").value = "";
+                        }else{
+                            document.getElementById("margin_product").value = parseFloat(margin_product).toFixed(2);
+                            document.getElementById("margin_product").style.color = "grey";
+                        }
+
+                        if(isNaN(suggest_price)) {
+                            document.getElementById("suggest_price").value = "";
+                        }else{
+                            document.getElementById("suggest_price").value = parseFloat(suggest_price).toFixed(2);
+                            document.getElementById("suggest_price").style.color = "grey";
+                        }
+
+                        if(isNaN(best_purchase_price)) {
+                            document.getElementById("best_purchase_price_hidden").value = "";
+                        }else{
+                            document.getElementById("best_purchase_price_hidden").value = parseFloat(best_purchase_price).toFixed(2);
+                            document.getElementById("best_purchase_price_hidden").style.color = "grey";
+                        }
+
+                        if(isNaN(coefficient_of_return)) {
+                            document.getElementById("coefficient_of_return_hidden").value = "";
+                        }else{
+                            document.getElementById("coefficient_of_return_hidden").value = parseFloat(coefficient_of_return).toFixed(2);
+                            document.getElementById("coefficient_of_return_hidden").style.color = "grey";
+                        }
+
+
+                        /* price ttc edit */
+                        var default_taux_tva =  parseFloat(document.getElementById("default_taux_tva").value);
+                        var price_ttc =  parseFloat(document.getElementById("price_ttc").value);
+                        var price_of_return =  parseFloat(document.getElementById("price_of_return").value);
+                        var coefficient_of_return =  parseFloat(document.getElementById("coefficient_of_return_hidden").value);
+                        var best_purchase_price =  parseFloat(document.getElementById("best_purchase_price_hidden").value);
+                        var tva_calculated = (price_ttc/((default_taux_tva+100)/100))*(default_taux_tva/100);
+                        var price_ht_calculated = price_ttc-tva_calculated;
+                        var brand_rate_in_percent = ((price_ttc-price_of_return)/price_ttc)*100;
+                        var margin_ttc = price_ttc-price_of_return;
+                        var coeff_vente_ttc = ((price_ttc/coefficient_of_return)*best_purchase_price)/100;
+                        var margin_rate_as_percentage = (margin_ttc*100/price_of_return);
+
+                        if(isNaN(tva_calculated)) {
+                            document.getElementById("vat_price").value ="";
+                        }else{
+                            document.getElementById("vat_price").value = parseFloat(tva_calculated).toFixed(2);
+                            document.getElementById("vat_price").style.color = "grey";
+                        }
+
+                        if(isNaN(price_ht_calculated) /*|| price_ht_calculated<0*/) {
+                            document.getElementById("selling_price_excl_tax").value = "";
+                        }else{
+                            document.getElementById("selling_price_excl_tax").value = parseFloat(price_ht_calculated).toFixed(2);
+                            document.getElementById("selling_price_excl_tax").style.color = "grey";
+                        }
+
+                        if(isNaN(brand_rate_in_percent) /*|| brand_rate_in_percent<0*/) {
+                            document.getElementById("brand_rate_in_percent").value = "";
+                        }else{
+                            document.getElementById("brand_rate_in_percent").value = parseFloat(brand_rate_in_percent).toFixed(2);
+                            document.getElementById("brand_rate_in_percent").style.color = "grey";
+                        }
+
+                        if(isNaN(margin_ttc) /*|| margin_ttc<0*/) {
+                            document.getElementById("margin_ttc").value = "";
+                        }else{
+                            document.getElementById("margin_ttc").value = parseFloat(margin_ttc).toFixed(2);
+                            document.getElementById("margin_ttc").style.color = "grey";
+                        }
+
+                        if(isNaN(coeff_vente_ttc)) {
+                            document.getElementById("coeff_vente_ttc").value = "";
+                        }else{
+                            document.getElementById("coeff_vente_ttc").value = parseFloat(coeff_vente_ttc).toFixed(2);
+                            document.getElementById("coeff_vente_ttc").style.color = "grey";
+                        }
+
+                        if(isNaN(margin_rate_as_percentage)) {
+                            document.getElementById("margin_rate_as_percentage").value = "";
+                        }else{
+                            document.getElementById("margin_rate_as_percentage").value = parseFloat(margin_rate_as_percentage).toFixed(2);
+                            document.getElementById("margin_rate_as_percentage").style.color = "grey";
+                        }
+                    }
+                </script>         
+                <?php
 		// Price minimum
 		print '<tr><td>';
 		$text = $langs->trans('MinPrice');
