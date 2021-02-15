@@ -267,6 +267,13 @@ class Product extends CommonObject
      * @var float
      */
     public $selling_price_excl_tax;
+	
+	 /**
+     * carte_metisse
+     *
+     * @var float
+     */
+    public $carte_metisse;
     /**
      *  vat_price
      *
@@ -1124,6 +1131,7 @@ class Product extends CommonObject
             $sql .= ", margin_ttc = ".($this->margin_ttc != '' ? $this->db->escape($this->margin_ttc) : 'null');
             $sql .= ", brand_rate_in_percent = ".($this->brand_rate_in_percent != '' ? $this->db->escape($this->brand_rate_in_percent) : 'null');
             $sql .= ", selling_price_excl_tax = ".($this->selling_price_excl_tax != '' ? $this->db->escape($this->selling_price_excl_tax) : 'null');
+			$sql .= ", carte_metisse = ".($this->carte_metisse != '' ? $this->db->escape($this->carte_metisse) : 'null');
             $sql .= ", vat_price = ".($this->vat_price != '' ? $this->db->escape($this->vat_price) : 'null');
             $sql .= ", transport_coast = ".($this->transport_coast != '' ? $this->db->escape($this->transport_coast) : 'null');
             $sql .= ", fk_unit= ".(!$this->fk_unit ? 'NULL' : (int) $this->fk_unit);
@@ -2203,7 +2211,7 @@ class Product extends CommonObject
         $sql .= " accountancy_code_sell, accountancy_code_sell_intra, accountancy_code_sell_export, stock, pmp,";
         $sql .= " datec, tms, import_key, entity, desiredstock, tobatch, fk_unit,";
         $sql .= " fk_price_expression, price_autogen, transport_coefficient, transport_coast, coef_revient, cout_revient, ";
-        $sql .= " margin_product, suggest_price, coeff_vente_ttc, margin_rate_as_percentage, margin_ttc, brand_rate_in_percent, selling_price_excl_tax, vat_price";
+        $sql .= " margin_product, suggest_price, coeff_vente_ttc, margin_rate_as_percentage, margin_ttc, brand_rate_in_percent, selling_price_excl_tax, vat_price, carte_metisse";
         
         $sql .= " FROM ".MAIN_DB_PREFIX."product";
         if ($id) {
@@ -2260,6 +2268,7 @@ class Product extends CommonObject
                 $this->margin_ttc                    = $obj->margin_ttc;
                 $this->brand_rate_in_percent         = $obj->brand_rate_in_percent;
                 $this->selling_price_excl_tax        = $obj->selling_price_excl_tax;
+				$this->carte_metisse        = $obj->carte_metisse;
                 $this->vat_price                     = $obj->vat_price;
                 $this->transport_coast               = $obj->transport_coast;
                 $this->default_vat_code = $obj->default_vat_code;

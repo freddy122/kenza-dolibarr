@@ -68,43 +68,41 @@ if(!empty(GETPOST("id_fourn")) && !empty(GETPOST("best_purchase_price", 'alpha')
     $ret = $productFournisseur->update_buyprice(1, GETPOST("best_purchase_price"), $user, $_POST["price_base_type_prd_frs"], $supplier, $_POST["oselDispo"], GETPOST("ref_prod_fourn", 'alpha'), $tva_tx, $_POST["charges"], 0, 0, 0, 0, "", array(), '', 0, 'HT', 1, '', "", GETPOST('barcode'), "");
 }
 if(!empty(GETPOST("coefficient_of_return"))) {
-    $product->coef_revient = GETPOST("coefficient_of_return");
+    $product->coef_revient = floatval(str_replace(",",".",GETPOST("coefficient_of_return")));
 }
 if(!empty(GETPOST("cost_of_return"))) {
-    $product->cout_revient = GETPOST("cost_of_return");
+    $product->cout_revient = floatval(str_replace(",",".",GETPOST("cost_of_return")));
 }
 if(!empty(GETPOST("price_of_return"))) {
-    $product->cost_price = GETPOST("price_of_return");
+    $product->cost_price = floatval(str_replace(",",".",GETPOST("price_of_return")));
 }
-if(!empty(GETPOST("average_price_weighted"))) {
+/*if(!empty(GETPOST("average_price_weighted"))) {
     $sqlUpdatePmp = 'update '.MAIN_DB_PREFIX.'product set pmp = '.GETPOST("average_price_weighted").' where rowid='.$id;
     $db->query($sqlUpdatePmp);
-}
+}*/
 if(!empty(GETPOST("margin_product"))) {
-    $product->margin_product = GETPOST("margin_product");
+    $product->margin_product = floatval(str_replace(",",".",GETPOST("margin_product")));
 }
 if(!empty(GETPOST("suggest_price"))) {
-    $product->suggest_price = GETPOST("suggest_price");
+    $product->suggest_price = floatval(str_replace(",",".",GETPOST("suggest_price")));
 }
 if(!empty(GETPOST("coeff_vente_ttc"))) {
-    $product->coeff_vente_ttc = GETPOST("coeff_vente_ttc");
+    $product->coeff_vente_ttc = floatval(str_replace(",",".",GETPOST("coeff_vente_ttc")));
 }
 if(!empty(GETPOST("margin_rate_as_percentage"))) {
-    $product->margin_rate_as_percentage = GETPOST("margin_rate_as_percentage");
+    $product->margin_rate_as_percentage = floatval(str_replace(",",".",GETPOST("margin_rate_as_percentage")));
 }
-
 if(!empty(GETPOST("margin_ttc"))) {
-    $product->margin_ttc = GETPOST("margin_ttc");
+    $product->margin_ttc = floatval(str_replace(",",".",GETPOST("margin_ttc")));
 }
-
 if(!empty(GETPOST("brand_rate_in_percent"))) {
-    $product->brand_rate_in_percent = GETPOST("brand_rate_in_percent");
+    $product->brand_rate_in_percent = floatval(str_replace(",",".",GETPOST("brand_rate_in_percent")));
 }
 if(!empty(GETPOST("selling_price_excl_tax"))) {
-    $product->selling_price_excl_tax = GETPOST("selling_price_excl_tax");
+    $product->selling_price_excl_tax = floatval(str_replace(",",".",GETPOST("selling_price_excl_tax")));
 }
 if(!empty(GETPOST("vat_price"))) {
-    $product->vat_price = GETPOST("vat_price");
+    $product->vat_price = floatval(str_replace(",",".",GETPOST("vat_price")));
 }
 $product->update($product->id, $user);
 
@@ -487,22 +485,7 @@ if ($id > 0 || $ref)
             print '<div class="underbanner clearboth"></div>';
             print '<table class="border tableforfield" width="100%">';
 
-			// Cost price. Can be used for margin module for option "calculate margin on explicit cost price
-            print '<tr><td>';
-			$textdesc = $langs->trans("CostPriceDescription");
-			$textdesc .= "<br>".$langs->trans("CostPriceUsage");
-			$text = $form->textwithpicto($langs->trans("CostPrice"), $textdesc, 1, 'help', '');
-			print $form->editfieldkey($text, 'cost_price', $object->cost_price, $object, $usercancreate, 'amount:6');
-            print '</td><td colspan="2">';
-            print $form->editfieldval($text, 'cost_price', $object->cost_price, $object, $usercancreate, 'amount:6');
-            print '</td></tr>';
-
-            // PMP
-            print '<tr><td class="titlefield">'.$form->textwithpicto($langs->trans("AverageUnitPricePMPShort"), $langs->trans("AverageUnitPricePMPDesc")).'</td>';
-            print '<td>';
-            if ($object->pmp > 0) print price($object->pmp).' '.$langs->trans("HT");
-            print '</td>';
-            print '</tr>';
+	    
 
             // Best buying Price
             print '<tr><td class="titlefield">'.$langs->trans("BuyingPriceMin").'</td>';
@@ -523,6 +506,26 @@ if ($id > 0 || $ref)
             // cout de révient
             print '<tr><td class="titlefield">'.$langs->trans("CostOfReturn").'</td>';
             print '<td>'.$object->cout_revient.'</td>';
+            print '</tr>';
+            
+            // Cost price. Can be used for margin module for option "calculate margin on explicit cost price
+            /*print '<tr><td>';
+			$textdesc = $langs->trans("CostPriceDescription");
+			$textdesc .= "<br>".$langs->trans("CostPriceUsage");
+			$text = $form->textwithpicto($langs->trans("CostPrice"), $textdesc, 1, 'help', '');
+			print $form->editfieldkey($text, 'cost_price', $object->cost_price, $object, $usercancreate, 'amount:6');
+            print '</td><td colspan="2">';*/
+            print '<tr><td>'.$langs->trans("CostPrice").'</td>';
+            //print $form->editfieldval($text, 'cost_price', $object->cost_price, $object, $usercancreate, 'amount:6');
+            print '<td>'.price($object->cost_price).'  €</td>';
+            //print '<td>'.$object->cost_price.'</td>';
+            print '</td></tr>';
+
+            // PMP
+            print '<tr><td class="titlefield">'.$form->textwithpicto($langs->trans("AverageUnitPricePMPShort"), $langs->trans("AverageUnitPricePMPDesc")).'</td>';
+            print '<td>';
+            if ($object->pmp > 0) print price($object->pmp).' '.$langs->trans("HT");
+            print '</td>';
             print '</tr>';
             
             print '<tr>';
@@ -839,6 +842,7 @@ SCRIPT;
                 print "<input type='hidden' value='".$product->selling_price_excl_tax."' id='selling_price_excl_tax' name='selling_price_excl_tax'>";
                 print "<input type='hidden' value='".$product->vat_price."' id='vat_price' name='vat_price'>";
                 print "<input type='hidden' value='".$product->price_ttc."' id='price_ttc' name='price_ttc'>";
+		print "<input type='hidden' value='".$product->carte_metisse."' id='carte_metisse' name='carte_metisse'>";
 
                 // Discount qty min
                 print '<tr><td>'.$langs->trans("DiscountQtyMin").'</td>';
@@ -974,14 +978,16 @@ SCRIPT;
                         <script>
                             function doCalculFourn() {
                                 /*best price edit*/
-                                var best_purchase_price = parseFloat(document.getElementById("best_purchase_price").value);
-                                var coefficient_of_return = parseFloat(document.getElementById("coefficient_of_return").value);
+                                var best_purchase_price = parseFloat((document.getElementById("best_purchase_price").value).replace(',','.'));
+                                var coefficient_of_return = parseFloat((document.getElementById("coefficient_of_return").value).replace(',','.'));
                                 var coef_vente = parseFloat(document.getElementById("coef_vente").value);
                                 var cost_of_return = (best_purchase_price*20)/100;
                                 var price_of_return = coefficient_of_return*best_purchase_price;
-                                var margin_product = coefficient_of_return*best_purchase_price;
-                                var average_price_weighted = coefficient_of_return*best_purchase_price;
-                                var suggest_price = coefficient_of_return*best_purchase_price*coef_vente;
+                                var cost_of_return = price_of_return-best_purchase_price;
+
+                                //var average_price_weighted = coefficient_of_return*best_purchase_price;
+                                var suggest_price = price_of_return*coef_vente;
+                                var margin_product = suggest_price-price_of_return;
 
                                 if(isNaN(cost_of_return)) {
                                     document.getElementById("cost_of_return").value = "";
@@ -997,12 +1003,12 @@ SCRIPT;
                                     document.getElementById("price_of_return").style.color = "grey";
                                 }
 
-                                if(isNaN(average_price_weighted)) {
+                                /*if(isNaN(average_price_weighted)) {
                                     document.getElementById("average_price_weighted").value = "";
                                 }else{
                                     document.getElementById("average_price_weighted").value = parseFloat(average_price_weighted).toFixed(2);
                                     document.getElementById("average_price_weighted").style.color = "grey";
-                                }
+                                }*/
 
                                 if(isNaN(margin_product)) {
                                     document.getElementById("margin_product").value = "";
@@ -1034,17 +1040,19 @@ SCRIPT;
 
 
                                 /* price ttc edit */
-                                var default_taux_tva =  parseFloat(document.getElementById("default_taux_tva").value);
-                                var price_ttc =  parseFloat(document.getElementById("price_ttc").value);
-                                var price_of_return =  parseFloat(document.getElementById("price_of_return").value);
-                                var coefficient_of_return =  parseFloat(document.getElementById("coefficient_of_return_hidden").value);
-                                var best_purchase_price =  parseFloat(document.getElementById("best_purchase_price_hidden").value);
+                                var default_taux_tva =  parseFloat((document.getElementById("default_taux_tva").value).replace(',','.'));
+                                var price_ttc =  parseFloat((document.getElementById("price_ttc").value).replace(',','.'));
+                                var price_of_return =  parseFloat((document.getElementById("price_of_return").value).replace(',','.'));
+                                var coefficient_of_return =  parseFloat((document.getElementById("coefficient_of_return_hidden").value).replace(',','.'));
+                                var best_purchase_price =  parseFloat((document.getElementById("best_purchase_price_hidden").value).replace(',','.'));
                                 var tva_calculated = (price_ttc/((default_taux_tva+100)/100))*(default_taux_tva/100);
                                 var price_ht_calculated = price_ttc-tva_calculated;
-                                var brand_rate_in_percent = ((price_ttc-price_of_return)/price_ttc)*100;
+
                                 var margin_ttc = price_ttc-price_of_return;
-                                var coeff_vente_ttc = ((price_ttc/coefficient_of_return)*best_purchase_price)/100;
-                                var margin_rate_as_percentage = (margin_ttc*100/price_of_return);
+                                var coeff_vente_ttc = price_ttc/price_of_return;
+                                var margin_rate_as_percentage = (margin_ttc*100)/price_of_return;
+                                                        var brand_rate_in_percent = (margin_ttc*100)/price_ttc;
+                                                        var carte_metisse = price_ttc*0.95;
 
                                 if(isNaN(tva_calculated)) {
                                     document.getElementById("vat_price").value ="";
@@ -1086,6 +1094,13 @@ SCRIPT;
                                 }else{
                                     document.getElementById("margin_rate_as_percentage").value = parseFloat(margin_rate_as_percentage).toFixed(2);
                                     document.getElementById("margin_rate_as_percentage").style.color = "grey";
+                                }
+
+                                                        if(isNaN(carte_metisse)) {
+                                    document.getElementById("carte_metisse").value = "";
+                                }else{
+                                    document.getElementById("carte_metisse").value = parseFloat(carte_metisse).toFixed(2);
+                                    document.getElementById("carte_metisse").style.color = "grey";
                                 }
                             }
                         </script> 

@@ -80,43 +80,53 @@ if(!empty(GETPOST("id_fourn")) && !empty(GETPOST("best_purchase_price", 'alpha')
     $ret = $productFournisseur->update_buyprice(1, GETPOST("best_purchase_price"), $user, $_POST["price_base_type_prd_frs"], $supplier, $_POST["oselDispo"], GETPOST("ref_prod_fourn", 'alpha'), $tva_tx, $_POST["charges"], 0, 0, 0, 0, "", array(), '', 0, 'HT', 1, '', "", GETPOST('barcode'), "");
 }
 if(!empty(GETPOST("coefficient_of_return"))) {
-    $object->coef_revient = GETPOST("coefficient_of_return");
+    $object->coef_revient = floatval(str_replace(",",".",GETPOST("coefficient_of_return")));
 }
 if(!empty(GETPOST("cost_of_return"))) {
-    $object->cout_revient = GETPOST("cost_of_return");
+    $object->cout_revient = floatval(str_replace(",",".",GETPOST("cost_of_return")));
 }
 if(!empty(GETPOST("price_of_return"))) {
-    $object->cost_price = GETPOST("price_of_return");
+    $object->cost_price = floatval(str_replace(",",".",GETPOST("price_of_return")));
 }
-if(!empty(GETPOST("average_price_weighted"))) {
+
+if(!empty(GETPOST("carte_metisse"))) {
+    $object->carte_metisse = floatval(str_replace(",",".",GETPOST("carte_metisse")));
+}
+/*if(!empty(GETPOST("average_price_weighted"))) {
     $sqlUpdatePmp = 'update '.MAIN_DB_PREFIX.'product set pmp = '.GETPOST("average_price_weighted").' where rowid='.$id;
     $db->query($sqlUpdatePmp);
-}
+}*/
+
 if(!empty(GETPOST("margin_product"))) {
-    $object->margin_product = GETPOST("margin_product");
+    $object->margin_product = floatval(str_replace(",",".",GETPOST("margin_product")));
 }
+
 if(!empty(GETPOST("suggest_price"))) {
-    $object->suggest_price = GETPOST("suggest_price");
+    $object->suggest_price = floatval(str_replace(",",".",GETPOST("suggest_price")));
 }
+
 if(!empty(GETPOST("coeff_vente_ttc"))) {
-    $object->coeff_vente_ttc = GETPOST("coeff_vente_ttc");
+    $object->coeff_vente_ttc = floatval(str_replace(",",".",GETPOST("coeff_vente_ttc")));
 }
+
 if(!empty(GETPOST("margin_rate_as_percentage"))) {
-    $object->margin_rate_as_percentage = GETPOST("margin_rate_as_percentage");
+    $object->margin_rate_as_percentage = floatval(str_replace(",",".",GETPOST("margin_rate_as_percentage")));
 }
 
 if(!empty(GETPOST("margin_ttc"))) {
-    $object->margin_ttc = GETPOST("margin_ttc");
+    $object->margin_ttc = floatval(str_replace(",",".",GETPOST("margin_ttc")));
 }
 
 if(!empty(GETPOST("brand_rate_in_percent"))) {
-    $object->brand_rate_in_percent = GETPOST("brand_rate_in_percent");
+    $object->brand_rate_in_percent = floatval(str_replace(",",".",GETPOST("brand_rate_in_percent")));
 }
+
 if(!empty(GETPOST("selling_price_excl_tax"))) {
-    $object->selling_price_excl_tax = GETPOST("selling_price_excl_tax");
+    $object->selling_price_excl_tax = floatval(str_replace(",",".",GETPOST("selling_price_excl_tax")));
 }
+
 if(!empty(GETPOST("vat_price"))) {
-    $object->vat_price = GETPOST("vat_price");
+    $object->vat_price = floatval(str_replace(",",".",GETPOST("vat_price")));
 }
 $object->update($object->id, $user);
 
@@ -1019,6 +1029,34 @@ if (!empty($conf->global->PRODUIT_MULTIPRICES) || !empty($conf->global->PRODUIT_
 }
 else
 {
+    
+        // Coefficient de vente
+	print '<tr><td>'.$langs->trans("CoeffVente").'</td><td>'.$conf->global->COEFFICIENT_VENTE.'</td></tr>';
+        
+        // Marge vente
+	print '<tr><td>'.$langs->trans("Margin").'</td><td>'.$object->margin_product.'</td></tr>';
+        
+	// Prix suggeré
+	print '<tr><td>'.$langs->trans("SuggestPrice").'</td><td>'.$object->suggest_price.'</td></tr>';
+        
+        // Coefficient vente TTC
+	print '<tr><td>'.$langs->trans("CoeffVenteTTC").'</td><td>'.$object->coeff_vente_ttc.'</td></tr>';
+        
+	// Margin Rate As Percentage
+	print '<tr><td>'.$langs->trans("MarginRateAsPercentage").'</td><td>'.$object->margin_rate_as_percentage.'</td></tr>';
+        
+	// margin_ttc
+	print '<tr><td>'.$langs->trans("MarginTTC").'</td><td>'.$object->margin_ttc.'</td></tr>';
+        
+	// brand_rate_in_percent
+	print '<tr><td>'.$langs->trans("BrandRateInPercent").'</td><td>'.$object->brand_rate_in_percent.'</td></tr>';
+        
+	// selling_price_excl_tax
+	print '<tr><td>'.$langs->trans("SellingPriceExclTax").'</td><td>'.$object->selling_price_excl_tax.'</td></tr>';
+        
+	// Vat
+	print '<tr><td>'.$langs->trans("Vat").'(8.5%)</td><td>'.$object->vat_price.'</td></tr>';
+        
 	// TVA
 	print '<tr><td class="titlefield">'.$langs->trans("DefaultTaxRate").'</td><td>';
 
@@ -1039,9 +1077,9 @@ else
 	// Price
 	print '<tr><td>'.$langs->trans("SellingPrice").'</td><td>';
 	if ($object->price_base_type == 'TTC') {
-		print price($object->price_ttc).' '.$langs->trans($object->price_base_type);
+		print "<b>".price($object->price_ttc).' '.$langs->trans($object->price_base_type)."</b>";
 	} else {
-		print price($object->price).' '.$langs->trans($object->price_base_type);
+		"<b>".print price($object->price).' '.$langs->trans($object->price_base_type)."</b>";
 	}
 	print '</td></tr>';
 
@@ -1054,32 +1092,12 @@ else
 	}
 	print '</td></tr>';
         
-	// Coefficient de vente
-	print '<tr><td>'.$langs->trans("CoeffVente").'</td><td>'.$conf->global->COEFFICIENT_VENTE.'</td></tr>';
+	
         
-        // Marge vente
-	print '<tr><td>'.$langs->trans("Margin").'</td><td>'.$object->margin_product.'</td></tr>';
-        
-	// Prix suggeré
-	print '<tr><td>'.$langs->trans("SuggestPrice").'</td><td>'.$object->suggest_price.'</td></tr>';
-        
-	// Coefficient vente TTC
-	print '<tr><td>'.$langs->trans("CoeffVenteTTC").'</td><td>'.$object->coeff_vente_ttc.'</td></tr>';
-        
-	// Margin Rate As Percentage
-	print '<tr><td>'.$langs->trans("MarginRateAsPercentage").'</td><td>'.$object->margin_rate_as_percentage.'</td></tr>';
-        
-	// margin_ttc
-	print '<tr><td>'.$langs->trans("MarginTTC").'</td><td>'.$object->margin_ttc.'</td></tr>';
-        
-	// brand_rate_in_percent
-	print '<tr><td>'.$langs->trans("BrandRateInPercent").'</td><td>'.$object->brand_rate_in_percent.'</td></tr>';
-        
-	// selling_price_excl_tax
-	print '<tr><td>'.$langs->trans("SellingPriceExclTax").'</td><td>'.$object->selling_price_excl_tax.'</td></tr>';
-        
-	// Vat
-	print '<tr><td>'.$langs->trans("Vat").'(8.5%)</td><td>'.$object->vat_price.'</td></tr>';
+	
+	
+		// carte metisse
+	print '<tr><td>Carte metisse (5%)</td><td>'.$object->carte_metisse.'</td></tr>';
         
 	// Price by quantity
 	if (!empty($conf->global->PRODUIT_CUSTOMER_PRICES_BY_QTY) || !empty($conf->global->PRODUIT_CUSTOMER_PRICES_BY_QTY_MULTIPRICES))    // TODO Fix the form inside tr instead of td
@@ -1369,6 +1387,7 @@ if ($action == 'edit_price' && $object->getRights()->creer)
                 print "<input type='hidden' value='".$product->brand_rate_in_percent."' id='brand_rate_in_percent' name='brand_rate_in_percent'>";
                 print "<input type='hidden' value='".$product->selling_price_excl_tax."' id='selling_price_excl_tax' name='selling_price_excl_tax'>";
                 print "<input type='hidden' value='".$product->vat_price."' id='vat_price' name='vat_price'>";
+				print "<input type='hidden' value='".$product->carte_metisse."' id='carte_metisse' name='carte_metisse'>";
 		print $form->textwithpicto($text, $langs->trans("PrecisionUnitIsLimitedToXDecimals", $conf->global->MAIN_MAX_DECIMALS_UNIT), 1, 1);
 		print '</td><td>';
 		if ($object->price_base_type == 'TTC') {
@@ -1381,14 +1400,16 @@ if ($action == 'edit_price' && $object->getRights()->creer)
                 <script>
                     function doCalcul() {
                         /*best price edit*/
-                        var best_purchase_price = parseFloat(document.getElementById("best_purchase_price").value);
-                        var coefficient_of_return = parseFloat(document.getElementById("coefficient_of_return").value);
+                        var best_purchase_price = parseFloat((document.getElementById("best_purchase_price").value).replace(',','.'));
+                        var coefficient_of_return = parseFloat((document.getElementById("coefficient_of_return").value).replace(',','.'));
                         var coef_vente = parseFloat(document.getElementById("coef_vente").value);
                         var cost_of_return = (best_purchase_price*20)/100;
                         var price_of_return = coefficient_of_return*best_purchase_price;
-                        var margin_product = coefficient_of_return*best_purchase_price;
-                        var average_price_weighted = coefficient_of_return*best_purchase_price;
-                        var suggest_price = coefficient_of_return*best_purchase_price*coef_vente;
+                        var cost_of_return = price_of_return-best_purchase_price;
+
+                        //var average_price_weighted = coefficient_of_return*best_purchase_price;
+                        var suggest_price = price_of_return*coef_vente;
+                        var margin_product = suggest_price-price_of_return;
 
                         if(isNaN(cost_of_return)) {
                             document.getElementById("cost_of_return").value = "";
@@ -1404,12 +1425,12 @@ if ($action == 'edit_price' && $object->getRights()->creer)
                             document.getElementById("price_of_return").style.color = "grey";
                         }
 
-                        if(isNaN(average_price_weighted)) {
+                        /*if(isNaN(average_price_weighted)) {
                             document.getElementById("average_price_weighted").value = "";
                         }else{
                             document.getElementById("average_price_weighted").value = parseFloat(average_price_weighted).toFixed(2);
                             document.getElementById("average_price_weighted").style.color = "grey";
-                        }
+                        }*/
 
                         if(isNaN(margin_product)) {
                             document.getElementById("margin_product").value = "";
@@ -1441,17 +1462,19 @@ if ($action == 'edit_price' && $object->getRights()->creer)
 
 
                         /* price ttc edit */
-                        var default_taux_tva =  parseFloat(document.getElementById("default_taux_tva").value);
-                        var price_ttc =  parseFloat(document.getElementById("price_ttc").value);
-                        var price_of_return =  parseFloat(document.getElementById("price_of_return").value);
-                        var coefficient_of_return =  parseFloat(document.getElementById("coefficient_of_return_hidden").value);
-                        var best_purchase_price =  parseFloat(document.getElementById("best_purchase_price_hidden").value);
+                        var default_taux_tva =  parseFloat((document.getElementById("default_taux_tva").value).replace(',','.'));
+                        var price_ttc =  parseFloat((document.getElementById("price_ttc").value).replace(',','.'));
+                        var price_of_return =  parseFloat((document.getElementById("price_of_return").value).replace(',','.'));
+                        var coefficient_of_return =  parseFloat((document.getElementById("coefficient_of_return_hidden").value).replace(',','.'));
+                        var best_purchase_price =  parseFloat((document.getElementById("best_purchase_price_hidden").value).replace(',','.'));
                         var tva_calculated = (price_ttc/((default_taux_tva+100)/100))*(default_taux_tva/100);
                         var price_ht_calculated = price_ttc-tva_calculated;
-                        var brand_rate_in_percent = ((price_ttc-price_of_return)/price_ttc)*100;
+
                         var margin_ttc = price_ttc-price_of_return;
-                        var coeff_vente_ttc = ((price_ttc/coefficient_of_return)*best_purchase_price)/100;
-                        var margin_rate_as_percentage = (margin_ttc*100/price_of_return);
+                        var coeff_vente_ttc = price_ttc/price_of_return;
+                        var margin_rate_as_percentage = (margin_ttc*100)/price_of_return;
+                                                var brand_rate_in_percent = (margin_ttc*100)/price_ttc;
+                                                var carte_metisse = price_ttc*0.95;
 
                         if(isNaN(tva_calculated)) {
                             document.getElementById("vat_price").value ="";
@@ -1493,6 +1516,13 @@ if ($action == 'edit_price' && $object->getRights()->creer)
                         }else{
                             document.getElementById("margin_rate_as_percentage").value = parseFloat(margin_rate_as_percentage).toFixed(2);
                             document.getElementById("margin_rate_as_percentage").style.color = "grey";
+                        }
+
+                                                if(isNaN(carte_metisse)) {
+                            document.getElementById("carte_metisse").value = "";
+                        }else{
+                            document.getElementById("carte_metisse").value = parseFloat(carte_metisse).toFixed(2);
+                            document.getElementById("carte_metisse").style.color = "grey";
                         }
                     }
                 </script>         

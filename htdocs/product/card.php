@@ -309,7 +309,15 @@ if (empty($reshook))
 			$object->status_batch = GETPOST('status_batch');
 
             $object->barcode_type          = GETPOST('fk_barcode_type');
-            $object->barcode = GETPOST('barcode');
+            //$object->barcode = GETPOST('barcode');
+            if(!empty(GETPOST('barcode'))) {
+                require DOL_DOCUMENT_ROOT . '/barcodegen/generated/vendor/autoload.php';
+                $code = new BarcodeBakery\Barcode\BCGean8();
+                $code->setScale(2);
+                $code->setThickness(30);
+                $code->parse(GETPOST('barcode'));
+                $object->barcode = $code->getLabel().$code->getChecksum();
+            }
             // Set barcode_type_xxx from barcode_type id
             $stdobject = new GenericObject($db);
     	    $stdobject->element = 'product';
@@ -405,52 +413,55 @@ if (empty($reshook))
                         }
                         
                         if(!empty(GETPOST("coefficient_of_return"))) {
-                            $object->coef_revient = GETPOST("coefficient_of_return");
+                            $object->coef_revient = floatval(str_replace(",",".",GETPOST("coefficient_of_return")));
                         }
                         
                         if(!empty(GETPOST("cost_of_return"))) {
-                            $object->cout_revient = GETPOST("cost_of_return");
+                            $object->cout_revient = floatval(str_replace(",",".",GETPOST("cost_of_return")));
                         }
                         
                         if(!empty(GETPOST("price_of_return"))) {
-                            $object->cost_price = GETPOST("price_of_return");
+                            $object->cost_price = floatval(str_replace(",",".",GETPOST("price_of_return")));
                         }
                         
-                        if(!empty(GETPOST("average_price_weighted"))) {
+			if(!empty(GETPOST("carte_metisse"))) {
+                            $object->carte_metisse = floatval(str_replace(",",".",GETPOST("carte_metisse")));
+                        }
+                        /*if(!empty(GETPOST("average_price_weighted"))) {
                             $sqlUpdatePmp = 'update '.MAIN_DB_PREFIX.'product set pmp = '.GETPOST("average_price_weighted").' where rowid='.$id;
                             $db->query($sqlUpdatePmp);
-                        }
+                        }*/
                         
                         if(!empty(GETPOST("margin_product"))) {
-                            $object->margin_product = GETPOST("margin_product");
+                            $object->margin_product = floatval(str_replace(",",".",GETPOST("margin_product")));
                         }
                         
                         if(!empty(GETPOST("suggest_price"))) {
-                            $object->suggest_price = GETPOST("suggest_price");
+                            $object->suggest_price = floatval(str_replace(",",".",GETPOST("suggest_price")));
                         }
                         
                         if(!empty(GETPOST("coeff_vente_ttc"))) {
-                            $object->coeff_vente_ttc = GETPOST("coeff_vente_ttc");
+                            $object->coeff_vente_ttc = floatval(str_replace(",",".",GETPOST("coeff_vente_ttc")));
                         }
                         
                         if(!empty(GETPOST("margin_rate_as_percentage"))) {
-                            $object->margin_rate_as_percentage = GETPOST("margin_rate_as_percentage");
+                            $object->margin_rate_as_percentage = floatval(str_replace(",",".",GETPOST("margin_rate_as_percentage")));
                         }
                         
                         if(!empty(GETPOST("margin_ttc"))) {
-                            $object->margin_ttc = GETPOST("margin_ttc");
+                            $object->margin_ttc = floatval(str_replace(",",".",GETPOST("margin_ttc")));
                         }
                         
                         if(!empty(GETPOST("brand_rate_in_percent"))) {
-                            $object->brand_rate_in_percent = GETPOST("brand_rate_in_percent");
+                            $object->brand_rate_in_percent = floatval(str_replace(",",".",GETPOST("brand_rate_in_percent")));
                         }
                         
                         if(!empty(GETPOST("selling_price_excl_tax"))) {
-                            $object->selling_price_excl_tax = GETPOST("selling_price_excl_tax");
+                            $object->selling_price_excl_tax = floatval(str_replace(",",".",GETPOST("selling_price_excl_tax")));
                         }
                         
                         if(!empty(GETPOST("vat_price"))) {
-                            $object->vat_price = GETPOST("vat_price");
+                            $object->vat_price = floatval(str_replace(",",".",GETPOST("vat_price")));
                         }
                         
                         
@@ -567,7 +578,15 @@ if (empty($reshook))
 	            }
 
 	            $object->barcode_type = GETPOST('fk_barcode_type');
-    	        $object->barcode = GETPOST('barcode');
+    	        //$object->barcode = GETPOST('barcode');
+                if(!empty(GETPOST('barcode'))) {
+                    require DOL_DOCUMENT_ROOT . '/barcodegen/generated/vendor/autoload.php';
+                    $code = new BarcodeBakery\Barcode\BCGean8();
+                    $code->setScale(2);
+                    $code->setThickness(30);
+                    $code->parse(GETPOST('barcode'));
+                    $object->barcode = $code->getLabel().$code->getChecksum();
+                }
     	        // Set barcode_type_xxx from barcode_type id
     	        $stdobject = new GenericObject($db);
     	        $stdobject->element = 'product';
@@ -1205,7 +1224,7 @@ else
 	        print '<td>'.$langs->trans("BarcodeValue").'</td><td>';
 	        $tmpcode = isset($_POST['barcode']) ?GETPOST('barcode') : $object->barcode;
 	        if (empty($tmpcode) && !empty($modBarCodeProduct->code_auto)) $tmpcode = $modBarCodeProduct->getNextValue($object, $type);
-	        print '<input class="maxwidth100" type="text" name="barcode" value="'.dol_escape_htmltag($tmpcode).'" '.$isDisabled.'>';
+	        print '<input class="maxwidth100" type="text" name="barcode" value="'.dol_escape_htmltag($tmpcode).'">';
 	        print '</td></tr>';
         }
 
@@ -1263,7 +1282,11 @@ else
             // Nature
             print '<tr><td>'.$langs->trans("Nature").'</td><td colspan="3">';
             $statutarray = array('1' => $langs->trans("Finished"), '0' => $langs->trans("RowMaterial"));
-            print $form->selectarray('finished', $statutarray, GETPOST('finished', 'alpha'), 1);
+			$natureSelectedDefault = GETPOST('finished', 'alpha');
+			if(empty(GETPOST('finished', 'alpha'))) {
+				$natureSelectedDefault = 1;
+			}
+            print $form->selectarray('finished', $statutarray, $natureSelectedDefault, 1);
             print '</td></tr>';
 
             // Brut Weight
@@ -1445,9 +1468,9 @@ else
             print '</td></tr>';
             
             // Prix moyen pondéré (pmp)
-            print '<tr><td>'.$langs->trans("AveragePriceWeighted").'</td>';
+            /*print '<tr><td>'.$langs->trans("AveragePriceWeighted").'</td>';
             print '<td><input id="average_price_weighted" name="average_price_weighted" class="maxwidth50" value="'.GETPOST("average_price_weighted", 'alpha').'" readonly>';
-            print '</td></tr>';
+            print '</td></tr>';*/
             
             print '<tr><td><hr></td></tr>';
             // Coef vente
@@ -1474,8 +1497,8 @@ else
             print '</td></tr>';
 
             // Min price
-            print '<tr><td>'.$langs->trans("MinPrice").'</td>';
-            print '<td><input name="price_min" class="maxwidth50" value="'.$object->price_min.'">';
+            print '<tr style="display:none;"><td>'.$langs->trans("MinPrice").'</td>';
+            print '<td><input name="price_min" class="maxwidth50" value="'.$object->price_min.'"  style="display:none;">';
             print '</td></tr>';
 
             // VAT
@@ -1528,6 +1551,10 @@ else
             print '<td><input id="vat_price" name="vat_price" class="maxwidth50" value="'.GETPOST("vat_price", 'alpha').'" readonly>';
             print '</td></tr>';
             
+            // Carte metisse 5%
+            print '<tr><td>Carte metisse 5%</td>';
+            print '<td><input id="carte_metisse" name="carte_metisse" class="maxwidth50" value="'.GETPOST("carte_metisse", 'alpha').'" readonly>';
+            print '</td></tr>';
             
 
             print '</table>';
@@ -1538,14 +1565,16 @@ else
                     });
                     function doCalcul() {
                         /*best price edit*/
-                        var best_purchase_price = parseFloat(document.getElementById("best_purchase_price").value);
-                        var coefficient_of_return = parseFloat(document.getElementById("coefficient_of_return").value);
+                        var best_purchase_price = parseFloat((document.getElementById("best_purchase_price").value).replace(',','.'));
+                        var coefficient_of_return = parseFloat((document.getElementById("coefficient_of_return").value).replace(',','.'));
                         var coef_vente = parseFloat(document.getElementById("coef_vente").value);
                         var cost_of_return = (best_purchase_price*20)/100;
                         var price_of_return = coefficient_of_return*best_purchase_price;
-                        var margin_product = coefficient_of_return*best_purchase_price;
-                        var average_price_weighted = coefficient_of_return*best_purchase_price;
-                        var suggest_price = coefficient_of_return*best_purchase_price*coef_vente;
+			var cost_of_return = price_of_return-best_purchase_price;
+                        
+                        //var average_price_weighted = coefficient_of_return*best_purchase_price;
+                        var suggest_price = price_of_return*coef_vente;
+			var margin_product = suggest_price-price_of_return;
                         
                         if(isNaN(cost_of_return)) {
                             document.getElementById("cost_of_return").value = "";
@@ -1561,12 +1590,12 @@ else
                             document.getElementById("price_of_return").style.color = "grey";
                         }
                         
-                        if(isNaN(average_price_weighted)) {
+                        /*if(isNaN(average_price_weighted)) {
                             document.getElementById("average_price_weighted").value = "";
                         }else{
                             document.getElementById("average_price_weighted").value = parseFloat(average_price_weighted).toFixed(2);
                             document.getElementById("average_price_weighted").style.color = "grey";
-                        }
+                        }*/
                         
                         if(isNaN(margin_product)) {
                             document.getElementById("margin_product").value = "";
@@ -1598,17 +1627,19 @@ else
                         
                         
                         /* price ttc edit */
-                        var default_taux_tva =  parseFloat(document.getElementById("default_taux_tva").value);
-                        var price_ttc =  parseFloat(document.getElementById("price_ttc").value);
-                        var price_of_return =  parseFloat(document.getElementById("price_of_return").value);
-                        var coefficient_of_return =  parseFloat(document.getElementById("coefficient_of_return_hidden").value);
-                        var best_purchase_price =  parseFloat(document.getElementById("best_purchase_price_hidden").value);
+                        var default_taux_tva =  parseFloat((document.getElementById("default_taux_tva").value).replace(',','.'));
+                        var price_ttc =  parseFloat((document.getElementById("price_ttc").value).replace(',','.'));
+                        var price_of_return =  parseFloat((document.getElementById("price_of_return").value).replace(',','.'));
+                        var coefficient_of_return =  parseFloat((document.getElementById("coefficient_of_return_hidden").value).replace(',','.'));
+                        var best_purchase_price =  parseFloat((document.getElementById("best_purchase_price_hidden").value).replace(',','.'));
                         var tva_calculated = (price_ttc/((default_taux_tva+100)/100))*(default_taux_tva/100);
                         var price_ht_calculated = price_ttc-tva_calculated;
-                        var brand_rate_in_percent = ((price_ttc-price_of_return)/price_ttc)*100;
+                        
                         var margin_ttc = price_ttc-price_of_return;
-                        var coeff_vente_ttc = ((price_ttc/coefficient_of_return)*best_purchase_price)/100;
-                        var margin_rate_as_percentage = (margin_ttc*100/price_of_return);
+                        var coeff_vente_ttc = price_ttc/price_of_return;
+                        var margin_rate_as_percentage = (margin_ttc*100)/price_of_return;
+                        var brand_rate_in_percent = (margin_ttc*100)/price_ttc;
+                        var carte_metisse = price_ttc*0.95;
                         
                         if(isNaN(tva_calculated)) {
                             document.getElementById("vat_price").value ="";
@@ -1650,6 +1681,13 @@ else
                         }else{
                             document.getElementById("margin_rate_as_percentage").value = parseFloat(margin_rate_as_percentage).toFixed(2);
                             document.getElementById("margin_rate_as_percentage").style.color = "grey";
+                        }
+						
+						if(isNaN(carte_metisse)) {
+                            document.getElementById("carte_metisse").value = "";
+                        }else{
+                            document.getElementById("carte_metisse").value = parseFloat(carte_metisse).toFixed(2);
+                            document.getElementById("carte_metisse").style.color = "grey";
                         }
                     }
                 </script>  
