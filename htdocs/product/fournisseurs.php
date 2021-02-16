@@ -528,7 +528,8 @@ if ($id > 0 || $ref)
             print '</td>';
             print '</tr>';
             
-            print '<tr>';
+            //commenté le transport
+            print '<!--tr>';
             print '<td>';
             $textdescs = $langs->trans("TransportCoefficientDescription");
 			$texts = $form->textwithpicto($langs->trans("TransportCoefficient"), $textdescs, 1, 'help', '');
@@ -546,7 +547,7 @@ if ($id > 0 || $ref)
             print '<td colspan="2">';
             print $form->editfieldval($text, 'transport_coast', $object->transport_coast, $object, $usercancreate, 'amount:2');
             print '</td>';
-            print '</tr>';
+            print '</tr-->';
             print '</table>';
 
             print '</div>';
@@ -1099,7 +1100,7 @@ SCRIPT;
                                                         if(isNaN(carte_metisse)) {
                                     document.getElementById("carte_metisse").value = "";
                                 }else{
-                                    document.getElementById("carte_metisse").value = parseFloat(carte_metisse).toFixed(2);
+                                    document.getElementById("carte_metisse").value = parseFloat(Math.floor(carte_metisse*10)/10).toFixed(2);
                                     document.getElementById("carte_metisse").style.color = "grey";
                                 }
                             }

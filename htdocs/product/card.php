@@ -216,12 +216,12 @@ if (empty($reshook))
             $action = "create";
             $error++;
         }
-        if (empty(GETPOST('nombre_produit_en_stock')))
+        /*if (empty(GETPOST('nombre_produit_en_stock')))
         {
             setEventMessages($langs->trans('ErrorFieldRequired', $langs->transnoentities('NombreProduitEnStock')), null, 'errors');
             $action = "create";
             $error++;
-        }
+        }*/
         if (empty(GETPOST('price')))
         {
             setEventMessages($langs->trans('ErrorFieldRequired', $langs->transnoentities('Prix de vente')), null, 'errors');
@@ -1179,7 +1179,7 @@ else
         
         /*if($datapopup == 1)
         {*/
-        print '<tr><td class="fieldrequired">Nombre produit en stock</td><td colspan="3"><input name="nombre_produit_en_stock" type class="minwidth300 maxwidth400onsmartphone" maxlength="255" value="'.GETPOST('nombre_produit_en_stock').'"></td></tr>';
+        print '<tr><td class="">Nombre produit en stock</td><td colspan="3"><input name="nombre_produit_en_stock" type="number" class="minwidth300 maxwidth400onsmartphone" maxlength="255" value="'.GETPOST('nombre_produit_en_stock').'"></td></tr>';
         //}
         // On sell
         print '<tr><td class="fieldrequired">'.$langs->trans("Status").' ('.$langs->trans("Sell").')</td><td colspan="3">';
@@ -1683,10 +1683,10 @@ else
                             document.getElementById("margin_rate_as_percentage").style.color = "grey";
                         }
 						
-						if(isNaN(carte_metisse)) {
+			if(isNaN(carte_metisse)) {
                             document.getElementById("carte_metisse").value = "";
                         }else{
-                            document.getElementById("carte_metisse").value = parseFloat(carte_metisse).toFixed(2);
+                            document.getElementById("carte_metisse").value = parseFloat(Math.floor(carte_metisse*10)/10).toFixed(2);
                             document.getElementById("carte_metisse").style.color = "grey";
                         }
                     }
