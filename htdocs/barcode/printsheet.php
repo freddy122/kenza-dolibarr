@@ -49,7 +49,114 @@ $action = GETPOST('action', 'aZ09');
 $producttmp = new Product($db);
 $thirdpartytmp = new Societe($db);
 
+if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && intval(GETPOST('fk_barcode_type'))==1) {
+    
+    $hosts = $_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_NAME']."/";
+    
+    $codebarValue = GETPOST("forbarcode");
+    $producttmp->fetch('','','',GETPOST("forbarcode"));
+    
+    if (GETPOST('submitproduct') && GETPOST('submitproduct'))
+    {
+            $action = ''; // We reset because we don't want to build doc
+            if (GETPOST('productid') > 0)
+            {
+                    $producttmp->fetch(GETPOST('productid'));
+                    $codebarValue = $producttmp->barcode;
+            }
+    }
+    $imgdata = $hosts.DOL_URL_ROOT."/barcodegen/generated/html/image.php?codebare=".$codebarValue;
+    $im = imagecreatefrompng($imgdata);
+    ob_start();
+    imagepng($im);
+    $images = ob_get_contents();
+    ob_end_clean();
+    $imgDataFromPng =  base64_encode($images);
+    require_once DOL_DOCUMENT_ROOT.'/includes/dompdf/autoload.inc.php';
+    $dompdf = new Dompdf\Dompdf();
+    $htmlData = '<html>
+        <head>
+            <style>
+                @page {
+                    margin: 100px 25px;
+                }
+                header {
+                    position: fixed;
+                    top: -50px;
+                    left: 0px;
+                    right: 0px;
+                    height: 31px;
+                    border-bottom: 2px solid;
+                    text-align:center;
+                }
+                footer {
+                    position: fixed; 
+                    bottom: -50px; 
+                    left: 0px; 
+                    right: 0px;
+                    height: 31px;
+                    border-top: 2px solid;
+                    text-align:center;
+                }
+                .page:after { content: counter(page, upper); }
+            </style>
+        </head>
+        <body>
+            <header>
+                Code-barres : '.$codebarValue.'
+            </header>
+            <footer>
+                <div style="display:inline">
+                    <div style="float:left">&copy; Kenza </div>
+                    <div class="page"  style="float:left;margin-left:50%">Page '.$PAGE_NUM.'</div>
+                </div>        
+            </footer>
+            <main>';
+            for($i=0; $i<$numberofsticker; $i++) {
+                    $carteMetisse = $producttmp->price_ttc*0.95;
+                    $htmlData .= "<table style='width:30%;'>";
+                    $htmlData .= "<tr>";
+                    $htmlData .= "<td colspan=2>";
+                    $htmlData .= "<p style='font-size:13px;text-transform:uppercase;font-family: Arial, Helvetica, sans-serif;font-weight:bold;'>".$producttmp->label."</p>";
+                    $htmlData .= "</td>";
+                    $htmlData .= "</tr>";
+                    $htmlData .= "<tr>";
+                    $htmlData .= "<td>";
 
+                    $htmlData .= "<img src='data:image/png;base64,".$imgDataFromPng."' style='margin-bottom:25px;'>";
+                    $htmlData .= "</td>";
+                    $htmlData .= "<td>";
+                    $htmlData .= "<p style='float:right;position:relative;margin-top:110px;font-weight:bold;font-family: Arial, Helvetica, sans-serif;'>".price($producttmp->price_ttc). " €"."</p>";
+                    $htmlData .= "</td>";
+                    $htmlData .= "</tr>";
+                    $htmlData .= "<tr>";
+                    $htmlData .= "<td colspan=2>";
+                    $htmlData .= "<p style='color:white;background-color:black;padding:7px;text-transform:uppercase;font-weight:bold;position:relative;margin-top:-20px;font-family: Arial, Helvetica, sans-serif;'>Carte metisse: ".price($carteMetisse)." €</p>";
+                    $htmlData .= "</td>";
+                    $htmlData .= "</tr>";
+                    $htmlData .= "</table><div style='clear:both;margin-top:30px'></div>";
+            }
+    $htmlData .= '</main>
+            <script type="text/php">
+                if ( isset($pdf) ) { 
+                  $font = Font_Metrics::get_font("helvetica", "normal");
+                  $size = 9;
+                  $y = $pdf->get_height() - 24;
+                  $x = $pdf->get_width() - 15 - Font_Metrics::get_text_width("1/1", $font, $size);
+                  $pdf->page_text($x, $y, "{PAGE_NUM}/{PAGE_COUNT}", $font, $size);
+                } 
+              </script>
+        </body>
+    </html>';
+    
+    $dompdf->loadHtml($htmlData);
+    $dompdf->setPaper('A4', 'landscape');
+    $dompdf->render();
+    $dompdf->stream($codebarValue.".pdf", [
+        "Attachment" => true
+    ]);
+    exit;
+}
 /*
  * Actions
  */
@@ -388,12 +495,12 @@ if (!empty($user->rights->produit->lire) || !empty($user->rights->service->lire)
 
 if (!empty($user->rights->societe->lire))
 {
-    print '<input id="fillfromthirdparty" type="radio" '.((GETPOST("selectorforbarcode") == 'fillfromthirdparty') ? 'checked ' : '').'name="selectorforbarcode" value="fillfromthirdparty" class="radiobarcodeselect"> '.$langs->trans("FillBarCodeTypeAndValueFromThirdParty").' &nbsp; ';
+   /* print '<input id="fillfromthirdparty" type="radio" '.((GETPOST("selectorforbarcode") == 'fillfromthirdparty') ? 'checked ' : '').'name="selectorforbarcode" value="fillfromthirdparty" class="radiobarcodeselect"> '.$langs->trans("FillBarCodeTypeAndValueFromThirdParty").' &nbsp; ';
     print '<br>';
     print '<div class="showforthirdpartyselector">';
     print $form->select_company(GETPOST('socid'), 'socid', '', 'SelectThirdParty', 0, 0, array(), 0, 'minwidth300');
     print ' &nbsp; <input type="submit" id="submitthirdparty" name="submitthirdparty" class="button showforthirdpartyselector" value="'.(dol_escape_htmltag($langs->trans("GetBarCode"))).'">';
-    print '</div>';
+    print '</div>';*/
 }
 
 print '<br>';
@@ -416,7 +523,7 @@ print $langs->trans("BarcodeType").' &nbsp; ';
 print '</div><div class="tagtd" style="overflow: hidden; white-space: nowrap; max-width: 300px;">';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formbarcode.class.php';
 $formbarcode = new FormBarCode($db);
-print $formbarcode->selectBarcodeType("6", 'fk_barcode_type', 1);
+print $formbarcode->selectBarcodeType("1", 'fk_barcode_type', 1);
 print '</div></div>';
 
 // Barcode value
