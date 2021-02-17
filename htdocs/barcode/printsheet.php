@@ -113,7 +113,7 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && intval(GETPOST('
             </footer>
             <main>';
             for($i=0; $i<$numberofsticker; $i++) {
-                    $carteMetisse = $producttmp->price_ttc*0.95;
+                    $carteMetisse = floor($producttmp->price_ttc*0.95*10)/10;
                     $htmlData .= "<table style='width:30%;'>";
                     $htmlData .= "<tr>";
                     $htmlData .= "<td colspan=2>";
@@ -121,12 +121,12 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && intval(GETPOST('
                     $htmlData .= "</td>";
                     $htmlData .= "</tr>";
                     $htmlData .= "<tr>";
-                    $htmlData .= "<td>";
+                    $htmlData .= "<td style='width:60%'>";
 
                     $htmlData .= "<img src='data:image/png;base64,".$imgDataFromPng."' style='margin-bottom:25px;'>";
                     $htmlData .= "</td>";
-                    $htmlData .= "<td>";
-                    $htmlData .= "<p style='float:right;position:relative;margin-top:110px;font-weight:bold;font-family: Arial, Helvetica, sans-serif;'>".price($producttmp->price_ttc). " €"."</p>";
+                    $htmlData .= "<td style='width:40%'>";
+                    $htmlData .= "<p style='float:right;position:relative;margin-top:104px;font-weight:bold;font-family: Arial, Helvetica, sans-serif;font-size:30px'>".price($producttmp->price_ttc). " €"."</p>";
                     $htmlData .= "</td>";
                     $htmlData .= "</tr>";
                     $htmlData .= "<tr>";

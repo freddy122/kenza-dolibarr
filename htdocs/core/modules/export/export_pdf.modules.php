@@ -248,7 +248,7 @@ class ExportPdf extends ModeleExports
                         .page:after { content: counter(page, upper); }
                         #customers {
                            font-family: Arial, Helvetica, sans-serif;
-                           font-size: 10px;
+                           font-size: 12px;
                            border-collapse: collapse;
                            width: 100%;
                          }
