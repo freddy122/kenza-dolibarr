@@ -178,25 +178,45 @@ if (empty($reshook))
     // Barcode value
     if ($action == 'setbarcode' && $createbarcode)
     {
-    	$result = $object->check_barcode(GETPOST('barcode'), GETPOST('barcode_type_code'));
+        require DOL_DOCUMENT_ROOT . '/barcodegen/generated/vendor/autoload.php';
+        if(intval(strlen(GETPOST('barcode')) != 8)) {
+            $langs->load("errors");
+            $errors[] = 'La taille de valeur du codebare doit égale à 8';
+            $error++;
+            setEventMessages($errors, null, 'errors');
+            header("Location: ".$_SERVER['PHP_SELF']."?id=".$object->id);
+            exit;
+        }
+            
+        if(!empty(GETPOST('barcode'))) {
+            $code = new BarcodeBakery\Barcode\BCGean8();
+            $code->setScale(2);
+            $code->setThickness(30);
+            $code->parse(GETPOST('barcode'));
+            $generatedBareCode = $code->getLabel().$code->getChecksum();
+            $result = $object->check_barcode($generatedBareCode, GETPOST('barcode_type_code'));
+        }
+        if ($result >= 0)
+        {
+            if(!empty(GETPOST('barcode'))) {
+                $result = $object->setValueFrom('barcode', $generatedBareCode, '', null, 'text', '', $user, 'PRODUCT_MODIFY');
+            }else{
+                $result = $object->setValueFrom('barcode', "", '', null, 'text', '', $user, 'PRODUCT_MODIFY');
+            }
+            header("Location: ".$_SERVER['PHP_SELF']."?id=".$object->id);
+            exit;
+        }
+        else
+        {
+            $langs->load("errors");
+            if ($result == -1) $errors[] = 'ErrorBadBarCodeSyntax';
+            elseif ($result == -2) $errors[] = 'ErrorBarCodeRequired';
+            elseif ($result == -3) $errors[] = 'ErrorBarCodeAlreadyUsed';
+            else $errors[] = 'FailedToValidateBarCode';
 
-		if ($result >= 0)
-		{
-	    	$result = $object->setValueFrom('barcode', GETPOST('barcode'), '', null, 'text', '', $user, 'PRODUCT_MODIFY');
-	    	header("Location: ".$_SERVER['PHP_SELF']."?id=".$object->id);
-	    	exit;
-		}
-		else
-		{
-			$langs->load("errors");
-        	if ($result == -1) $errors[] = 'ErrorBadBarCodeSyntax';
-        	elseif ($result == -2) $errors[] = 'ErrorBarCodeRequired';
-        	elseif ($result == -3) $errors[] = 'ErrorBarCodeAlreadyUsed';
-        	else $errors[] = 'FailedToValidateBarCode';
-
-			$error++;
-			setEventMessages($errors, null, 'errors');
-		}
+            $error++;
+            setEventMessages($errors, null, 'errors');
+        }
     }
 
     // Add a product or service
@@ -2249,7 +2269,7 @@ else
                 {
                     require_once DOL_DOCUMENT_ROOT.'/core/class/html.formbarcode.class.php';
                     $formbarcode = new FormBarCode($db);
-				}
+		}
                 if ($action == 'editbarcodetype')
                 {
                     print $formbarcode->formBarcodeType($_SERVER['PHP_SELF'].'?id='.$object->id, $object->barcode_type, 'fk_barcode_type');
