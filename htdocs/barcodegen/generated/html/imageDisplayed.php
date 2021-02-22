@@ -1,19 +1,30 @@
 <?php
-require '../../../main.inc.php';
+require __DIR__ . '../../vendor/autoload.php';
 
-$hosts = $_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_NAME']."/";
-$imgdata = $hosts.DOL_URL_ROOT."/barcodegen/generated/html/image.php?codebare=".GETPOST("codebare");
-$imgdata = $hosts.DOL_URL_ROOT."/barcodegen/generated/html/image.php?codebare=".GETPOST("codebare");
-$im = imagecreatefrompng($imgdata);
+use BarcodeBakery\Common\BCGFontFile;
+use BarcodeBakery\Common\BCGColor;
+use BarcodeBakery\Common\BCGDrawing;
+use BarcodeBakery\Barcode\BCGean8;
+
+$font = new BCGFontFile(__DIR__ . '/font/Arial.ttf', 12);
+$colorFront = new BCGColor(0, 0, 0);
+$colorBack = new BCGColor(255, 255, 255);
+
+// Barcode Part
+$code = new BCGean8();
+$code->setScale(5);
+$code->setThickness(45);
+$code->setForegroundColor($colorFront);
+$code->setBackgroundColor($colorBack);
+$code->setFont($font);
+$code->parse($_GET["codebare"]);
+
+// Drawing Part
+$drawing = new BCGDrawing('', $colorBack);
+$drawing->setBarcode($code);
+$drawing->setDPI(300);
+$drawing->draw();
+$drawing->getBarcode();
 header('Content-Type: image/png');
-header('Content-Disposition:attachment;filename='.GETPOST("codebare").'.png');
-imagepng($im);
-imagedestroy($im);
 
-/*ob_start();
-imagepng($cardTemplateImage);
-$cardTemplateImage = ob_get_contents();
-ob_end_clean();
-$this->loggerService->log(__CLASS__, __FUNCTION__, 'End');
-return 'data:image/.png' . ';base64,' . base64_encode($cardTemplateImage);*/
-
+$drawing->finish(BCGDrawing::IMG_FORMAT_PNG);

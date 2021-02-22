@@ -50,20 +50,18 @@ $producttmp = new Product($db);
 $thirdpartytmp = new Societe($db);
 
 if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && intval(GETPOST('fk_barcode_type'))==1) {
-    
     $hosts = $_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_NAME']."/";
-    
     $codebarValue = GETPOST("forbarcode");
     $producttmp->fetch('','','',GETPOST("forbarcode"));
     
     if (GETPOST('submitproduct') && GETPOST('submitproduct'))
     {
-            $action = ''; // We reset because we don't want to build doc
-            if (GETPOST('productid') > 0)
-            {
-                    $producttmp->fetch(GETPOST('productid'));
-                    $codebarValue = $producttmp->barcode;
-            }
+        $action = ''; // We reset because we don't want to build doc
+        if (GETPOST('productid') > 0)
+        {
+            $producttmp->fetch(GETPOST('productid'));
+            $codebarValue = $producttmp->barcode;
+        }
     }
     $imgdata = $hosts.DOL_URL_ROOT."/barcodegen/generated/html/image.php?codebare=".$codebarValue;
     $im = imagecreatefrompng($imgdata);
@@ -72,6 +70,93 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && intval(GETPOST('
     $images = ob_get_contents();
     ob_end_clean();
     $imgDataFromPng =  base64_encode($images);
+    
+    if (GETPOST('printproduct') && GETPOST('printproduct'))
+    {
+        if (GETPOST('productid') > 0)
+        {
+            $producttmp->fetch(GETPOST('productid'));
+            $codebarValue = $producttmp->barcode;
+        }
+        $imgdata = $hosts.DOL_URL_ROOT."/barcodegen/generated/html/imageDisplayed.php?codebare=".$codebarValue;
+        $im = imagecreatefrompng($imgdata);
+        ob_start();
+        imagepng($im);
+        $images = ob_get_contents();
+        ob_end_clean();
+        $imgDataFromPng =  base64_encode($images);
+        
+        $carteMetisse = floor($producttmp->price_ttc*0.95*10)/10;
+        $htmlDataToPrint  = "<div style='width:437;display:none;margin-top:1%' id='print_codebare'>";
+        $htmlDataToPrint .= "<style>
+            @media print {
+                .carte_metisse_style {
+                    color:white;
+                    background-color:#000000;
+                    padding:7px;text-transform:uppercase;
+                    font-weight:bold;
+                    position:relative;
+                    margin-top:-20px;
+                    font-family: Arial, Helvetica, sans-serif;
+                }
+           }
+           .carte_metisse_style {
+                    color:white;
+                    background-color:#000000;
+                    padding:7px;text-transform:uppercase;
+                    font-weight:bold;
+                    position:relative;
+                    margin-top:-20px;
+                    font-family: Arial, Helvetica, sans-serif;
+                }
+        </style>";
+        for($i=1;$i<=$numberofsticker;$i++){
+            $breakbefore = "";
+            if($i%3 == 0) {
+                $breakbefore = "page-break-after: always;";
+            }
+            $htmlDataToPrint .= "<table style='width:437px;height:295;".$breakbefore."'>";
+            $htmlDataToPrint .= "<tr>";
+            $htmlDataToPrint .= "<td colspan=2>";
+            $htmlDataToPrint .= "<p style='font-size:20px;text-transform:uppercase;font-family: Arial, Helvetica, sans-serif;font-weight:bold;'>".$producttmp->label."</p>";
+            $htmlDataToPrint .= "</td>";
+            $htmlDataToPrint .= "</tr>";
+            $htmlDataToPrint .= "<tr>";
+            $htmlDataToPrint .= "<td style='width:60%'>";
+            $htmlDataToPrint .= "<img src='data:image/png;base64,".$imgDataFromPng."' style='margin-bottom:25px;'>";
+            $htmlDataToPrint .= "</td>";
+            $htmlDataToPrint .= "<td style='width:40%'>";
+            $htmlDataToPrint .= "<p style='float:right;position:relative;margin-top:104px;font-weight:bold;font-family: Arial, Helvetica, sans-serif;font-size:25px'>".price($producttmp->price_ttc). " €"."</p>";
+            $htmlDataToPrint .= "</td>";
+            $htmlDataToPrint .= "</tr>";
+            $htmlDataToPrint .= "<tr>";
+            $htmlDataToPrint .= "<td colspan=2>";
+            $htmlDataToPrint .= "<p class='carte_metisse_style'>Carte metisse: ".price($carteMetisse)." €</p>";
+            $htmlDataToPrint .= "</td>";
+            $htmlDataToPrint .= "</tr>";
+            $htmlDataToPrint .= "</table><br>";
+        }
+        print $htmlDataToPrint;
+        print "<input type='button' id='show_me_print' value='test' onclick='showPrint()' style='display:none;'/>";
+        ?>
+        <script type='text/javascript'>
+            document.getElementById('show_me_print').click();
+            function showPrint() {
+                var divContents = document.getElementById("print_codebare").innerHTML;
+                var printWindow = window.open('', '', 'height=400,width=980');
+                printWindow.document.write('<html><head><title>Print DIV Content</title>');
+                printWindow.document.write('</head><body><div style="width:437px;">');
+                printWindow.document.write(divContents);
+                printWindow.document.write('</div></body></html>');
+                printWindow.document.close();
+                printWindow.print();
+                location.href="<?php echo $hosts.DOL_URL_ROOT.'/barcode/printsheet.php'; ?>";
+            };
+        </script>
+        <?php
+        exit;
+    }
+    
     require_once DOL_DOCUMENT_ROOT.'/includes/dompdf/autoload.inc.php';
     $dompdf = new Dompdf\Dompdf();
     $htmlData = '<html>
@@ -111,31 +196,40 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && intval(GETPOST('
                     <div class="page"  style="float:left;margin-left:50%">Page '.$PAGE_NUM.'</div>
                 </div>        
             </footer>
-            <main>';
+            <main style="margin-left:25px;">';
+            $j = 0;
+            $htmlData .= "<table style='width:80%'>";
             for($i=0; $i<$numberofsticker; $i++) {
-                    $carteMetisse = floor($producttmp->price_ttc*0.95*10)/10;
-                    $htmlData .= "<table style='width:30%;'>";
-                    $htmlData .= "<tr>";
-                    $htmlData .= "<td colspan=2>";
-                    $htmlData .= "<p style='font-size:13px;text-transform:uppercase;font-family: Arial, Helvetica, sans-serif;font-weight:bold;'>".$producttmp->label."</p>";
-                    $htmlData .= "</td>";
-                    $htmlData .= "</tr>";
-                    $htmlData .= "<tr>";
-                    $htmlData .= "<td style='width:60%'>";
-
-                    $htmlData .= "<img src='data:image/png;base64,".$imgDataFromPng."' style='margin-bottom:25px;'>";
-                    $htmlData .= "</td>";
-                    $htmlData .= "<td style='width:40%'>";
-                    $htmlData .= "<p style='float:right;position:relative;margin-top:104px;font-weight:bold;font-family: Arial, Helvetica, sans-serif;font-size:30px'>".price($producttmp->price_ttc). " €"."</p>";
-                    $htmlData .= "</td>";
-                    $htmlData .= "</tr>";
-                    $htmlData .= "<tr>";
-                    $htmlData .= "<td colspan=2>";
-                    $htmlData .= "<p style='color:white;background-color:black;padding:7px;text-transform:uppercase;font-weight:bold;position:relative;margin-top:-20px;font-family: Arial, Helvetica, sans-serif;'>Carte metisse: ".price($carteMetisse)." €</p>";
-                    $htmlData .= "</td>";
-                    $htmlData .= "</tr>";
-                    $htmlData .= "</table><div style='clear:both;margin-top:30px'></div>";
+                $carteMetisse = floor($producttmp->price_ttc*0.95*10)/10;
+                /*$htmlData .= "<tr>";
+                $htmlData .= "<td colspan=2>";
+                $htmlData .= "<p style='font-size:13px;text-transform:uppercase;font-family: Arial, Helvetica, sans-serif;font-weight:bold;'>".$producttmp->label."</p>";
+                $htmlData .= "</td>";
+                $htmlData .= "</tr>";*/
+                if (++$j % 2 != 0){
+                     $htmlData .= "<tr>";
+                } 
+                
+                $htmlData .= "<td style='width:50%;'>";
+                $htmlData .= "<div style='margin-bottom: 7px;font-size:13px;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;font-weight:bold;'>".$producttmp->label."</div>";
+                $htmlData .= "<div><img src='data:image/png;base64,".$imgDataFromPng."'/></div>";
+                $htmlData .= "<div style='margin-top:-22px;margin-left:213px;font-size:16px;font-weight:bold;'>&nbsp;".price($producttmp->price_ttc). " €"."</div>";
+                $htmlData .= "<div style='margin-top:6px;color:white;background-color:black;padding:7px;text-transform:uppercase;font-weight:bold;font-family: Arial, Helvetica, sans-serif;width:260px;font-size:13px;'>Carte metisse: ".price($carteMetisse)." €</div><br>";
+                $htmlData .= "</td>";
+                $htmlData .= "<td style='width:50%;'>";
+                $htmlData .= "<p style='float:right;position:relative;margin-top:104px;font-weight:bold;font-family: Arial, Helvetica, sans-serif;font-size:25px'></p>";
+                $htmlData .= "</td>";
+                /*$htmlData .= "<tr>";
+                $htmlData .= "<td colspan=2>";
+                $htmlData .= "<p style='color:white;background-color:black;padding:7px;text-transform:uppercase;font-weight:bold;position:relative;margin-top:-20px;font-family: Arial, Helvetica, sans-serif;'>Carte metisse: ".price($carteMetisse)." €</p>";
+                $htmlData .= "</td>";
+                $htmlData .= "</tr>";*/
+                if ($j % 2 == 0) {
+                    $htmlData .= "&nbsp;&nbsp;</tr><br>";
+                }
             }
+            if ($j % 2 != 0)  $htmlData .= "<td></td></tr>";
+            $htmlData .= "</table><div style='margin-top:30px'></div>";
     $htmlData .= '</main>
             <script type="text/php">
                 if ( isset($pdf) ) { 
@@ -150,7 +244,7 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && intval(GETPOST('
     </html>';
     
     $dompdf->loadHtml($htmlData);
-    $dompdf->setPaper('A4', 'landscape');
+    $dompdf->setPaper('A4', 'portrait');
     $dompdf->render();
     $dompdf->stream($codebarValue.".pdf", [
         "Attachment" => true
@@ -425,39 +519,39 @@ print '<script type="text/javascript" language="javascript">
 jQuery(document).ready(function() {
 	function init_selectors()
 	{
-		if (jQuery("#fillmanually:checked").val() == "fillmanually")
-		{
-			jQuery("#submitproduct").prop("disabled", true);
-			jQuery("#submitthirdparty").prop("disabled", true);
-			jQuery("#search_productid").prop("disabled", true);
-			jQuery("#socid").prop("disabled", true);
-			jQuery(".showforproductselector").hide();
-			jQuery(".showforthirdpartyselector").hide();
-		}
-		if (jQuery("#fillfromproduct:checked").val() == "fillfromproduct")
-		{
-			jQuery("#submitproduct").removeAttr("disabled");
-			jQuery("#submitthirdparty").prop("disabled", true);
-			jQuery("#search_productid").removeAttr("disabled");
-			jQuery("#socid").prop("disabled", true);
-			jQuery(".showforproductselector").show();
-			jQuery(".showforthirdpartyselector").hide();
-		}
-		if (jQuery("#fillfromthirdparty:checked").val() == "fillfromthirdparty")
-		{
-			jQuery("#submitproduct").prop("disabled", true);
-			jQuery("#submitthirdparty").removeAttr("disabled");
-			jQuery("#search_productid").prop("disabled", true);
-			jQuery("#socid").removeAttr("disabled");
-			jQuery(".showforproductselector").hide();
-			jQuery(".showforthirdpartyselector").show();
-		}
-	}
+            if (jQuery("#fillmanually:checked").val() == "fillmanually")
+            {
+                jQuery("#submitproduct").prop("disabled", true);
+                jQuery("#submitthirdparty").prop("disabled", true);
+                jQuery("#search_productid").prop("disabled", true);
+                jQuery("#socid").prop("disabled", true);
+                jQuery(".showforproductselector").hide();
+                jQuery(".showforthirdpartyselector").hide();
+            }
+            if (jQuery("#fillfromproduct:checked").val() == "fillfromproduct")
+            {
+                jQuery("#submitproduct").removeAttr("disabled");
+                jQuery("#submitthirdparty").prop("disabled", true);
+                jQuery("#search_productid").removeAttr("disabled");
+                jQuery("#socid").prop("disabled", true);
+                jQuery(".showforproductselector").show();
+                jQuery(".showforthirdpartyselector").hide();
+            }
+            if (jQuery("#fillfromthirdparty:checked").val() == "fillfromthirdparty")
+            {
+                jQuery("#submitproduct").prop("disabled", true);
+                jQuery("#submitthirdparty").removeAttr("disabled");
+                jQuery("#search_productid").prop("disabled", true);
+                jQuery("#socid").removeAttr("disabled");
+                jQuery(".showforproductselector").hide();
+                jQuery(".showforthirdpartyselector").show();
+            }
+        }
 	init_selectors();
 	jQuery(".radiobarcodeselect").click(function() {
 		init_selectors();
 	});
-
+        
 	function init_gendoc_button()
 	{
 		if (jQuery("#select_fk_barcode_type").val() > 0 && jQuery("#forbarcode").val())
@@ -548,6 +642,7 @@ print '<br>';
 print '</div>';
 
 print '<br><input class="button" type="submit" id="submitformbarcodegen" '.((GETPOST("selectorforbarcode") && GETPOST("selectorforbarcode")) ? '' : 'disabled ').'value="'.$langs->trans("BuildPageToPrint").'">';
+print '<input class="button" type="submit" id="printformbacodgen" name="printproduct" class="button" value="'.$langs->trans('PrintLabelBareCode').'">';
 
 print '</form>';
 print '<br>';

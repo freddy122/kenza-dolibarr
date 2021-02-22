@@ -1039,3 +1039,4 @@ SwitchInEditModeToAddTranslation=Passer en mode édition pour ajouter des traduc
 NotUsedForThisCustomer=Non utilisé pour ce client
 AmountMustBePositive=Le montant doit être positif.
 ByStatus=Par statut
+PrintCodeBare=Imprimer le code barre produit

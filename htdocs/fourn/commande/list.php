@@ -41,6 +41,7 @@ require_once DOL_DOCUMENT_ROOT.'/core/class/html.formother.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formcompany.class.php';
 require_once DOL_DOCUMENT_ROOT.'/product/class/product.class.php';
 require_once DOL_DOCUMENT_ROOT.'/projet/class/project.class.php';
+require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.commande.dispatch.class.php';
 
 $langs->loadLangs(array("orders", "sendings", 'deliveries', 'companies', 'compta', 'bills', 'projects', 'suppliers'));
 
@@ -193,7 +194,7 @@ if (empty($reshook))
 {
 	// Selection of new fields
 	include DOL_DOCUMENT_ROOT.'/core/actions_changeselectedfields.inc.php';
-
+        
 	// Purge search criteria
 	if (GETPOST('button_removefilter_x', 'alpha') || GETPOST('button_removefilter.x', 'alpha') || GETPOST('button_removefilter', 'alpha')) // All tests are required to be compatible with all browsers
 	{
@@ -245,7 +246,152 @@ if (empty($reshook))
 	$permissiontodelete = $user->rights->fournisseur->commande->supprimer;
 	$uploaddir = $conf->fournisseur->commande->dir_output;
 	include DOL_DOCUMENT_ROOT.'/core/actions_massactions.inc.php';
-
+        if ($massaction == 'print_bare_code') {
+            $orders = GETPOST('toselect', 'array');
+            $fournCommandes = new CommandeFournisseurDispatch($db);
+            /* Contenu de données à imprimer*/
+            $htmlData = "<div style='width:437;display:none;margin-top:1%' id='print_codebare'>";
+            $htmlData .= "<style>
+                @media print {
+                    .carte_metisse_style {
+                        color:white;
+                        background-color:#000000;
+                        padding:7px;text-transform:uppercase;
+                        font-weight:bold;
+                        position:relative;
+                        margin-top:-20px;
+                        font-family: Arial, Helvetica, sans-serif;
+                    }
+               }
+               .carte_metisse_style {
+                        color:white;
+                        background-color:#000000;
+                        padding:7px;text-transform:uppercase;
+                        font-weight:bold;
+                        position:relative;
+                        margin-top:-20px;
+                        font-family: Arial, Helvetica, sans-serif;
+                    }
+            </style>";
+            $sqlGetCommandeFournisseur = "SELECT  cfd.fk_commande, cfd.fk_product, cfd.qty from ".MAIN_DB_PREFIX."commande_fournisseur_dispatch as cfd where cfd.fk_commande in (".implode(",",$orders).")";
+            //echo $sqlGetCommandeFournisseur;    
+            $hosts = $_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_NAME']."/";
+            $resfournsql    = $db->getRows($sqlGetCommandeFournisseur);
+                $arrBarCodeProductFourn = [];
+                $arrProduitDeclinaison  = [];
+                /* Pour le produit parent */
+                foreach ($resfournsql as $resComF ) {
+                    // product inside commande
+                    $sqlProd = "select barcode,label,price_ttc from ".MAIN_DB_PREFIX."product where  rowid = ".$resComF->fk_product;
+                    $resuProd = $db->query($sqlProd);
+                    $barProd    = $db->fetch_object($resuProd);
+                    // declinaison
+                    $sqlDeclinaison = "select fk_product_child from ".MAIN_DB_PREFIX."product_attribute_combination where fk_product_parent =".$resComF->fk_product;
+                    $resuDeclinaison = $db->getRows($sqlDeclinaison);
+                    
+                    if(!empty($barProd->barcode)){
+                        $imgdata = $hosts.DOL_URL_ROOT."/barcodegen1d/generated/html/imageDisplayed.php?codebare=".$barProd->barcode;
+                        $im = imagecreatefrompng($imgdata);
+                        ob_start();
+                        imagepng($im);
+                        $images = ob_get_contents();
+                        ob_end_clean();
+                        $imgDataFromPng =  base64_encode($images);
+                        $carteMetisse = floor($barProd->price_ttc*0.95*10)/10;
+                        for($i=1;$i<=$resComF->qty;$i++){
+                            $breakbefore = "";
+                            if($i%2 == 0) {
+                                $breakbefore = "page-break-after: always;";
+                            }
+                            $htmlData .= "<table style='width:437px;height:295;".$breakbefore."'>";
+                            $htmlData .= "<tr>";
+                            $htmlData .= "<td colspan=2>";
+                            $htmlData .= "<p style='font-size:20px;text-transform:uppercase;font-family: Arial, Helvetica, sans-serif;font-weight:bold;'>".$barProd->label."</p>";
+                            $htmlData .= "</td>";
+                            $htmlData .= "</tr>";
+                            $htmlData .= "<tr>";
+                            $htmlData .= "<td style='width:60%'>";
+                            $htmlData .= "<img src='data:image/png;base64,".$imgDataFromPng."' style='margin-bottom:25px;'>";
+                            $htmlData .= "</td>";
+                            $htmlData .= "<td style='width:40%'>";
+                            $htmlData .= "<p style='float:right;position:relative;margin-top:104px;font-weight:bold;font-family: Arial, Helvetica, sans-serif;font-size:25px'>".price($barProd->price_ttc). " €"."</p>";
+                            $htmlData .= "</td>";
+                            $htmlData .= "</tr>";
+                            $htmlData .= "<tr>";
+                            $htmlData .= "<td colspan=2>";
+                            $htmlData .= "<p class='carte_metisse_style'>Carte metisse: ".price($carteMetisse)." €</p>";
+                            $htmlData .= "</td>";
+                            $htmlData .= "</tr>";
+                            $htmlData .= "</table><br><br><br>";
+                        }
+                        
+                        // déclinaison
+                        if(!empty($resuDeclinaison)){
+                            foreach($resuDeclinaison as $decl) {
+                                $sqlProd = "select barcode,label,price_ttc from ".MAIN_DB_PREFIX."product where  rowid = ".$decl->fk_product_child;
+                                $resuProd = $db->query($sqlProd);
+                                $barProd    = $db->fetch_object($resuProd);
+                                $hosts = $_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_NAME']."/";
+                                $imgdata = $hosts.DOL_URL_ROOT."/barcodegen1d/generated/html/imageDisplayed.php?codebare=".$barProd->barcode;
+                                $im = imagecreatefrompng($imgdata);
+                                ob_start();
+                                imagepng($im);
+                                $images = ob_get_contents();
+                                ob_end_clean();
+                                $imgDataFromPng =  base64_encode($images);
+                                $carteMetisse = floor($barProd->price_ttc*0.95*10)/10;
+                                for($k=1;$k<=$resComF->qty;$k++){
+                                    $breakbefore = "";
+                                    if($k%2 == 0) {
+                                        $breakbefore = "page-break-after: always;";
+                                    }
+                                    $htmlData .= "<table style='width:437px;height:295;".$breakbefore."'>";
+                                    $htmlData .= "<tr>";
+                                    $htmlData .= "<td colspan=2>";
+                                    $htmlData .= "<p style='font-size:20px;text-transform:uppercase;font-family: Arial, Helvetica, sans-serif;font-weight:bold;'>".$barProd->label."</p>";
+                                    $htmlData .= "</td>";
+                                    $htmlData .= "</tr>";
+                                    $htmlData .= "<tr>";
+                                    $htmlData .= "<td style='width:60%'>";
+                                    $htmlData .= "<img src='data:image/png;base64,".$imgDataFromPng."' style='margin-bottom:25px;'>";
+                                    $htmlData .= "</td>";
+                                    $htmlData .= "<td style='width:40%'>";
+                                    $htmlData .= "<p style='float:right;position:relative;margin-top:104px;font-weight:bold;font-family: Arial, Helvetica, sans-serif;font-size:25px'>".price($barProd->price_ttc). " €"."</p>";
+                                    $htmlData .= "</td>";
+                                    $htmlData .= "</tr>";
+                                    $htmlData .= "<tr>";
+                                    $htmlData .= "<td colspan=2>";
+                                    $htmlData .= "<p class='carte_metisse_style'>Carte metisse: ".price($carteMetisse)." €</p>";
+                                    $htmlData .= "</td>";
+                                    $htmlData .= "</tr>";
+                                    $htmlData .= "</table><br><br><br>";
+                                }
+                            }
+                        }
+                    }
+                }
+            $htmlData .= "</div>";
+            echo $htmlData;
+            echo "<input type='button' id='show_me_print' value='test' onclick='showPrint()' style='display:none;'/>";
+            /* Fin contenu de données à imprimer*/
+            ?>
+            <script type="text/javascript">
+                document.getElementById('show_me_print').click();
+                function showPrint() {
+                    var divContents = document.getElementById("print_codebare").innerHTML;
+                    var printWindow = window.open('', '', 'height=400,width=980');
+                    printWindow.document.write('<html><head><title>Print DIV Content</title>');
+                    printWindow.document.write('</head><body><div style="width:437px;">');
+                    printWindow.document.write(divContents);
+                    printWindow.document.write('</div></body></html>');
+                    printWindow.document.close();
+                    printWindow.print();
+                    location.href="<?php echo $hosts.DOL_URL_ROOT.'/fourn/commande/list.php'; ?>";
+                };
+            </script>
+            <?php
+        }
+        
 	// TODO Move this into mass action include
 	if ($massaction == 'confirm_createbills')
 	{
@@ -647,7 +793,8 @@ if ($resql)
 	$arrayofmassactions = array(
 		'generate_doc'=>$langs->trans("ReGeneratePDF"),
 		'builddoc'=>$langs->trans("PDFMerge"),
-	    'presend'=>$langs->trans("SendByMail"),
+                'presend'=>$langs->trans("SendByMail"),
+                "print_bare_code"=>$langs->trans("PrintCodeBare")
 	);
 	//if($user->rights->fournisseur->facture->creer) $arrayofmassactions['createbills']=$langs->trans("CreateInvoiceForThisCustomer");
 	if ($user->rights->fournisseur->commande->supprimer) $arrayofmassactions['predelete'] = '<span class="fa fa-trash paddingrightonly"></span>'.$langs->trans("Delete");
