@@ -5380,9 +5380,10 @@ class Form
 				// Define key to use into select list
 				$key = $rate['txtva'];
 				$key .= $rate['nprtva'] ? '*' : '';
-				if ($mode > 0 && $rate['code']) $key .= ' ('.$rate['code'].')';
-				if ($mode < 0) $key = $rate['rowid'];
-
+                                
+                                // modification fred fix tva 8.585
+				/*if ($mode > 0 && $rate['code']) $key .= ' ('.$rate['code'].')';
+				if ($mode < 0) $key = $rate['rowid'];*/
 				$return .= '<option value="'.$key.'"';
 				if (!$selectedfound)
 				{
