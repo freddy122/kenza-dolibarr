@@ -153,7 +153,7 @@ if ($reshook < 0) setEventMessages($hookmanager->error, $hookmanager->errors, 'e
 if (empty($reshook))
 {
     // Type
-	if ($action == 'setfk_product_type' && $usercancreate)
+    if ($action == 'setfk_product_type' && $usercancreate)
     {
     	$result = $object->setValueFrom('fk_product_type', GETPOST('fk_product_type'), '', null, 'text', '', $user, 'PRODUCT_MODIFY');
     	header("Location: ".$_SERVER['PHP_SELF']."?id=".$object->id);
@@ -178,10 +178,31 @@ if (empty($reshook))
     // Barcode value
     if ($action == 'setbarcode' && $createbarcode)
     {
-        require DOL_DOCUMENT_ROOT . '/barcodegen/generated/vendor/autoload.php';
-        if(intval(strlen(GETPOST('barcode')) != 8)) {
+        require DOL_DOCUMENT_ROOT . '/barcodegen1d/generated/vendor/autoload.php';
+        
+        // ISBN, EAN13, EAN8, UPC
+        $object->fetch_barcode();
+        //print_r($object->barcode_type_label);die();
+        if(($object->barcode_type_label == "ISBN" || $object->barcode_type_label == "EAN13")  && intval(strlen(GETPOST('barcode')) != 13)) {
             $langs->load("errors");
-            $errors[] = 'La taille de valeur du codebare doit égale à 8';
+            $errors[] = 'La taille de valeur du codebare doit égale à 13 POUR EAN13 et ISBN';
+            $error++;
+            setEventMessages($errors, null, 'errors');
+            header("Location: ".$_SERVER['PHP_SELF']."?id=".$object->id);
+            exit;
+        }
+        if(intval(strlen(GETPOST('barcode')) != 12) && $object->barcode_type_label == "UPC") {
+            $langs->load("errors");
+            $errors[] = 'La taille de valeur du codebare pour UPC doit  être égale à 12';
+            $error++;
+            setEventMessages($errors, null, 'errors');
+            header("Location: ".$_SERVER['PHP_SELF']."?id=".$object->id);
+            exit;
+        }
+        
+        if(intval(strlen(GETPOST('barcode')) != 8) && $object->barcode_type_label == "EAN8") {
+            $langs->load("errors");
+            $errors[] = 'La taille de valeur du codebare pour EAN8 doit égale à 8';
             $error++;
             setEventMessages($errors, null, 'errors');
             header("Location: ".$_SERVER['PHP_SELF']."?id=".$object->id);
@@ -189,13 +210,31 @@ if (empty($reshook))
         }
             
         if(!empty(GETPOST('barcode'))) {
-            $code = new BarcodeBakery\Barcode\BCGean8();
-            $code->setScale(2);
-            $code->setThickness(30);
-            $code->parse(GETPOST('barcode'));
-            $generatedBareCode = $code->getLabel().$code->getChecksum();
-            $result = $object->check_barcode($generatedBareCode, GETPOST('barcode_type_code'));
+            if(!empty($object->barcode_type_label)) { // ean8
+                if($object->barcode_type_label == "EAN8") { // ean8
+                    $code = new BarcodeBakery\Barcode\BCGean8();
+                    $code->parse(GETPOST('barcode'));
+                    $generatedBareCode = $code->getLabel().$code->getChecksum();
+                    $result = $object->check_barcode($generatedBareCode, GETPOST('barcode_type_code'));
+                }else if($object->barcode_type_label == "EAN13") { // ean-13
+                    $code = new BarcodeBakery\Barcode\BCGean13();
+                    $code->parse(GETPOST('barcode'));
+                    $generatedBareCode = $code->getLabel().$code->getChecksum();
+                    $result = $object->check_barcode($generatedBareCode, GETPOST('barcode_type_code'));
+                }else if($object->barcode_type_label == "ISBN") { // isbn
+                    $code = new BarcodeBakery\Barcode\BCGisbn();
+                    $code->parse(GETPOST('barcode'));
+                    $generatedBareCode = $code->getLabel().$code->getChecksum();
+                    $result = $object->check_barcode($generatedBareCode, GETPOST('barcode_type_code'));
+                }else if($object->barcode_type_label == "UPC") { // upc
+                    $code = new BarcodeBakery\Barcode\BCGupca();
+                    $code->parse(GETPOST('barcode'));
+                    $generatedBareCode = $code->getLabel().$code->getChecksum();
+                    $result = $object->check_barcode($generatedBareCode, GETPOST('barcode_type_code'));
+                }
+            }
         }
+       // print_r($generatedBareCode);die();
         if ($result >= 0)
         {
             if(!empty(GETPOST('barcode'))) {
@@ -267,6 +306,22 @@ if (empty($reshook))
             $action = "create";
             $error++;
         }
+        
+        if(!empty(GETPOST('barcode'))) {
+            if(!empty(GETPOST('fk_barcode_type'))) {
+                if(intval(GETPOST('fk_barcode_type')) == 1 && intval(strlen(GETPOST('barcode'))) != 8 ) {
+                   setEventMessages('La taille de valeur du codebare doit égale à 8  pour EAN8',null,"errors");
+                   $action = "create";
+                    $error++;
+                }
+
+                if( (intval(GETPOST('fk_barcode_type')) == 2 || intval(GETPOST('fk_barcode_type')) == 4) && intval(strlen(GETPOST('barcode'))) != 13 ) {
+                    setEventMessages('La taille de valeur du codebare doit égale à 13 POUR EAN13 et ISBN',null,"errors");
+                    $action = "create";
+                    $error++;
+                }
+            }
+        }
 
         if (!$error)
         {
@@ -331,12 +386,26 @@ if (empty($reshook))
             $object->barcode_type          = GETPOST('fk_barcode_type');
             //$object->barcode = GETPOST('barcode');
             if(!empty(GETPOST('barcode'))) {
-                require DOL_DOCUMENT_ROOT . '/barcodegen/generated/vendor/autoload.php';
-                $code = new BarcodeBakery\Barcode\BCGean8();
-                $code->setScale(2);
-                $code->setThickness(30);
-                $code->parse(GETPOST('barcode'));
-                $object->barcode = $code->getLabel().$code->getChecksum();
+                require DOL_DOCUMENT_ROOT . '/barcodegen1d/generated/vendor/autoload.php';
+                if(!empty(GETPOST('fk_barcode_type'))) {
+                    if(GETPOST('fk_barcode_type') == 1) { // ean8
+                        $code = new BarcodeBakery\Barcode\BCGean8();
+                        $code->parse(GETPOST('barcode'));
+                        $object->barcode = $code->getLabel().$code->getChecksum();
+                    }else if(GETPOST('fk_barcode_type') == 2) { // ean-13
+                        $code = new BarcodeBakery\Barcode\BCGean13();
+                        $code->parse(GETPOST('barcode'));
+                        $object->barcode = $code->getLabel().$code->getChecksum();
+                    }else if(GETPOST('fk_barcode_type') == 4) { // isbn
+                        $code = new BarcodeBakery\Barcode\BCGisbn();
+                        $code->parse(GETPOST('barcode'));
+                        $object->barcode = $code->getLabel().$code->getChecksum();
+                    }else if(GETPOST('fk_barcode_type') == 3) { // upc
+                        $code = new BarcodeBakery\Barcode\BCGupca();
+                        $code->parse(GETPOST('barcode'));
+                        $object->barcode = $code->getLabel().$code->getChecksum();
+                    }
+                }
             }
             // Set barcode_type_xxx from barcode_type id
             $stdobject = new GenericObject($db);
@@ -600,12 +669,26 @@ if (empty($reshook))
 	            $object->barcode_type = GETPOST('fk_barcode_type');
     	        //$object->barcode = GETPOST('barcode');
                 if(!empty(GETPOST('barcode'))) {
-                    require DOL_DOCUMENT_ROOT . '/barcodegen/generated/vendor/autoload.php';
-                    $code = new BarcodeBakery\Barcode\BCGean8();
-                    $code->setScale(2);
-                    $code->setThickness(30);
-                    $code->parse(GETPOST('barcode'));
-                    $object->barcode = $code->getLabel().$code->getChecksum();
+                    require DOL_DOCUMENT_ROOT . '/barcodegen1d/generated/vendor/autoload.php';
+                    if(!empty(GETPOST('fk_barcode_type'))) {
+                        if(GETPOST('fk_barcode_type') == 1) { // ean8
+                            $code = new BarcodeBakery\Barcode\BCGean8();
+                            $code->parse(GETPOST('barcode'));
+                            $object->barcode = $code->getLabel().$code->getChecksum();
+                        }else if(GETPOST('fk_barcode_type') == 2) { // ean-13
+                            $code = new BarcodeBakery\Barcode\BCGean13();
+                            $code->parse(GETPOST('barcode'));
+                            $object->barcode = $code->getLabel().$code->getChecksum();
+                        }else if(GETPOST('fk_barcode_type') == 4) { // isbn
+                            $code = new BarcodeBakery\Barcode\BCGisbn();
+                            $code->parse(GETPOST('barcode'));
+                            $object->barcode = $code->getLabel().$code->getChecksum();
+                        }else if(GETPOST('fk_barcode_type') == 3) { // upc
+                            $code = new BarcodeBakery\Barcode\BCGupca();
+                            $code->parse(GETPOST('barcode'));
+                            $object->barcode = $code->getLabel().$code->getChecksum();
+                        }
+                    }
                 }
     	        // Set barcode_type_xxx from barcode_type id
     	        $stdobject = new GenericObject($db);
@@ -1227,7 +1310,7 @@ else
 
         if ($showbarcode)
         {
- 	        print '<tr><td>'.$langs->trans('BarcodeType').'</td><td>';
+ 	        print '<tr><td>'.$langs->trans('BarcodeType').'sefse</td><td>';
  	        if (isset($_POST['fk_barcode_type']))
 	        {
 	         	$fk_barcode_type = GETPOST('fk_barcode_type');
@@ -1941,7 +2024,7 @@ else
 
 	        if ($showbarcode)
 	        {
-		        print '<tr><td>'.$langs->trans('BarcodeType').'</td><td>';
+		        print '<tr><td>'.$langs->trans('BarcodeType').'sefsef</td><td>';
 		        if (isset($_POST['fk_barcode_type']))
 		        {
 		         	$fk_barcode_type = GETPOST('fk_barcode_type');

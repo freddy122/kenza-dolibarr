@@ -49,12 +49,12 @@ $action = GETPOST('action', 'aZ09');
 $producttmp = new Product($db);
 $thirdpartytmp = new Societe($db);
 
-if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && intval(GETPOST('fk_barcode_type'))==1) {
+if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("submitproduct"))) {
     $hosts = $_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_NAME']."/";
     $codebarValue = GETPOST("forbarcode");
     $producttmp->fetch('','','',GETPOST("forbarcode"));
     
-    if (GETPOST('submitproduct') && GETPOST('submitproduct'))
+    if (GETPOST('submitproduct'))
     {
         $action = ''; // We reset because we don't want to build doc
         if (GETPOST('productid') > 0)
@@ -63,7 +63,26 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && intval(GETPOST('
             $codebarValue = $producttmp->barcode;
         }
     }
-    $imgdata = $hosts.DOL_URL_ROOT."/barcodegen/generated/html/image.php?codebare=".$codebarValue;
+    if(empty($producttmp->barcode)) {
+        $langs->load("errors");
+        $errors[] = 'Aucun produit associé au code-barre '.$codebarValue;
+        $error++;
+        setEventMessages($errors, null, 'errors');
+        header("Location: ".$_SERVER['PHP_SELF']."?codebare=".$codebarValue);
+        exit;
+    }
+    
+    if(intval(strlen($codebarValue) != 8) && intval(GETPOST('fk_barcode_type')) == 1) {
+        $langs->load("errors");
+        $errors[] = 'La taille de valeur du codebare pour EAN8 doit égale à 8';
+        $error++;
+        setEventMessages($errors, null, 'errors');
+        header("Location: ".$_SERVER['PHP_SELF']."?codebare=".$codebarValue);
+        exit;
+    }
+    
+    //intval(GETPOST('fk_barcode_type'))==1
+    $imgdata = $hosts.DOL_URL_ROOT."/barcodegen1d/generated/html/image.php?codebare=".$codebarValue."&type_codebare=".intval(GETPOST('fk_barcode_type'));
     $im = imagecreatefrompng($imgdata);
     ob_start();
     imagepng($im);
@@ -78,7 +97,9 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && intval(GETPOST('
             $producttmp->fetch(GETPOST('productid'));
             $codebarValue = $producttmp->barcode;
         }
-        $imgdata = $hosts.DOL_URL_ROOT."/barcodegen/generated/html/imageDisplayed.php?codebare=".$codebarValue;
+        
+        $imgdata = $hosts.DOL_URL_ROOT."/barcodegen1d/generated/html/imageDisplayed.php?codebare=".$codebarValue."&type_codebare=".intval(GETPOST('fk_barcode_type'));
+        
         $im = imagecreatefrompng($imgdata);
         ob_start();
         imagepng($im);
@@ -112,21 +133,33 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && intval(GETPOST('
         </style>";
         for($i=1;$i<=$numberofsticker;$i++){
             $breakbefore = "";
-            if($i%3 == 0) {
-                $breakbefore = "page-break-after: always;";
+            if(intval(GETPOST('fk_barcode_type')) == 1){
+                if($i%3 == 0) {
+                    $breakbefore = "page-break-after: always;";
+                }
+                $tableWidth = "360px";
+                $policeWidth = "18px";
+                $paddingTop = "165px";
+            }else{
+                if($i%3 == 0) {
+                    $breakbefore = "page-break-after: always;";
+                }
+                $tableWidth = "410px";
+                $policeWidth = "20px";
+                $paddingTop = "150px";
             }
-            $htmlDataToPrint .= "<table style='width:437px;height:295;".$breakbefore."'>";
+            $htmlDataToPrint .= "<table style='width:".$tableWidth.";height:auto;".$breakbefore."'>";
             $htmlDataToPrint .= "<tr>";
             $htmlDataToPrint .= "<td colspan=2>";
-            $htmlDataToPrint .= "<p style='font-size:20px;text-transform:uppercase;font-family: Arial, Helvetica, sans-serif;font-weight:bold;'>".$producttmp->label."</p>";
+            $htmlDataToPrint .= "<p style='font-size:".$policeWidth.";text-transform:uppercase;font-family: Arial, Helvetica, sans-serif;font-weight:bold;'>".$producttmp->label."</p>";
             $htmlDataToPrint .= "</td>";
             $htmlDataToPrint .= "</tr>";
             $htmlDataToPrint .= "<tr>";
             $htmlDataToPrint .= "<td style='width:60%'>";
             $htmlDataToPrint .= "<img src='data:image/png;base64,".$imgDataFromPng."' style='margin-bottom:25px;'>";
             $htmlDataToPrint .= "</td>";
-            $htmlDataToPrint .= "<td style='width:40%'>";
-            $htmlDataToPrint .= "<p style='float:right;position:relative;margin-top:104px;font-weight:bold;font-family: Arial, Helvetica, sans-serif;font-size:25px'>".price($producttmp->price_ttc). " €"."</p>";
+            $htmlDataToPrint .= "<td style='width:40%;padding-top:".$paddingTop.";'>";
+            $htmlDataToPrint .= "<p style='float:right;font-weight:bold;font-family: Arial, Helvetica, sans-serif;font-size:22px'>".price($producttmp->price_ttc). " €"."</p>";
             $htmlDataToPrint .= "</td>";
             $htmlDataToPrint .= "</tr>";
             $htmlDataToPrint .= "<tr>";
@@ -150,7 +183,7 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && intval(GETPOST('
                 printWindow.document.write('</div></body></html>');
                 printWindow.document.close();
                 printWindow.print();
-                location.href="<?php echo $hosts.DOL_URL_ROOT.'/barcode/printsheet.php'; ?>";
+                location.href="<?php echo $hosts.DOL_URL_ROOT.'/barcode/printsheet.php?codebare='.$codebarValue; ?>";
             };
         </script>
         <?php
@@ -371,6 +404,16 @@ if ($action == 'builddoc')
 		} else {
 			$template = 'tcpdflabel';
 			$encoding = $module->getTcpdfEncodingType($encoding); //convert to TCPDF compatible encoding types
+                        /*echo "<pre>";
+                        // print_r($stdobject);die();
+                        $height = 50;
+                        $width = 1;
+                        require_once TCPDF_PATH.'tcpdf_barcodes_1d.php';
+                        print_r($code);
+                        print_r($encoding);
+                        $barcodeobj = new TCPDFBarcode($code, $encoding);
+                        echo($barcodeobj->getBarcodeHTML(2,150));
+                        echo($barcodeobj->getBarcodeArray()['code']);*/
 			$is2d = $module->is2d;
 		}
 	}
@@ -569,9 +612,14 @@ jQuery(document).ready(function() {
 	});
 	jQuery("#forbarcode").keyup(function() {
 		init_gendoc_button()
-	});
-});
-</script>';
+	});';
+        if(strlen(GETPOST("codebare")) == 8 || strlen($producttmp->barcode) == 8) {
+            print 'jQuery("#select_fk_barcode_type").val(1)';
+        }else if (strlen(GETPOST("codebare")) == 13 || strlen($producttmp->barcode) == 13) {
+            print 'jQuery("#select_fk_barcode_type").val(4)';
+        }
+print   '});
+        </script>';
 
 // Checkbox to select from free text
 print '<input id="fillmanually" type="radio" '.((!GETPOST("selectorforbarcode") || GETPOST("selectorforbarcode") == 'fillmanually') ? 'checked ' : '').'name="selectorforbarcode" value="fillmanually" class="radiobarcodeselect"> '.$langs->trans("FillBarCodeTypeAndValueManually").' &nbsp; ';
@@ -601,7 +649,7 @@ print '<br>';
 
 if ($producttmp->id > 0)
 {
-	print $langs->trans("BarCodeDataForProduct", '').' '.$producttmp->getNomUrl(1).'<br>';
+    print $langs->trans("BarCodeDataForProduct", '').' '.$producttmp->getNomUrl(1).'<br>';
 }
 if ($thirdpartytmp->id > 0)
 {
@@ -617,7 +665,7 @@ print $langs->trans("BarcodeType").' &nbsp; ';
 print '</div><div class="tagtd" style="overflow: hidden; white-space: nowrap; max-width: 300px;">';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formbarcode.class.php';
 $formbarcode = new FormBarCode($db);
-print $formbarcode->selectBarcodeType("1", 'fk_barcode_type', 1);
+print $formbarcode->selectBarcodeType("4", 'fk_barcode_type', 1);
 print '</div></div>';
 
 // Barcode value
