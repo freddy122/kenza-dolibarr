@@ -89,8 +89,9 @@ foreach ($catparent0 as $cat_parent0)
 {
     $idparent0 = $cat_parent0->id;
 }
-
+$arr_combinaison = [];
 if (is_array($params) && sizeof($params)>0) {
+    $countProducts = 0;
     foreach ($params as $product)
     {
         $db->begin();
@@ -146,10 +147,12 @@ if (is_array($params) && sizeof($params)>0) {
             if ($db->num_rows($resql) > 0) {
                 $res = $db->fetch_array($resql);
 		$produit_id=$res['rowid'];
-            } else 
+            } else {
                 $produit_id=0;
-        } else 
+            }
+        } else {
             $produit_id=0;
+        }
         if ($db->num_rows($resql) > 1 && $product['match'] == '{ref}') {
             //$error++;
             $list_ok.= "<br/>ERROR ref ".$product['reference']." x ".$db->num_rows($resql);
@@ -158,8 +161,9 @@ if (is_array($params) && sizeof($params)>0) {
 	}
 	/*****creation
 	**************/
-	$newobject->price_base_type 	= 'HT';
-	$newobject->price				= $product['price'];
+	$newobject->price_base_type 	= 'TTC';
+        //$newobject->price				= $product['price'];
+	$newobject->price				= price2num($product['price'] * (1 + ($product['tax_rate'] / 100)),'MU');
 	$newobject->price_ttc 			= price2num($product['price'] * (1 + ($product['tax_rate'] / 100)),'MU');
 	$newobject->tva_tx				= $product['tax_rate'];
 
@@ -298,7 +302,12 @@ if (is_array($params) && sizeof($params)>0) {
 		$resql = $db->query($sql);
             }
 	} 
-	
+        
+        if ($nbr>0){
+            $exploded_id = explode("-", $product['id_product']);
+            $arr_combinaison[$exploded_id[0]."-".$product["real_name"]][$countProducts] = $product["reference"]."-".$result;
+            $countProducts++;
+        }
 	/*****modification
 	******************/
 	$sql = "SELECT rowid";
@@ -351,8 +360,9 @@ if (is_array($params) && sizeof($params)>0) {
 	$newobject->length_units 	= $cunits->scale;//-2;//cm
         $tabunits = $cunits->fetch(null, '', $product['VOLUME_UNIT']);
         $newobject->volume_units        = $cunits->scale;
-	$newobject->price_base_type 	= 'HT';
-	$newobject->price				= $product['price'];
+	$newobject->price_base_type 	= 'TTC';
+	//$newobject->price				= $product['price'];
+	$newobject->price				= price2num($product['price'] * (1 + ($product['tax_rate'] / 100)),'MU');
 	$newobject->tva_tx				= $product['tax_rate'];
 	$newobject->price_ttc 			= price2num($product['price'] * (1 + ($product['tax_rate'] / 100)),'MU');
 	$newobject->id					= $produit_id;
@@ -397,12 +407,12 @@ if (is_array($params) && sizeof($params)>0) {
             if (empty($conf->global->PRODUIT_MULTIPRICES) || $conf->global->PRODUIT_MULTIPRICES == 0)
             {
                 if (round($product_price->price,3) != round($product['price'],3) || round($product_price->tva_tx,3) != round($product['tax_rate'],3))
-                    $newobject->updatePrice($product['price'], 'HT', $user, $product['tax_rate']);
+                    $newobject->updatePrice(($product['price'] * (1 + ($product['tax_rate'] / 100))), 'TTC', $user, $product['tax_rate']);
             } else {
                 $pricelevel = (int)$conf->global->{"MYCYBEROFFICE_pricelevel".$indice_name} ;
                 if ($pricelevel==0) $pricelevel = 1;
                 if (round($product_price->multiprices_min[$pricelevel],3) != round($product['price'],3) || round($product_price->tva_tx,3) != round($product['tax_rate'],3))
-                    $newobject->updatePrice($product['price'], 'HT', $user, $product['tax_rate'], $product_price->multiprices_min[$pricelevel],$pricelevel);
+                    $newobject->updatePrice(($product['price'] * (1 + ($product['tax_rate'] / 100))), 'TTC', $user, $product['tax_rate'], $product_price->multiprices_min[$pricelevel],$pricelevel);
             }
             $newobject->oldcopy='';
             dol_syslog("CyberOffice_server_product::Update Product : ".$product['id_product'].'->'.$produit_id . ' : ' .$product['name']);
@@ -727,6 +737,44 @@ if (is_array($params) && sizeof($params)>0) {
 				//}//fin foreach declinaison
 			//}//fin if count
     }  //fin foreach
+    // combination produit principale
+    if(!empty($arr_combinaison)) {
+        $idParentAndChild = [];
+        foreach($arr_combinaison as $kCombin => $valCombin) {
+            $expKCombin = explode('-',$kCombin);
+            foreach($valCombin as $kComb => $vComb) {
+                $explod_default = explode("-", $vComb);
+                $posZero = substr($explod_default[0], 8);
+                if($posZero == "0000") {
+                    $expvComb = explode('-', $vComb);
+                    $idParent[] = intval($expvComb[1]);
+                    //Modification nom par defaut
+                    //$sqlUpdateDefaultNameCombinaison = 'UPDATE '.MAIN_DB_PREFIX.'product set label = "'.$expKCombin[1].'" where rowid = '.intval($expvComb[1]);
+                    //$ressqlUpdateDefaultNameCombinaison = $db->query($sqlUpdateDefaultNameCombinaison);
+                    unset($valCombin[$kComb]);
+                    $idParentAndChild[intval($expvComb[1])."-".$expKCombin[1]] = $valCombin;
+                }
+            }
+        }
+        
+        foreach($idParentAndChild as $kp => $valp) {
+            $exkp  = explode('-',$kp);
+            foreach($valp as $kvalp => $vvalp) {
+                $exvalp = explode('-',$vvalp);
+                // ajout combination produit 
+                $sqlVerif = "SELECT rowid FROM ".MAIN_DB_PREFIX."product_attribute_combination "
+                    . " WHERE fk_product_parent = ".intval($exkp[0])." and fk_product_child = ".intval($exvalp[1])."";
+                $res = $db->query($sqlVerif);
+                $resultats = $db->fetch_object($res);
+                if(empty($resultats)){
+                    $sqlAssociateProduct = "INSERT INTO ".MAIN_DB_PREFIX."product_attribute_combination "
+                        . " (fk_product_parent,fk_product_child,variation_price,variation_price_percentage,variation_weight,entity) "
+                        . " values (".intval($exkp[0]).",".intval($exvalp[1]).",0,0,0,1)";
+                    $db->query($sqlAssociateProduct);
+                }
+            }
+        }
+    }
 }		
 if (! $error || $error==0)
 {
