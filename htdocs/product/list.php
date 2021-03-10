@@ -83,7 +83,12 @@ if (!empty($conf->variants->enabled) && !empty($conf->global->PRODUIT_ATTRIBUTES
 
 $diroutputmassaction = $conf->product->dir_output.'/temp/massgeneration/'.$user->id;
 
-$limit = GETPOST('limit', 'int') ?GETPOST('limit', 'int') : $conf->liste_limit;
+if(GETPOST('limit', 'int')){
+    $user->last_limit_product_list = GETPOST('limit', 'int');
+}
+$user->update($user);
+$limit = $user->last_limit_product_list;
+
 $sortfield = GETPOST("sortfield", 'alpha');
 $sortorder = GETPOST("sortorder", 'alpha');
 $page = GETPOSTISSET('pageplusone') ? (GETPOST('pageplusone') - 1) : GETPOST("page", 'int');
