@@ -1242,7 +1242,9 @@ if ($resql)
 				if (count($productFournList = $product_fourn->list_product_fournisseur_price($obj->rowid)) > 0)
 				{
 					$htmltext = $product_fourn->display_price_product_fournisseur(1, 1, 0, 1, $productFournList);
-					print $form->textwithpicto(count($productFournList), $htmltext);
+                                        // Modif fred
+					//print $form->textwithpicto(count($productFournList), $htmltext);
+                                        print $product_fourn->display_min_info_price_product_fournisseur(1, 1, 0, 1, $productFournList);
 				}
 			}
 			print '</td>';

@@ -932,6 +932,23 @@ class ProductFournisseur extends Product
         }
         return $out;
     }
+    
+    public function display_min_info_price_product_fournisseur($showunitprice = 1, $showsuptitle = 1, $maxlen = 0, $notooltip = 0, $productFournList = array())
+    {
+        // phpcs:enable
+        global $langs;
+
+        $out = '';
+        $langs->load("suppliers");
+        if (count($productFournList) > 0) {
+            foreach ($productFournList as $productFourn) {
+                $out .= "<br>".' '.$productFourn->fourn_ref.' - '.$productFourn->getSocNomUrl(1, 'supplier', $maxlen, $notooltip).' ( '.($showunitprice ?price($productFourn->fourn_unitprice * (1 - $productFourn->fourn_remise_percent / 100) - $productFourn->fourn_remise) : '').' € '.$langs->trans("HT").' ) <br>';
+            }
+        } else {
+            $out = "";
+        }
+        return $out;
+    }
 
     /**
      * Function used to replace a thirdparty id with another one.
