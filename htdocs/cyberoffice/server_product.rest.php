@@ -99,6 +99,11 @@ foreach ($catparent0 as $cat_parent0)
 }
 
 $arr_combinaison = [];
+
+function UR_exists($url){
+   $headers=get_headers($url);
+   return stripos($headers[0],"200 OK")?true:false;
+}
 if (is_array($params) && sizeof($params)>0) {
     $countProducts = 0;
     foreach ($params as $product)
@@ -609,72 +614,74 @@ if (is_array($params) && sizeof($params)>0) {
         			
 	////////////////
 	foreach($product['images'] as $productimages) {
-            dol_syslog("CyberOffice_server_product::IMAGE -> ".__LINE__.$productimages['name'].$productimages['url']);
-            $picture = $productimages['url'];
-            $name = $productimages['name'];
-            $ext=preg_match('/(\.gif|\.jpg|\.jpeg|\.png|\.bmp)$/i',$picture,$reg);
-            $imgfonction='';
-            if (strtolower($reg[1]) == '.gif')  
-                $ext= 'gif';
-            if (strtolower($reg[1]) == '.png')  
-                $ext= 'png';
-            if (strtolower($reg[1]) == '.jpg')  
-                $ext= 'jpeg';
-            if (strtolower($reg[1]) == '.jpeg') 
-                $ext= 'jpeg';
-            if (strtolower($reg[1]) == '.bmp')  
-                $ext= 'wbmp';
-            $name=$name.'.'.$ext;
-            $file = array("tmp_name"=>"images_temp/temp.$ext","name"=>$name);
-            
-            switch ($ext) { 
-                case 'gif' : 
-                    $img = imagecreatefromgif($picture); 
-                    break; 
-		case 'png' : 
-                    $img = imagecreatefrompng($picture); 
-                    break; 
-		case 'jpeg' : 
-                    if ( false !== (@$fd = fopen($picture, 'rb' )) )
-                    {
-                        if ( fread($fd,2) == chr(255).chr(216) )
+            if(UR_exists($productimages['url'])) {
+                dol_syslog("CyberOffice_server_product::IMAGE -> ".__LINE__.$productimages['name'].$productimages['url']);
+                $picture = $productimages['url'];
+                $name = $productimages['name'];
+                $ext=preg_match('/(\.gif|\.jpg|\.jpeg|\.png|\.bmp)$/i',$picture,$reg);
+                $imgfonction='';
+                if (strtolower($reg[1]) == '.gif')  
+                    $ext= 'gif';
+                if (strtolower($reg[1]) == '.png')  
+                    $ext= 'png';
+                if (strtolower($reg[1]) == '.jpg')  
+                    $ext= 'jpeg';
+                if (strtolower($reg[1]) == '.jpeg') 
+                    $ext= 'jpeg';
+                if (strtolower($reg[1]) == '.bmp')  
+                    $ext= 'wbmp';
+                $name=$name.'.'.$ext;
+                $file = array("tmp_name"=>"images_temp/temp.$ext","name"=>$name);
+
+                switch ($ext) { 
+                    case 'gif' : 
+                        $img = imagecreatefromgif($picture); 
+                        break; 
+                    case 'png' : 
+                        $img = imagecreatefrompng($picture); 
+                        break; 
+                    case 'jpeg' : 
+                        if ( false !== (@$fd = fopen($picture, 'rb' )) )
+                        {
+                            if ( fread($fd,2) == chr(255).chr(216) )
+                                $img = imagecreatefromjpeg($picture);
+                            else
+                                $img = imagecreatefrompng($picture);
+                        } else
                             $img = imagecreatefromjpeg($picture);
-                        else
-                            $img = imagecreatefrompng($picture);
-                    } else
-			$img = imagecreatefromjpeg($picture);
-                    break;
-		case 'wbmp' : 
-                    $img = imagecreatefromwbmp($picture); 
-                    break; 
-            }
-							
-            $upload_dir = $conf->product->multidir_output[$conf->entity];
-            
-            $sdir = $conf->product->multidir_output[$conf->entity];
-            
-            if (! empty($conf->global->PRODUCT_USE_OLD_PATH_FOR_PHOTO)) {
-                if (version_compare(DOL_VERSION, '3.8.0', '<'))
-                    $dir = $sdir .'/'. get_exdir($produit_id,2) . $produit_id ."/photos";
-		else 
-                    $dir = $sdir .'/'. get_exdir($produit_id,2,0,0,$newobject,'product') . $produit_id ."/photos";
-            } else 
-                $dir = $sdir .'/'.dol_sanitizeFileName($product['reference']);
-            dol_syslog("CyberOffice_server_product::IMAGE dir ".$dir);
-            if (! file_exists($dir)) 
-                dol_mkdir($dir);//,'','0705');
+                        break;
+                    case 'wbmp' : 
+                        $img = imagecreatefromwbmp($picture); 
+                        break; 
+                }
 
-            @call_user_func_array("image$ext",array($img,$dir.'/'.$file['name']));
-            @imagedestroy($img);
-            include_once DOL_DOCUMENT_ROOT.'/core/lib/images.lib.php';
-            if (image_format_supported($dir.'/'.$file['name']) == 1)
-            {
-                $imgThumbSmall = vignette($dir.'/'.$file['name'], 160, 120, '_small', 50, "thumbs");
-		$imgThumbMini = vignette($dir.'/'.$file['name'], 160, 120, '_mini', 50, "thumbs");
-            }
+                $upload_dir = $conf->product->multidir_output[$conf->entity];
 
-            $list_ok.="<br/>Image Product : ".$dir.'/'.$file['name']. ' : ' .$product['name'];
-            dol_syslog("CyberOffice_server_product::IMAGE Product : ".$dir.'/'.$file['name']. ' : ' .$product['name']);
+                $sdir = $conf->product->multidir_output[$conf->entity];
+
+                if (! empty($conf->global->PRODUCT_USE_OLD_PATH_FOR_PHOTO)) {
+                    if (version_compare(DOL_VERSION, '3.8.0', '<'))
+                        $dir = $sdir .'/'. get_exdir($produit_id,2) . $produit_id ."/photos";
+                    else 
+                        $dir = $sdir .'/'. get_exdir($produit_id,2,0,0,$newobject,'product') . $produit_id ."/photos";
+                } else 
+                    $dir = $sdir .'/'.dol_sanitizeFileName($product['reference']);
+                dol_syslog("CyberOffice_server_product::IMAGE dir ".$dir);
+                if (! file_exists($dir)) 
+                    dol_mkdir($dir);//,'','0705');
+
+                @call_user_func_array("image$ext",array($img,$dir.'/'.$file['name']));
+                @imagedestroy($img);
+                include_once DOL_DOCUMENT_ROOT.'/core/lib/images.lib.php';
+                if (image_format_supported($dir.'/'.$file['name']) == 1)
+                {
+                    $imgThumbSmall = vignette($dir.'/'.$file['name'], 160, 120, '_small', 50, "thumbs");
+                    $imgThumbMini = vignette($dir.'/'.$file['name'], 160, 120, '_mini', 50, "thumbs");
+                }
+
+                $list_ok.="<br/>Image Product : ".$dir.'/'.$file['name']. ' : ' .$product['name'];
+                dol_syslog("CyberOffice_server_product::IMAGE Product : ".$dir.'/'.$file['name']. ' : ' .$product['name']);
+            }
         }
 	/***** category 
 	***************/

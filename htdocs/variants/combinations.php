@@ -772,13 +772,17 @@ if (!empty($id) || !empty($ref))
 
     			$productCombination2ValuePairs = $comb2val->fetchByFkCombination($currcomb->id);
     			$iMax = count($productCombination2ValuePairs);
-
-    			for ($i = 0; $i < $iMax; $i++) {
-    				echo dol_htmlentities($productCombination2ValuePairs[$i]);
-    				if ($i !== ($iMax - 1)) {
-    					echo ', ';
-    				}
-    			}
+                        
+                        if(!empty($prodstatic->description)) {
+                            print $prodstatic->description;
+                        } else {
+                            for ($i = 0; $i < $iMax; $i++) {
+                                    echo dol_htmlentities($productCombination2ValuePairs[$i]);
+                                    if ($i !== ($iMax - 1)) {
+                                            echo ', ';
+                                    }
+                            }
+                        }
     			print '</td>';
     			print '<td class="right">'.($currcomb->variation_price >= 0 ? '+' : '').price($currcomb->variation_price).($currcomb->variation_price_percentage ? ' %' : '').'</td>';
                 if ($object->isProduct()) {

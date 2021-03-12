@@ -600,6 +600,32 @@ if ($resql)
 	$reshook = $hookmanager->executeHooks('printFieldPreListTitle', $parameters); // Note that $action and $object may have been modified by hook
 	if (empty($reshook)) $moreforfilter .= $hookmanager->resPrint;
 	else $moreforfilter = $hookmanager->resPrint;
+        
+        $moreforfilter .= '<div class="divsearchfield">';
+        $hosts = $_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_NAME'];
+        $moreforfilter .= '<a id="regenerateVariation" style="cursor:pointer">Régenerer les déclinaisons</a><br><img src = "'.$hosts.DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif" style="width: 20%;display:none;" id="load_product_variation">';
+        
+        print '<script>
+            $(function() {
+                $("#regenerateVariation").click(function(){
+                    $("#load_product_variation").show();
+                    $.ajax("'.$hosts.DOL_URL_ROOT.'/cyberoffice/server_product.regenerate.php", {
+                        type: "GET",
+                        success: function (data){
+                            $("#load_product_variation").hide();
+                            if(data.success){
+                                alert(data.success_detail);
+                                location.reload();
+                            }else{
+                                alert("Une erreur est survenu");
+                                location.reload();
+                            }
+                        }
+                    })
+                });
+            });
+        </script>';
+        $moreforfilter .= '</div>';
 
 	if ($moreforfilter)
 	{
