@@ -74,6 +74,11 @@ $search_accountancy_code_buy_export = GETPOST("search_accountancy_code_buy_expor
 $optioncss = GETPOST('optioncss', 'alpha');
 $type = GETPOST("type", "int");
 
+// modif fred
+$idFournisseur = GETPOST("list_fourni");
+$refPrixFournisseur = GETPOST("search_ref_fourn");
+$prixFournisseur = GETPOST("search_prix_fourn");
+
 //Show/hide child products
 if (!empty($conf->variants->enabled) && !empty($conf->global->PRODUIT_ATTRIBUTES_HIDECHILD)) {
 	$show_childproducts = GETPOST('search_show_childproducts');
@@ -391,6 +396,9 @@ if ($searchCategoryProductOperator == 1) {
     }
 }
 if ($fourn_id > 0)  $sql .= " AND pfp.fk_soc = ".((int) $fourn_id);
+if (intval($idFournisseur) > 0)  $sql .= " AND pfp.fk_soc = ".((int) $idFournisseur);
+if ($refPrixFournisseur) $sql .= natural_search('pfp.ref_fourn', $refPrixFournisseur);
+if ($prixFournisseur) $sql .= natural_search('pfp.price', $prixFournisseur);
 if ($search_accountancy_code_sell)        $sql .= natural_search('p.accountancy_code_sell', $search_accountancy_code_sell);
 if ($search_accountancy_code_sell_intra)  $sql .= natural_search('p.accountancy_code_sell_intra', $search_accountancy_code_sell_intra);
 if ($search_accountancy_code_sell_export) $sql .= natural_search('p.accountancy_code_sell_export', $search_accountancy_code_sell_export);
@@ -779,7 +787,17 @@ if ($resql)
 	if (!empty($arrayfields['p.numbuyprice']['checked']))
 	{
 		print '<td class="liste_titre">';
-		print '&nbsp;';
+                $sqlFourni = "SELECT rowid, nom";
+                $sqlFourni .= " FROM ".MAIN_DB_PREFIX."societe";
+                $sqlFourni .= " WHERE fournisseur = 1 ORDER BY nom  asc";
+                $resuFourn = $db->getRows($sqlFourni);
+                $arrFourni = [];
+                foreach($resuFourn as $resFourn) {
+                    $arrFourni[$resFourn->rowid] = $resFourn->nom;
+                }
+                print $form->selectarray('list_fourni', $arrFourni, GETPOST("list_fourni")? GETPOST("list_fourni") : "" , 1, 0, 0, '', 0, 0, 0, '', '', 1) ." <br>";
+		print '<input class="flat" type="text" name="search_ref_fourn" placeholder="Réference prix fournisseur" value="'.trim(GETPOST('search_ref_fourn')).'"><br>';
+		print '<input class="flat" type="text" name="search_prix_fourn" placeholder="Prix fournisseur" value="'.trim(GETPOST('search_prix_fourn')).'">';
 		print '</td>';
 	}
     // Sell price
