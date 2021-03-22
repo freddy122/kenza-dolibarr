@@ -41,6 +41,7 @@ $fk_barcode_type = GETPOST('fk_barcode_type');
 $mode = GETPOST('mode');
 $modellabel = GETPOST("modellabel"); // Doc template to use
 $numberofsticker = GETPOST('numberofsticker', 'int');
+$isShowLabel = GETPOST("choix_labels");
 
 $mesg = '';
 
@@ -134,14 +135,14 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
         for($i=1;$i<=$numberofsticker;$i++){
             $breakbefore = "";
             if(intval(GETPOST('fk_barcode_type')) == 1){
-                if($i%3 == 0) {
+                if($i%1 == 0) {
                     $breakbefore = "page-break-after: always;";
                 }
                 $tableWidth = "360px";
                 $policeWidth = "18px";
                 $paddingTop = "165px";
             }else{
-                if($i%3 == 0) {
+                if($i%1 == 0) {
                     $breakbefore = "page-break-after: always;";
                 }
                 $tableWidth = "410px";
@@ -149,24 +150,30 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
                 $paddingTop = "150px";
             }
             $htmlDataToPrint .= "<table style='width:".$tableWidth.";height:auto;".$breakbefore."'>";
-            $htmlDataToPrint .= "<tr>";
-            $htmlDataToPrint .= "<td colspan=2>";
-            $htmlDataToPrint .= "<p style='font-size:".$policeWidth.";text-transform:uppercase;font-family: Arial, Helvetica, sans-serif;font-weight:bold;'>".$producttmp->label."</p>";
-            $htmlDataToPrint .= "</td>";
-            $htmlDataToPrint .= "</tr>";
+            if($isShowLabel == 1){
+                $htmlDataToPrint .= "<tr>";
+                $htmlDataToPrint .= "<td colspan=2>";
+                $htmlDataToPrint .= "<p style='font-size:".$policeWidth.";text-transform:uppercase;font-family: Arial, Helvetica, sans-serif;font-weight:bold;'>".$producttmp->label."</p>";
+                $htmlDataToPrint .= "</td>";
+                $htmlDataToPrint .= "</tr>";
+            }
             $htmlDataToPrint .= "<tr>";
             $htmlDataToPrint .= "<td style='width:60%'>";
             $htmlDataToPrint .= "<img src='data:image/png;base64,".$imgDataFromPng."' style='margin-bottom:25px;'>";
             $htmlDataToPrint .= "</td>";
-            $htmlDataToPrint .= "<td style='width:40%;padding-top:".$paddingTop.";'>";
-            $htmlDataToPrint .= "<p style='float:right;font-weight:bold;font-family: Arial, Helvetica, sans-serif;font-size:22px'>".price($producttmp->price_ttc). " €"."</p>";
-            $htmlDataToPrint .= "</td>";
+            if($isShowLabel == 1){
+                $htmlDataToPrint .= "<td style='width:40%;padding-top:".$paddingTop.";'>";
+                $htmlDataToPrint .= "<p style='float:right;font-weight:bold;font-family: Arial, Helvetica, sans-serif;font-size:22px'>".price($producttmp->price_ttc). " €"."</p>";
+                $htmlDataToPrint .= "</td>";
+            }
             $htmlDataToPrint .= "</tr>";
-            $htmlDataToPrint .= "<tr>";
-            $htmlDataToPrint .= "<td colspan=2>";
-            $htmlDataToPrint .= "<p class='carte_metisse_style'>Carte metisse: ".price($carteMetisse)." €</p>";
-            $htmlDataToPrint .= "</td>";
-            $htmlDataToPrint .= "</tr>";
+            if($isShowLabel == 1){
+                $htmlDataToPrint .= "<tr>";
+                $htmlDataToPrint .= "<td colspan=2>";
+                $htmlDataToPrint .= "<p class='carte_metisse_style'>Carte metisse: ".price($carteMetisse)." €</p>";
+                $htmlDataToPrint .= "</td>";
+                $htmlDataToPrint .= "</tr>";
+            }
             $htmlDataToPrint .= "</table><br>";
         }
         print $htmlDataToPrint;
@@ -243,15 +250,26 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
                      $htmlData .= "<tr>";
                 } 
                 
+                
                 $htmlData .= "<td style='width:50%;'>";
-                $htmlData .= "<div style='margin-bottom: 7px;font-size:13px;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;font-weight:bold;'>".$producttmp->label."</div>";
+                if($isShowLabel == 1){
+                    $htmlData .= "<div style='margin-bottom: 7px;font-size:13px;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;font-weight:bold;'>".$producttmp->label."</div>";
+                }
                 $htmlData .= "<div><img src='data:image/png;base64,".$imgDataFromPng."'/></div>";
-                $htmlData .= "<div style='margin-top:-22px;margin-left:213px;font-size:16px;font-weight:bold;'>&nbsp;".price($producttmp->price_ttc). " €"."</div>";
-                $htmlData .= "<div style='margin-top:6px;color:white;background-color:black;padding:7px;text-transform:uppercase;font-weight:bold;font-family: Arial, Helvetica, sans-serif;width:260px;font-size:13px;'>Carte metisse: ".price($carteMetisse)." €</div><br>";
+                if($isShowLabel == 0){
+                    $htmlData .= "<br><br>";
+                }
+                if($isShowLabel == 1){
+                    $htmlData .= "<div style='margin-top:-22px;margin-left:213px;font-size:16px;font-weight:bold;'>&nbsp;".price($producttmp->price_ttc). " €"."</div>";
+                    $htmlData .= "<div style='margin-top:6px;color:white;background-color:black;padding:7px;text-transform:uppercase;font-weight:bold;font-family: Arial, Helvetica, sans-serif;width:260px;font-size:13px;'>Carte metisse: ".price($carteMetisse)." €</div><br>";
+                }
                 $htmlData .= "</td>";
-                $htmlData .= "<td style='width:50%;'>";
-                $htmlData .= "<p style='float:right;position:relative;margin-top:104px;font-weight:bold;font-family: Arial, Helvetica, sans-serif;font-size:25px'></p>";
-                $htmlData .= "</td>";
+                
+                if($isShowLabel == 1){
+                    $htmlData .= "<td style='width:50%;'>";
+                    $htmlData .= "<p style='float:right;position:relative;margin-top:104px;font-weight:bold;font-family: Arial, Helvetica, sans-serif;font-size:25px'></p>";
+                    $htmlData .= "</td>";
+                }
                 /*$htmlData .= "<tr>";
                 $htmlData .= "<td colspan=2>";
                 $htmlData .= "<p style='color:white;background-color:black;padding:7px;text-transform:uppercase;font-weight:bold;position:relative;margin-top:-20px;font-family: Arial, Helvetica, sans-serif;'>Carte metisse: ".price($carteMetisse)." €</p>";
@@ -527,7 +545,7 @@ print '<input type="hidden" name="token" value="'.newtoken().'">';
 print '<div class="tagtable">';
 
 // Sheet format
-print '	<div class="tagtr">';
+/*print '	<div class="tagtr">';
 print '	<div class="tagtd" style="overflow: hidden; white-space: nowrap; max-width: 300px;">';
 print $langs->trans("DescADHERENT_ETIQUETTE_TYPE").' &nbsp; ';
 print '</div><div class="tagtd maxwidthonsmartphone" style="overflow: hidden; white-space: nowrap;">';
@@ -541,7 +559,7 @@ foreach (array_keys($_Avery_Labels) as $codecards)
 }
 asort($arrayoflabels);
 print $form->selectarray('modellabel', $arrayoflabels, (GETPOST('modellabel') ?GETPOST('modellabel') : $conf->global->ADHERENT_ETIQUETTE_TYPE), 1, 0, 0, '', 0, 0, 0, '', '', 1);
-print '</div></div>';
+print '</div></div>';*/
 
 // Number of stickers to print
 print '	<div class="tagtr">';
@@ -665,7 +683,7 @@ print $langs->trans("BarcodeType").' &nbsp; ';
 print '</div><div class="tagtd" style="overflow: hidden; white-space: nowrap; max-width: 300px;">';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formbarcode.class.php';
 $formbarcode = new FormBarCode($db);
-print $formbarcode->selectBarcodeType("4", 'fk_barcode_type', 1);
+print $formbarcode->selectBarcodeType("2", 'fk_barcode_type', 1);
 print '</div></div>';
 
 // Barcode value
@@ -686,6 +704,13 @@ print '<br>'.$langs->trans("BarcodeStickersMask").':<br>';
 print '<textarea cols="40" type="text" name="barcodestickersmask" value="'.GETPOST('barcodestickersmask').'">'.$barcodestickersmask.'</textarea>';
 print '<br>';
 */
+
+print '<div class="tagtd" style="overflow: hidden; white-space: nowrap; max-width: 50%;">';
+print 'Choix label (Affiche ou non sur l\'étiquette le nom produit, prix, prix carte metisse)</div>';
+print '<div class="tagtd" style="overflow: hidden; white-space: nowrap; max-width: 50%;">';
+print $form->selectarray('choix_labels', array("1"=>"Oui","0"=>"Non"), "1", 1, 0, 0, '', 0, 0, 0, '', '', 1);
+print '';
+print '</div>';
 
 print '</div>';
 

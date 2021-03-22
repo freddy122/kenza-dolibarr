@@ -393,7 +393,7 @@ $response = curl_exec($ch);
 // close the connection, release resources used
 curl_close($ch);
 
-header("Content-Type:application/json");
+//header("Content-Type:application/json");
 // do anything you want with your response
 
 print $response;

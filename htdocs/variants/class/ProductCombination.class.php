@@ -622,15 +622,17 @@ WHERE c.fk_product_parent = ".(int) $productid." AND p.tosell = 1";
 
 			// A new variant must use a new barcode (not same product)
                         //generate bare code modif fred
-                        require DOL_DOCUMENT_ROOT . '/barcodegen/generated/vendor/autoload.php';
+                        require DOL_DOCUMENT_ROOT . '/barcodegen1d/generated/vendor/autoload.php';
                         
                         $sqlgetLastRecod = "select barcode from ".MAIN_DB_PREFIX."product order by rowid desc limit 1";
                         $resfournsql    = $db->query($sqlgetLastRecod);
                         $resus = $db->fetch_object($resfournsql);
-                        $barcodeFromProduct = strval((substr($resus->barcode,0,-1))+9);
-                        $code = new BarcodeBakery\Barcode\BCGean8();
-                        $code->setScale(2);
-                        $code->setThickness(30);
+                        $barcodeFromProduct = strval((substr($resus->barcode,0,-1))+1);
+                        if(strlen($barcodeFromProduct) == 8){
+                            $code = new BarcodeBakery\Barcode\BCGean8();
+                        }else{
+                            $code = new BarcodeBakery\Barcode\BCGean13();
+                        }
                         $code->parse($barcodeFromProduct);
                         $generatedBareCode = $code->getLabel().$code->getChecksum();
 			$newproduct->barcode = $generatedBareCode;
