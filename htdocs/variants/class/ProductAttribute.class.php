@@ -106,7 +106,7 @@ class ProductAttribute
 		$return = array();
 
 		$sql = 'SELECT rowid, ref, label, rang FROM '.MAIN_DB_PREFIX."product_attribute WHERE entity IN (".getEntity('product').')';
-		$sql .= $this->db->order('rang', 'asc');
+		$sql .= $this->db->order('label', 'asc');
 		$query = $this->db->query($sql);
 		if ($query)
 		{

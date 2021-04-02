@@ -459,11 +459,11 @@ class ProductCombination
 
 		//Attributes
 		$sql = "SELECT DISTINCT fk_prod_attr, a.rang
-FROM ".MAIN_DB_PREFIX."product_attribute_combination2val c2v LEFT JOIN ".MAIN_DB_PREFIX."product_attribute_combination c
-    ON c2v.fk_prod_combination = c.rowid
-  LEFT JOIN ".MAIN_DB_PREFIX."product p ON p.rowid = c.fk_product_child
-  LEFT JOIN ".MAIN_DB_PREFIX."product_attribute a ON a.rowid = fk_prod_attr
-WHERE c.fk_product_parent = ".(int) $productid." AND p.tosell = 1";
+                        FROM ".MAIN_DB_PREFIX."product_attribute_combination2val c2v LEFT JOIN ".MAIN_DB_PREFIX."product_attribute_combination c
+                            ON c2v.fk_prod_combination = c.rowid
+                          LEFT JOIN ".MAIN_DB_PREFIX."product p ON p.rowid = c.fk_product_child
+                          LEFT JOIN ".MAIN_DB_PREFIX."product_attribute a ON a.rowid = fk_prod_attr
+                        WHERE c.fk_product_parent = ".(int) $productid." AND p.tosell = 1";
 
 		$sql .= $this->db->order('a.rang', 'asc');
 
@@ -490,7 +490,75 @@ WHERE c.fk_product_parent = ".(int) $productid." AND p.tosell = 1";
 
 		return $variants;
 	}
-
+        
+        /**
+         * @author Fréderic id web <freddyhat122@gmail.com>
+         */
+        public function getAllCombinationAttributeValue($productId) {
+            $sql = "SELECT c2v.fk_prod_attr,a.label, a.rang, c2v.fk_prod_attr_val,c.fk_product_child
+                    FROM ".MAIN_DB_PREFIX."product_attribute_combination2val c2v 
+                    LEFT JOIN ".MAIN_DB_PREFIX."product_attribute_combination c ON c2v.fk_prod_combination = c.rowid 
+                    LEFT JOIN ".MAIN_DB_PREFIX."product p ON p.rowid = c.fk_product_child 
+                    LEFT JOIN ".MAIN_DB_PREFIX."product_attribute a ON a.rowid = fk_prod_attr 
+                    WHERE c.fk_product_parent = ".$productId."  
+                    ORDER BY c.fk_product_child ASC";
+            $query = $this->db->query($sql);
+            
+            $arrAssociate = [];
+            $i = 0;
+            while ($result = $this->db->fetch_object($query)) {
+                $arrRes = (array) $result;
+                //print_r($arrRes); 
+                $arrAssociate[$arrRes['fk_prod_attr']][$i] = array(
+                    $arrRes['fk_prod_attr_val'] => $arrRes['fk_product_child']
+                );
+                /*$arrAssociate[$arrRes['fk_product_child']][$i] = array(
+                    $arrRes['fk_prod_attr'] => $arrRes['fk_prod_attr_val']
+                );*/
+                $i++;
+                //print_r($arrRes['fk_prod_attr']."---".$arrRes['label']."--".$arrRes['fk_prod_attr_val']."--".$arrRes['fk_product_child']);
+            }
+            return $arrAssociate;
+        }
+        
+        public function getProductTaille($productId,$pchild) {
+            $sql = "SELECT c2v.fk_prod_attr,a.label, a.rang, c2v.fk_prod_attr_val,c.fk_product_child
+                    FROM ".MAIN_DB_PREFIX."product_attribute_combination2val c2v 
+                    LEFT JOIN ".MAIN_DB_PREFIX."product_attribute_combination c ON c2v.fk_prod_combination = c.rowid 
+                    LEFT JOIN ".MAIN_DB_PREFIX."product p ON p.rowid = c.fk_product_child 
+                    LEFT JOIN ".MAIN_DB_PREFIX."product_attribute a ON a.rowid = fk_prod_attr 
+                    WHERE c.fk_product_parent = ".$productId." and c.fk_product_child = ".$pchild." and c2v.fk_prod_attr = 2
+                    ORDER BY c.fk_product_child ASC";
+            $query = $this->db->query($sql);
+            $arrAssociate = [];
+            
+            $i = 0;
+            while ($result = $this->db->fetch_object($query)) {
+                $arrRes = (array) $result;
+                $arrAssociate[$arrRes['fk_product_child']][$i] = $arrRes['fk_prod_attr_val'];
+                $i++;
+            }
+            return $arrAssociate;
+        }
+        
+        /**
+         * @author Fréderic id web <freddyhat122@gmail.com>
+         */
+        public function getAttributeById($idAttr) {
+            $sql = "select rowid,ref,label from ".MAIN_DB_PREFIX."product_attribute where rowid = ".$idAttr;
+            $query = $this->db->query($sql);
+            return (array)$this->db->fetch_object($query);
+        }
+        
+        /**
+         * @author Fréderic id web <freddyhat122@gmail.com>
+         */
+        public function getAttributeValueById($idAttrVal) {
+            $sql = "select rowid,ref,value,code_couleur,fk_product_attribute from ".MAIN_DB_PREFIX."product_attribute_value where rowid = ".$idAttrVal;
+            $query = $this->db->query($sql);
+            return (array)$this->db->fetch_object($query);
+        }
+        
 	/**
 	 * Creates a product combination. Check usages to find more about its use
 	 *
@@ -514,7 +582,7 @@ WHERE c.fk_product_parent = ".(int) $productid." AND p.tosell = 1";
 	 * @param bool|string $forced_refvar If the reference is forced
 	 * @return int <0 KO, >0 OK
 	 */
-	public function createProductCombination(User $user, Product $product, array $combinations, array $variations, $price_var_percent = false, $forced_pricevar = false, $forced_weightvar = false, $forced_refvar = false)
+	public function createProductCombination(User $user, Product $product, array $combinations, array $variations, $price_var_percent = false, $forced_pricevar = false, $forced_weightvar = false, $forced_refvar = false, array $arrayOtherInformation)
 	{
 		global $db, $conf;
 
@@ -608,9 +676,26 @@ WHERE c.fk_product_parent = ".(int) $productid." AND p.tosell = 1";
 		$newcomb->variation_price_percentage = $price_var_percent;
 		$newcomb->variation_price = $price_impact;
 		$newcomb->variation_weight = $weight_impact;
-
-		$newproduct->weight += $weight_impact;
-
+                
+                if(empty($arrayOtherInformation) && !$arrayOtherInformation){
+                    $newproduct->weight += $weight_impact;
+                }else{
+                    $newproduct->weight = floatval($arrayOtherInformation['poidsfabriq']);
+                    $newproduct->weight_variant = floatval($arrayOtherInformation['poidsfabriq']);
+                    $newproduct->quantite_commander = $arrayOtherInformation['quantite_commander'];
+                    $newproduct->quantite_fabriquer = $arrayOtherInformation['quantite_fabriquer'];
+                    $newproduct->composition = strval($arrayOtherInformation['composition']);
+                    $newproduct->ref_fab_frs = strval($arrayOtherInformation['ref_fab_frs']);
+                    $newproduct->price_yuan = $arrayOtherInformation['price_yuan'];
+                    $newproduct->price_euro = $arrayOtherInformation['price_euro'];
+                    $newproduct->taux_euro_yuan = str_replace(',','.',$arrayOtherInformation['tauxChange']);
+                    $newproduct->price = floatval($arrayOtherInformation['price_euro']);
+                    $newproduct->price_ttc = floatval($arrayOtherInformation['price_euro']);
+                    $newproduct->price_ttc = floatval($arrayOtherInformation['codebares']);
+                    /*$sqlupdateother = "UPDATE ".MAIN_DB_PREFIX."product set price = ".floatval($arrayOtherInformation['price_euro'])." , price_ttc = ".floatval($arrayOtherInformation['price_euro']).", where rowid = ".$newproduct->id;
+                    $db->query($sqlupdateother);*/
+                }
+                
 		// Now create the product
 		//print 'Create prod '.$newproduct->ref.'<br>'."\n";
 		if ($existingProduct === false) {
@@ -635,7 +720,11 @@ WHERE c.fk_product_parent = ".(int) $productid." AND p.tosell = 1";
                         }
                         $code->parse($barcodeFromProduct);
                         $generatedBareCode = $code->getLabel().$code->getChecksum();
-			$newproduct->barcode = $generatedBareCode;
+                        if(empty($arrayOtherInformation) && !$arrayOtherInformation){
+                            $newproduct->barcode = $generatedBareCode;
+                        }else{
+                            $newproduct->barcode = $arrayOtherInformation['codebares'];
+                        }
                         // old code 
 			//$newproduct->barcode = -1;
 			$result = $newproduct->create($user);
@@ -649,7 +738,7 @@ WHERE c.fk_product_parent = ".(int) $productid." AND p.tosell = 1";
 					$db->rollback();
 					return -1;
 				}
-
+                                
 				/**
 				 * If there is an existing combination, then we update the prices and weight
 				 * Otherwise, we try adding a random number to the ref
@@ -664,7 +753,7 @@ WHERE c.fk_product_parent = ".(int) $productid." AND p.tosell = 1";
 					do {
 						$newproduct->ref = $orig_prod_ref.$i;
 						$res = $newproduct->create($user);
-
+                                                
 						if ($newproduct->error != 'ErrorProductAlreadyExists') {
 							$this->errors[] = $newproduct->error;
 							break;
@@ -680,7 +769,9 @@ WHERE c.fk_product_parent = ".(int) $productid." AND p.tosell = 1";
 				}
 			}
 		} else {
-			$result = $newproduct->update($newproduct->id, $user);
+                        if(empty($arrayOtherInformation) && !$arrayOtherInformation){
+                            $result = $newproduct->update($newproduct->id, $user);
+                        }
 			if ($result < 0)
 			{
 				$db->rollback();
@@ -689,14 +780,48 @@ WHERE c.fk_product_parent = ".(int) $productid." AND p.tosell = 1";
 		}
 
 		$newcomb->fk_product_child = $newproduct->id;
-
+                
 		if ($newcomb->update($user) < 0)
 		{
 			$db->rollback();
 			return -1;
 		}
-
+                
 		$db->commit();
+                
+                if(empty($arrayOtherInformation) && !$arrayOtherInformation){
+                                                    
+                }else{
+                    /*$sqlCheckStock =  "SELECT fk_product from ".MAIN_DB_PREFIX."product_stock where fk_product = ".$newproduct->id;
+                    $rescheckstock  = $db->query($sqlCheckStock);
+                    $resustock = $db->fetch_object($rescheckstock);
+                    if(empty($resustock->fk_product)){
+                        $curdt = date('Y-m-d H:i:s');
+                        $sqlUpdateStock = "INSERT INTO ".MAIN_DB_PREFIX."product_stock (tms,fk_product,fk_entrepot,reel) values ('".$curdt."',".$newproduct->id.",1,".$arrayOtherInformation['quantite_fabriquer'].")";
+                        $db->query($sqlUpdateStock);
+                    }*/
+                    $newproduct->product_type_txt = strval(($arrayOtherInformation['product_type_txt']));
+                    $tauxEurYuan = !empty($arrayOtherInformation['tauxChange']) ? $arrayOtherInformation['tauxChange'] : 0;
+                    $sqlupdateother = "UPDATE ".MAIN_DB_PREFIX."product set "
+                            . " price = ".floatval($arrayOtherInformation['price_euro'])." , "
+                            . " price_ttc = ".floatval($arrayOtherInformation['price_euro']).", "
+                            . " barcode = ".$arrayOtherInformation['codebares'].", "
+                            . " weight=".floatval($arrayOtherInformation['poidsfabriq']).", "
+                            . " weight_variant=".floatval($arrayOtherInformation['poidsfabriq']).", ";
+                    
+                    if(!empty($arrayOtherInformation['ref_fab_frs'])){
+                        $sqlupdateother .= " ref_fab_frs='".$arrayOtherInformation['ref_fab_frs']."', ";
+                    }
+                    
+                    $sqlupdateother .= " taux_euro_yuan=".$tauxEurYuan." "
+                            . " where rowid = ".$newproduct->id;
+                    
+                    $db->query($sqlupdateother);
+                    $qtyfab = !empty($arrayOtherInformation['quantite_fabriquer']) ? $arrayOtherInformation['quantite_fabriquer'] : 0;
+                    $sqlInsertStock = "INSERT into ".MAIN_DB_PREFIX."product_stock (tms,fk_product,fk_entrepot,reel) values ('".date('Y-m-d h:i:s')."',".$newproduct->id.",1,".$qtyfab.")";
+                    $db->query($sqlInsertStock);
+                }
+                
 		return $newproduct->id;
 	}
 

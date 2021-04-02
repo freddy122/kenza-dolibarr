@@ -2040,14 +2040,38 @@ function print_left_eldy_menu($db, $menu_array_before, $menu_array_after, &$tabM
 			// Menu level 0
 			if ($menu_array[$i]['level'] == 0)
 			{
+                                $sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
+                                $resuUser = $db->query($sql_user_group);
+                                $reug = $db->fetch_object($resuUser);
+                                $resu_fab = "";
+                                if ($reug->fk_usergroup) {
+                                    $sql_group = "select code from ".MAIN_DB_PREFIX."usergroup where rowid = ".$reug->fk_usergroup;
+                                    $resuug = $db->query($sql_group);
+                                    $resug = $db->fetch_object($resuug);
+                                    $resu_fab = $resug->code;
+                                }
 				if ($menu_array[$i]['enabled'])     // Enabled so visible
 				{
 					print '<div class="menu_titre">'.$tabstring;
-					if ($shorturlwithoutparam) print '<a class="vmenu" title="'.dol_escape_htmltag($menu_array[$i]['titre']).'" href="'.$url.'"'.($menu_array[$i]['target'] ? ' target="'.$menu_array[$i]['target'].'"' : '').'>';
-					else print '<span class="vmenu">';
-					print ($menu_array[$i]['prefix'] ? $menu_array[$i]['prefix'] : '').$menu_array[$i]['titre'];
-					if ($shorturlwithoutparam) print '</a>';
-					else print '</span>';
+                                        if($resu_fab !== 'fab') {
+                                            if ($shorturlwithoutparam){
+                                                print '<a class="vmenu" title="'.dol_escape_htmltag($menu_array[$i]['titre']).'" href="'.$url.'"'.($menu_array[$i]['target'] ? ' target="'.$menu_array[$i]['target'].'"' : '').'>';
+                                            } else {
+                                                print '<span class="vmenu">';
+                                            }
+                                            print ($menu_array[$i]['prefix'] ? $menu_array[$i]['prefix'] : '').$menu_array[$i]['titre'];
+                                            if ($shorturlwithoutparam) {
+                                                print '</a>';
+                                            } 
+                                            else {
+                                                print '</span>';
+                                            }
+                                        }else{
+                                            if($menu_array[$i]['titre'] == "Produits"){
+                                                print '<font class="vmenudisabled">Produits</font>';
+                                            }
+                                        }
+                                        
 					print '</div>'."\n";
 					$lastlevel0 = 'enabled';
 				}
@@ -2071,7 +2095,20 @@ function print_left_eldy_menu($db, $menu_array_before, $menu_array_after, &$tabM
 			{
 				$cssmenu = '';
 				if ($menu_array[$i]['url']) $cssmenu = ' menu_contenu'.dol_string_nospecial(preg_replace('/\.php.*$/', '', $menu_array[$i]['url']));
-
+                                
+                                $sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
+                                $resuUser = $db->query($sql_user_group);
+                                $reug = $db->fetch_object($resuUser);
+                                if($reug->fk_usergroup){
+                                    $sql_group = "select code from ".MAIN_DB_PREFIX."usergroup where rowid = ".$reug->fk_usergroup;
+                                    $resuug = $db->query($sql_group);
+                                    $resug = $db->fetch_object($resuug);
+                                    if($resug->code == "fab" && ($menu_array[$i]['titre'] == "Nouveau produit FAB" || $menu_array[$i]['titre'] == "Nouveau produit" || $menu_array[$i]['titre'] == "Attributs de variante" || $menu_array[$i]['titre'] == "Liste")) {
+                                        $menu_array[$i]['enabled'] = "";
+                                    }
+                                }
+                                
+                                
 				if ($menu_array[$i]['enabled'] && $lastlevel0 == 'enabled')     // Enabled so visible, except if parent was not enabled.
 				{
 					print '<div class="menu_contenu'.$cssmenu.'">'.$tabstring;

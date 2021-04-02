@@ -59,6 +59,8 @@ if ($_POST) {
 		if ($objectval->fetch($valueid) > 0) {
 			$objectval->ref = $ref;
 			$objectval->value = GETPOST('value', 'alpha');
+			$objectval->code_couleur = GETPOST('code_couleur', 'alpha');
+			$objectval->type_taille = GETPOST('type_taille', 'alpha');
 
 			if (empty($objectval->ref))
 			{
@@ -243,6 +245,12 @@ if ($action == 'edit') {
 	print '<tr class="liste_titre">';
 	print '<th class="liste_titre titlefield">'.$langs->trans('Ref').'</th>';
 	print '<th class="liste_titre">'.$langs->trans('Value').'</th>';
+        if($object->id == 1) {
+            print '<th class="liste_titre">Code couleur</th>';
+        }
+        if($object->id == 2) {
+            print '<th class="liste_titre">Type taille</th>';
+        }
 	print '<th class="liste_titre"></th>';
 	print '</tr>';
 
@@ -252,17 +260,56 @@ if ($action == 'edit') {
 			?>
 				<td><input type="text" name="ref" value="<?php echo $attrval->ref ?>"></td>
 				<td><input type="text" name="value" value="<?php echo $attrval->value ?>"></td>
+                                <?php if($object->id == 2): ?>
+                                <td>
+                                    <select name="type_taille">
+                                        <option value="1" <?php echo intval($attrval->type_taille) == 1 ? "selected='selected'" : ""; ?>>Femme</option>
+                                        <option value="2" <?php echo intval($attrval->type_taille) == 2 ? "selected='selected'" : ""; ?> >Fillette</option>
+                                        <option value="3" <?php echo intval($attrval->type_taille) == 3 ? "selected='selected'" : ""; ?>>Bébé</option>
+                                    </select>
+                                </td>
+                                <?php endif;?>
+                                <?php if(!empty($attrval->code_couleur)): ?>
+                                    <td>
+                                        <input id="code_couleur" type="text" name="code_couleur" value="<?php echo $attrval->code_couleur ?>">
+                                        <input id="code_couleur_pick" type="color"  value="<?php echo $attrval->code_couleur ?>" >
+                                        <script>
+                                            $(document).ready(function(){
+                                                $("#code_couleur_pick").change(function(){
+                                                    $("#code_couleur").val($(this).val());
+                                                });
+                                            });
+                                        </script>
+                                    </td>
+                                <?php endif ?>
 				<td class="right">
 					<input type="submit" value="<?php echo $langs->trans('Save') ?>" class="button">
 					&nbsp; &nbsp;
-					<input type="submit" name="cancel" value="<?php echo $langs->trans('Cancel') ?>" class="button">
+                                        <a href="<?php echo DOL_URL_ROOT."/variants/card.php?id=".$object->id; ?>" class="button" style="background: var(--butactionbg);border-collapse: collapse;border: none;"><?php echo $langs->trans('Cancel') ?></a>
 				</td>
 			<?php
 		} else {
 			?>
 				<td><?php echo dol_htmlentities($attrval->ref) ?></td>
 				<td><?php echo dol_htmlentities($attrval->value) ?></td>
-				<td class="right">
+                                <?php if($object->id == 1): ?>
+                                    <td><?php echo dol_htmlentities($attrval->code_couleur) ?><p style="width:10px;height:10px; background-color:<?php echo dol_htmlentities($attrval->code_couleur) ?>; "></p></td>
+				<?php endif;?>
+                                <?php if($object->id == 2): ?>
+                                    <td><?php 
+                                    $type_taille_text = "";
+                                    if(intval($attrval->type_taille) == 1){
+                                        $type_taille_text = "Femme";
+                                    }elseif(intval($attrval->type_taille) == 2){
+                                        $type_taille_text = "Fillette";
+                                    }elseif(intval($attrval->type_taille) == 3){
+                                        $type_taille_text = "Bébé";
+                                    }
+                                    echo dol_htmlentities($type_taille_text) 
+                                    
+                                    ?></td>
+				<?php endif;?>
+                                <td class="right">
 					<a class="editfielda marginrightonly" href="card.php?id=<?php echo $object->id ?>&action=edit_value&valueid=<?php echo $attrval->id ?>"><?php echo img_edit() ?></a>
 					<a href="card.php?id=<?php echo $object->id ?>&action=delete_value&valueid=<?php echo $attrval->id ?>"><?php echo img_delete() ?></a>
 				</td>

@@ -39,7 +39,17 @@ $hookmanager->initHooks(array('index'));
 /*
  * Actions
  */
-
+$user->update($user);
+$sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
+$resuUser = $db->query($sql_user_group);
+$reug = $db->fetch_object($resuUser);
+$resu_fab = "";
+if ($reug->fk_usergroup) {
+    $sql_group = "select code from ".MAIN_DB_PREFIX."usergroup where rowid = ".$reug->fk_usergroup;
+    $resuug = $db->query($sql_group);
+    $resug = $db->fetch_object($resuug);
+    $resu_fab = $resug->code;
+}
 // Check if company name is defined (first install)
 if (!isset($conf->global->MAIN_INFO_SOCIETE_NOM) || empty($conf->global->MAIN_INFO_SOCIETE_NOM))
 {
@@ -324,7 +334,7 @@ if (empty($user->socid) && empty($conf->global->MAIN_DISABLE_GLOBAL_BOXSTATS))
 }
 
 
-
+if($resu_fab !== "fab"){
 
 // Dolibarr Working Board with weather
 
@@ -993,7 +1003,7 @@ if ($user->admin && empty($conf->global->MAIN_REMOVE_INSTALL_WARNING))
 }
 
 //print 'mem='.memory_get_usage().' - '.memory_get_peak_usage();
-
+}
 // End of page
 llxFooter();
 $db->close();

@@ -4482,7 +4482,7 @@ function print_barre_liste($titre, $page, $file, $options = '', $sortfield = '',
  */
 function print_fleche_navigation($page, $file, $options = '', $nextpage = 0, $betweenarrows = '', $afterarrows = '', $limit = -1, $totalnboflines = 0, $hideselectlimit = 0)
 {
-	global $conf, $langs;
+	global $conf, $langs, $user, $db;
 
 	print '<div class="pagination"><ul>';
 	if ((int) $limit > 0 && empty($hideselectlimit))
@@ -4547,9 +4547,21 @@ function print_fleche_navigation($page, $file, $options = '', $nextpage = 0, $be
 	}
 	if ($afterarrows)
 	{
+            $sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
+            $resuUser = $db->query($sql_user_group);
+            $reug = $db->fetch_object($resuUser);
+            $resu_fab = "";
+            if ($reug->fk_usergroup) {
+                $sql_group = "select code from ".MAIN_DB_PREFIX."usergroup where rowid = ".$reug->fk_usergroup;
+                $resuug = $db->query($sql_group);
+                $resug = $db->fetch_object($resuug);
+                $resu_fab = $resug->code;
+            }
+            if($resu_fab !== "fab"){
 		print '<li class="paginationafterarrows">';
 		print $afterarrows;
 		print '</li>';
+            }   
 	}
 	print '</ul></div>'."\n";
 }

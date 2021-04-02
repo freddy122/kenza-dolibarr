@@ -287,6 +287,68 @@ class Product extends CommonObject
      * @var float
      */
     public $transport_coast;
+    
+    /**
+     * Quantité commandé
+     *
+     * @var int
+     */
+    public $quantite_commander;
+    
+    /**
+     * Quantité fabriqué
+     *
+     * @var int
+     */
+    public $quantite_fabriquer;
+    
+    /**
+     * Composition
+     *
+     * @var string
+     */
+    public $composition;
+    
+    /**
+     * Prix yuan
+     *
+     * @var float
+     */
+    public $price_yuan;
+    
+    /**
+     * Prix en euro
+     *
+     * @var float
+     */
+    public $price_euro;
+    
+    
+    /**
+     * poids variants
+     *
+     * @var float
+     */
+    public $weight_variant;
+    
+    /**
+     * Simple product type
+     * not the constant type of product
+     * @var string
+     */
+    public $product_type_txt;
+    
+    /**
+     * reference fournisseurs
+     * @var string
+     */
+    public $ref_fab_frs;
+    
+    /**
+     * Taux euro en yuan
+     * @var string
+     */
+    public $taux_euro_yuan;
 
     //! Average price value for product entry into stock (PMP)
     public $pmp;
@@ -512,6 +574,11 @@ class Product extends CommonObject
      * Advanced feature: stock kit
      */
     const TYPE_STOCKKIT = 3;
+    
+    /**
+     * Product with fabricant type
+     */
+    const TYPE_FAB = 4;
 
 
     /**
@@ -646,8 +713,9 @@ class Product extends CommonObject
         $this->accountancy_code_sell_export = trim($this->accountancy_code_sell_export);
 
         // Barcode value
-        $this->barcode = trim($this->barcode);
-
+        // modif fred commented this
+        //$this->barcode = trim($this->barcode);
+        
         // Check parameters
         if (empty($this->label)) {
             $this->error = 'ErrorMandatoryParametersNotProvided';
@@ -683,10 +751,11 @@ class Product extends CommonObject
         $this->db->begin();
 
         // For automatic creation during create action (not used by Dolibarr GUI, can be used by scripts)
-        if ($this->barcode == -1) {
+        // // modif fred commented the condition 
+        //if ($this->barcode == -1) {
             $this->barcode = $this->get_barcode($this, $this->barcode_type_code);
-        }
-
+        //}
+       
         // Check more parameters
         // If error, this->errors[] is filled
         $result = $this->verify();
@@ -819,6 +888,10 @@ class Product extends CommonObject
             else
             {
                 $this->db->rollback();
+                // Modif fred debogage ici
+                /*echo "<pre>";
+                print_r($this->error);
+                die('u--aaa');*/
                 return -$error;
             }
         }
@@ -848,7 +921,7 @@ class Product extends CommonObject
             $this->errors[] = 'ErrorBadRef';
             $result = -2;
         }
-
+        
         $rescode = $this->check_barcode($this->barcode, $this->barcode_type_code);
         if ($rescode) {
             if ($rescode == -1) {
@@ -994,7 +1067,7 @@ class Product extends CommonObject
 
         // Barcode value
         $this->barcode = trim($this->barcode);
-
+        
         $this->accountancy_code_buy = trim($this->accountancy_code_buy);
         $this->accountancy_code_buy_intra = trim($this->accountancy_code_buy_intra);
         $this->accountancy_code_buy_export = trim($this->accountancy_code_buy_export);
@@ -1131,7 +1204,16 @@ class Product extends CommonObject
             $sql .= ", margin_ttc = ".($this->margin_ttc != '' ? $this->db->escape($this->margin_ttc) : 'null');
             $sql .= ", brand_rate_in_percent = ".($this->brand_rate_in_percent != '' ? $this->db->escape($this->brand_rate_in_percent) : 'null');
             $sql .= ", selling_price_excl_tax = ".($this->selling_price_excl_tax != '' ? $this->db->escape($this->selling_price_excl_tax) : 'null');
-			$sql .= ", carte_metisse = ".($this->carte_metisse != '' ? $this->db->escape($this->carte_metisse) : 'null');
+            $sql .= ", carte_metisse = ".($this->carte_metisse != '' ? $this->db->escape($this->carte_metisse) : 'null');
+            $sql .= ", quantite_commander = ".($this->quantite_commander != '' ? $this->db->escape($this->quantite_commander) : 'null');
+            $sql .= ", quantite_fabriquer = ".($this->quantite_fabriquer != '' ? $this->db->escape($this->quantite_fabriquer) : 'null');
+            $sql .= ", composition = ".($this->composition != '' ? "'".$this->db->escape($this->composition)."'" : 'null');
+            $sql .= ", product_type_txt = ".($this->product_type_txt != '' ? "'".$this->db->escape($this->product_type_txt)."'" : 'null');
+            $sql .= ", ref_fab_frs = ".($this->ref_fab_frs != '' ? "'".$this->db->escape($this->ref_fab_frs)."'" : 'null');
+            $sql .= ", price_yuan = ".($this->price_yuan != '' ? $this->db->escape($this->price_yuan) : 'null');
+            $sql .= ", price_euro = ".($this->price_euro != '' ? $this->db->escape($this->price_euro) : 'null');
+            $sql .= ", weight_variant = ".($this->weight_variant != '' ? $this->db->escape($this->weight_variant) : 'null');
+            $sql .= ", taux_euro_yuan = ".($this->taux_euro_yuan != '' ? $this->db->escape($this->taux_euro_yuan) : 'null');
             $sql .= ", vat_price = ".($this->vat_price != '' ? $this->db->escape($this->vat_price) : 'null');
             $sql .= ", transport_coast = ".($this->transport_coast != '' ? $this->db->escape($this->transport_coast) : 'null');
             $sql .= ", fk_unit= ".(!$this->fk_unit ? 'NULL' : (int) $this->fk_unit);
@@ -2211,7 +2293,7 @@ class Product extends CommonObject
         $sql .= " accountancy_code_sell, accountancy_code_sell_intra, accountancy_code_sell_export, stock, pmp,";
         $sql .= " datec, tms, import_key, entity, desiredstock, tobatch, fk_unit,";
         $sql .= " fk_price_expression, price_autogen, transport_coefficient, transport_coast, coef_revient, cout_revient, ";
-        $sql .= " margin_product, suggest_price, coeff_vente_ttc, margin_rate_as_percentage, margin_ttc, brand_rate_in_percent, selling_price_excl_tax, vat_price, carte_metisse";
+        $sql .= " margin_product, suggest_price, coeff_vente_ttc, margin_rate_as_percentage, margin_ttc, brand_rate_in_percent, selling_price_excl_tax, vat_price, carte_metisse, quantite_commander, quantite_fabriquer, composition, price_yuan, product_type_txt, ref_fab_frs, taux_euro_yuan, price_euro, weight_variant";
         
         $sql .= " FROM ".MAIN_DB_PREFIX."product";
         if ($id) {
@@ -2226,7 +2308,7 @@ class Product extends CommonObject
                 $sql .= " AND barcode = '".$this->db->escape($barcode)."'";
             }
         }
-
+        
         $resql = $this->db->query($sql);
         if ($resql) {
         	unset($this->oldcopy);
@@ -2268,7 +2350,16 @@ class Product extends CommonObject
                 $this->margin_ttc                    = $obj->margin_ttc;
                 $this->brand_rate_in_percent         = $obj->brand_rate_in_percent;
                 $this->selling_price_excl_tax        = $obj->selling_price_excl_tax;
-				$this->carte_metisse        = $obj->carte_metisse;
+		$this->carte_metisse        = $obj->carte_metisse;
+		$this->quantite_commander        = $obj->quantite_commander;
+		$this->quantite_fabriquer        = $obj->quantite_fabriquer;
+		$this->composition          = $obj->composition;
+		$this->product_type_txt          = $obj->product_type_txt;
+		$this->ref_fab_frs          = $obj->ref_fab_frs;
+		$this->price_yuan          = $obj->price_yuan;
+		$this->price_euro          = $obj->price_euro;
+		$this->weight_variant          = $obj->weight_variant;
+		$this->taux_euro_yuan          = $obj->taux_euro_yuan;
                 $this->vat_price                     = $obj->vat_price;
                 $this->transport_coast               = $obj->transport_coast;
                 $this->default_vat_code = $obj->default_vat_code;
@@ -2329,7 +2420,7 @@ class Product extends CommonObject
                 $this->price_autogen = $obj->price_autogen;
 
                 $this->db->free($resql);
-
+                
                 // Retreive all extrafield
                 // fetch optionals attributes and labels
                 $this->fetch_optionals();
@@ -4542,7 +4633,7 @@ class Product extends CommonObject
      * @param  int    $notooltip			 No tooltip
      * @return string                                String with URL
      */
-    public function getNomUrl($withpicto = 0, $option = '', $maxlength = 0, $save_lastsearch_value = -1, $notooltip = 0)
+    public function getNomUrl($withpicto = 0, $option = '', $maxlength = 0, $save_lastsearch_value = -1, $notooltip = 0, $isProductfab = false)
     {
         global $conf, $langs, $hookmanager;
         include_once DOL_DOCUMENT_ROOT.'/core/lib/product.lib.php';
@@ -4636,8 +4727,10 @@ class Product extends CommonObject
         {
         	$linkclose = ' class="nowraponall"';
         }
-
-        if ($option == 'supplier' || $option == 'category') {
+        
+        if($isProductfab){
+            $url = DOL_URL_ROOT.'/product/card.php?action=edit&id='.$this->id;
+        }elseif ($option == 'supplier' || $option == 'category') {
             $url = DOL_URL_ROOT.'/product/fournisseurs.php?id='.$this->id;
         } elseif ($option == 'stock') {
             $url = DOL_URL_ROOT.'/product/stock/product.php?id='.$this->id;
@@ -4652,7 +4745,11 @@ class Product extends CommonObject
             $add_save_lastsearch_values = ($save_lastsearch_value == 1 ? 1 : 0);
             if ($save_lastsearch_value == -1 && preg_match('/list\.php/', $_SERVER["PHP_SELF"])) { $add_save_lastsearch_values = 1;
             }
-            if ($add_save_lastsearch_values) { $url .= '&save_lastsearch_values=1';
+            if ($add_save_lastsearch_values && !$isProductfab) { 
+                $url .= '&save_lastsearch_values=1';
+            }
+            if($isProductfab) {
+                $url .= '&status_product=produitfab';
             }
         }
 

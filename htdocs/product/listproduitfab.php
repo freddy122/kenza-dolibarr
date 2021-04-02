@@ -94,19 +94,6 @@ if(GETPOST('limit', 'int')){
 $user->update($user);
 $limit = $user->last_limit_product_list;
 
-$sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
-$resuUser = $db->query($sql_user_group);
-$reug = $db->fetch_object($resuUser);
-if($reug->fk_usergroup){
-    $sql_group = "select code from ".MAIN_DB_PREFIX."usergroup where rowid = ".$reug->fk_usergroup;
-    $resuug = $db->query($sql_group);
-    $resug = $db->fetch_object($resuug);
-    if($resug->code == "fab" ) {
-        header("Location: ".DOL_URL_ROOT."/product/listproduitfab.php?leftmenu=product&type=0&idmenu=37");
-        exit;
-    }
-}
-
 $limit = $user->last_limit_product_list == "" ? 5000 : $user->last_limit_product_list;
 $sortfield = GETPOST("sortfield", 'alpha');
 $sortorder = GETPOST("sortorder", 'alpha');
@@ -410,8 +397,7 @@ if ($searchCategoryProductOperator == 1) {
     }
 }
 
-$sql .= " AND p.rowid not in  (select rowid from ".MAIN_DB_PREFIX."product where p.product_type_txt = 'fab' ) ";
-
+$sql .= " AND p.product_type_txt = 'fab' ";
 /*$sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
 $resuUser = $db->query($sql_user_group);
 $reug = $db->fetch_object($resuUser);
@@ -424,6 +410,7 @@ if($reug->fk_usergroup){
         $sql .= " AND p.product_type_txt = 'fab' ";
     }
 }*/
+
 if ($fourn_id > 0)  $sql .= " AND pfp.fk_soc = ".((int) $fourn_id);
 if (intval($idFournisseur) > 0)  $sql .= " AND pfp.fk_soc = ".((int) $idFournisseur);
 if ($refPrixFournisseur) $sql .= natural_search('pfp.ref_fourn', $refPrixFournisseur);

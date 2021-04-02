@@ -1205,7 +1205,36 @@ function top_htmlhead($head, $title = '', $disablejs = 0, $disablehead = 0, $arr
 		print '<meta name="robots" content="noindex'.($disablenofollow ? '' : ',nofollow').'">'."\n"; // Do not index
 		print '<meta name="viewport" content="width=device-width, initial-scale=1.0">'."\n"; // Scale for mobile device
 		print '<meta name="author" content="Dolibarr Development Team">'."\n";
+                
+                if (file_exists(dirname(dol_buildpath($reldir.$conf->css, 0))."/css"))
+                {
 
+		//array that contains the css files to add
+		$theme_add_css = array();
+		if ($handle = opendir(dirname(dol_buildpath($reldir.$conf->css, 0))."/css"))
+		{
+			while (false !== ($entry = readdir($handle))) 
+			{
+				list($filename, $extension) = explode(".", $entry);
+				if ($entry !== '.' && $entry !== '..' && $extension == 'css')
+				{
+					$theme_add_css[] = $entry;
+				}
+			}
+			closedir($handle);
+		}
+		//there are css files to add in the header
+		if(! empty($theme_add_css))
+		{
+			$pathtofoldercss = dirname(dol_buildpath($reldir.$conf->css, 1))."/css";
+			foreach($theme_add_css as $css)
+			{
+				print '<link rel="stylesheet" type="text/css" href="'.$pathtofoldercss."/".$css.'">'."\n";
+			}
+		}
+            }
+
+                
 		// Favicon
 		$favicon = DOL_URL_ROOT.'/theme/dolibarr_256x256_color.png';
 		if (!empty($mysoc->logo_squarred_mini)) $favicon = DOL_URL_ROOT.'/viewimage.php?cache=1&modulepart=mycompany&file='.urlencode('logos/thumbs/'.$mysoc->logo_squarred_mini);
@@ -2471,6 +2500,35 @@ function printSearchForm($urlaction, $urlobject, $title, $htmlmorecss, $htmlinpu
 	return $ret;
 }
 
+// $digits devrait 12 chaine de caractère entier comme '252142547784'
+function ean13valideFromDigit($digits)
+{
+    $originalcheck = false;
+    if ( strlen($digits) == 13 ) {
+        $originalcheck = substr($digits, -1);
+        $digits = substr($digits, 0, -1);
+    } elseif ( strlen($digits) != 12 ) {
+        // Invalid EAN13 barcode
+        return false;
+    }
+    // position impaire
+    $even = $digits[1] + $digits[3] + $digits[5] + $digits[7] + $digits[9] + $digits[11];
+    // Multiplier par 3 les nombres sur le position impaire
+    $even = $even * 3;
+    // position paire
+    $odd = $digits[0] + $digits[2] + $digits[4] + $digits[6] + $digits[8] + $digits[10];
+    // additionner le 2
+    $total = $even + $odd;
+    // calculer checksum
+    // Diviser par 10 et avoir le reste
+    $checksum = $total % 10;
+    // si le résultat n'est pas zéros il faut le soustraire 10 avec ce checksum
+    if($checksum != 0){
+        $checksum = 10 - $checksum;
+    }
+    // Return ean13 valide
+    return $digits.$checksum;
+}
 
 if (!function_exists("llxFooter"))
 {

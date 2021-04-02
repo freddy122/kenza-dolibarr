@@ -1,0 +1,141 @@
+.div-combination-pfab {
+    text-align: center;
+    font-size: 20px;
+}
+.width20percent{
+    width:20%
+}
+.option-heading-content { width:30%; margin-left:2%;}
+.option-heading-content-taille {width:30%; margin-left:2%;}
+.div-main-content-optionh {display:flex;}
+.option-heading {padding: 7px;border:1px solid #bbcdd2;}
+.option-heading-taille {padding: 7px;border:1px solid #bbcdd2;}
+.option-content-couleur {padding: 7px;border:1px solid #bbcdd2;}
+.option-content-taille {padding: 7px;border:1px solid #bbcdd2;}
+.option-heading:after {content:"\25bc";float: right;}
+.option-heading-taille:after {content:"\25bc";float: right;}
+.option-heading.is-active:after {content:"\25b2";float: right;}
+.option-heading-taille.is-active:after {content:"\25b2";float: right;}
+.is-hidden {display: none;}
+.text-align-left{text-align:left;}
+
+/* The container */
+.container-declinaison {
+  display: block;
+  position: relative;
+  padding-left: 35px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  font-size: 15px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.container-declinaison input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkmark-declinaison {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 20px;
+  width: 20px;
+  /*background-color: #eee;*/
+}
+
+/*.container-declinaison:hover input ~ .checkmark-declinaison {
+  background-color: #ccc;
+}*/
+
+/*.container-declinaison input:checked ~ .checkmark-declinaison {
+  background-color: #2196F3;
+}*/
+
+.checkmark-declinaison:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.container-declinaison input:checked ~ .checkmark-declinaison:after {
+  display: block;
+}
+
+.container-declinaison .checkmark-declinaison:after {
+  left: 7px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid black;
+  border-width: 0 3px 3px 0;
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
+.dynamic_lines{
+    max-width: 100%;
+    display: block;
+}
+.dynamic_lines input{
+    font-family: tahoma,verdana,helvetica!important;
+    width: 90%;
+}
+
+.custom_button {
+    margin-left: 5px;
+    margin-right: 5px;
+    font-family: roboto,arial,tahoma,verdana,helvetica;
+    display: inline-block;
+    padding: 3px 8px;
+    min-width: 73px;
+    text-align: center;
+    cursor: pointer;
+    text-decoration: none !important;
+    background-color: #DAEBE1;
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+    border: 1px solid #aaa;
+    -webkit-border-radius: 2px;
+    border-radius: 1px;
+    font-weight: bold;
+    color: #444!important;
+}
+.custom_button_delete {
+    margin-left: 5px;
+    margin-right: 5px;
+    font-family: roboto,arial,tahoma,verdana,helvetica;
+    display: inline-block;
+    padding: 3px 8px;
+    min-width: 73px;
+    text-align: center;
+    cursor: pointer;
+    text-decoration: none !important;
+    background-color: #ec4646;
+    color: white !important;
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+    border: 1px solid #aaa;
+    -webkit-border-radius: 2px;
+    border-radius: 1px;
+    font-weight: bold;
+}
+.custom_button:hover {
+    -webkit-box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0.2), 0px 0px 0px rgba(60,60,60,0.1);
+    box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0.2), 0px 0px 0px rgba(60,60,60,0.1);
+}
+.custom_button_delete:hover {
+    -webkit-box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0.2), 0px 0px 0px rgba(60,60,60,0.1);
+    box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0.2), 0px 0px 0px rgba(60,60,60,0.1);
+}
+
+.create_combination_popup{
+    margin-left:0px!important;
+    background:#DAEBE1!important;
+    border-collapse:collapse;
+    border:none;
+}

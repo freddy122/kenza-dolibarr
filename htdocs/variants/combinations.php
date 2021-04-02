@@ -147,7 +147,7 @@ if ($_POST) {
 
 			if (!$prodcomb->fetchByProductCombination2ValuePairs($id, $sanit_features))
 			{
-				$result = $prodcomb->createProductCombination($user, $object, $sanit_features, array(), $price_impact_percent, $price_impact, $weight_impact, $reference);
+				$result = $prodcomb->createProductCombination($user, $object, $sanit_features, array(), $price_impact_percent, $price_impact, $weight_impact, $reference,array());
 				if ($result > 0)
 				{
 					setEventMessages($langs->trans('RecordSaved'), null, 'mesgs');

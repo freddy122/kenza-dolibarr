@@ -50,6 +50,9 @@ require_once DOL_DOCUMENT_ROOT.'/core/lib/product.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/company.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/categories/class/categorie.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/modules/product/modules_product.class.php';
+require DOL_DOCUMENT_ROOT.'/variants/class/ProductAttribute.class.php';
+require DOL_DOCUMENT_ROOT.'/variants/class/ProductAttributeValue.class.php';
+require_once DOL_DOCUMENT_ROOT.'/variants/class/ProductCombination.class.php';
 
 if (!empty($conf->propal->enabled))     require_once DOL_DOCUMENT_ROOT.'/comm/propal/class/propal.class.php';
 if (!empty($conf->facture->enabled))    require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';
@@ -78,6 +81,7 @@ $confirm = GETPOST('confirm', 'alpha');
 $socid = GETPOST('socid', 'int');
 $duration_value = GETPOST('duration_value', 'int');
 $duration_unit = GETPOST('duration_unit', 'alpha');
+$status_product = GETPOST('status_product');
 
 $accountancy_code_sell = GETPOST('accountancy_code_sell', 'alpha');
 $accountancy_code_sell_intra = GETPOST('accountancy_code_sell_intra', 'alpha');
@@ -234,18 +238,18 @@ if (empty($reshook))
                 }
             }
         }
-       // print_r($generatedBareCode);die();
-        if ($result >= 0)
-        {
-            if(!empty(GETPOST('barcode'))) {
-                $result = $object->setValueFrom('barcode', $generatedBareCode, '', null, 'text', '', $user, 'PRODUCT_MODIFY');
-            }else{
-                $result = $object->setValueFrom('barcode', "", '', null, 'text', '', $user, 'PRODUCT_MODIFY');
-            }
-            header("Location: ".$_SERVER['PHP_SELF']."?id=".$object->id);
-            exit;
+       //print_r($generatedBareCode);die();
+        /*if ($result >= 0)
+        {*/
+        if(!empty(GETPOST('barcode'))) {
+            $result = $object->setValueFrom('barcode', $generatedBareCode, '', null, 'text', '', $user, 'PRODUCT_MODIFY');
+        }else{
+            $result = $object->setValueFrom('barcode', "", '', null, 'text', '', $user, 'PRODUCT_MODIFY');
         }
-        else
+        header("Location: ".$_SERVER['PHP_SELF']."?id=".$object->id);
+        exit;
+        //}
+        /*else
         {
             $langs->load("errors");
             if ($result == -1) $errors[] = 'ErrorBadBarCodeSyntax';
@@ -255,7 +259,7 @@ if (empty($reshook))
 
             $error++;
             setEventMessages($errors, null, 'errors');
-        }
+        }*/
     }
 
     // Add a product or service
@@ -283,9 +287,13 @@ if (empty($reshook))
         }*/
         if (empty(GETPOST('price')))
         {
-            setEventMessages($langs->trans('ErrorFieldRequired', $langs->transnoentities('Prix de vente')), null, 'errors');
-            $action = "create";
-            $error++;
+            if($status_product && $status_product == "produitfab") {
+                
+            }else{
+                setEventMessages($langs->trans('ErrorFieldRequired', $langs->transnoentities('Prix de vente')), null, 'errors');
+                $action = "create";
+                $error++;
+            }
         }
         if (!empty($duration_value) && empty($duration_unit))
         {
@@ -296,15 +304,23 @@ if (empty($reshook))
         
         if ( (!empty(GETPOST("ref_prod_fourn")) || !empty(GETPOST("best_purchase_price")) || !empty(GETPOST("coefficient_of_return"))) &&  GETPOST("id_fourn") == -1 )
         {
-            setEventMessages("Le champ fournisseur est réquis si l\'un de champs Référence prod fournisseur,Meilleur prix d'achat,Coefficient de révient sont renseigné", null, 'errors');
-            $action = "create";
-            $error++;
+            if($status_product && $status_product == "produitfab") {
+                
+            }else{
+                setEventMessages("Le champ fournisseur est réquis si l'un de champs Référence prod fournisseur,Meilleur prix d'achat,Coefficient de révient sont renseigné", null, 'errors');
+                $action = "create";
+                $error++;
+            }
         }
         
         if(GETPOST("id_fourn") != -1 && (empty(GETPOST("ref_prod_fourn")) || empty(GETPOST("best_purchase_price")) || empty(GETPOST("coefficient_of_return")))) {
-            setEventMessages("Le champ Référence prod fournisseur,Meilleur prix d'achat,Coefficient de révient  sont réquises si le champ fournisseur est renseigné", null, 'errors');
-            $action = "create";
-            $error++;
+            if($status_product && $status_product == "produitfab") {
+                
+            }else{
+                setEventMessages("Le champ Référence prod fournisseur,Meilleur prix d'achat,Coefficient de révient  sont réquises si le champ fournisseur est renseigné", null, 'errors');
+                $action = "create";
+                $error++;
+            }
         }
         
         if(!empty(GETPOST('barcode'))) {
@@ -377,7 +393,7 @@ if (empty($reshook))
 	        $object->localtax2_tx = $localtax2;
 	        $object->localtax1_type = $localtax1_type;
 	        $object->localtax2_type = $localtax2_type;
-
+                
             $object->type               	 = $type;
             $object->status             	 = GETPOST('statut');
             $object->status_buy            = GETPOST('statut_buy');
@@ -482,12 +498,12 @@ if (empty($reshook))
 
             // Fill array 'array_options' with data from add form
         	$ret = $extrafields->setOptionalsFromPost(null, $object);
-			if ($ret < 0) $error++;
+                if ($ret < 0) $error++;
 
-			if (!$error)
-			{
-            	$id = $object->create($user);
-			}
+                if (!$error)
+                {
+                    $id = $object->create($user);
+		}
 
             if ($id > 0)
             {
@@ -553,8 +569,58 @@ if (empty($reshook))
                             $object->vat_price = floatval(str_replace(",",".",GETPOST("vat_price")));
                         }
                         
+                        if($status_product && $status_product == "produitfab") {
+                            $object->product_type_txt = "fab";
+                            $sqlUpdateProdType = "update ".MAIN_DB_PREFIX."product set "
+                                    . " product_type_txt = 'fab', "
+                                    . " barcode='".GETPOST('barcode')."', "
+                                    . " ref_fab_frs='".GETPOST('ref_fab_frs')."' where rowid =  ".$id;
+                            $db->query($sqlUpdateProdType);
+                        }else{
+                            $object->product_type_txt = "simple";
+                        }
                         
-			$object->update($id, $user);
+                        $arrposted   = $_POST;
+                        $totalQtyfab = 0;
+                        
+                        if($arrposted['valCouleurs']){
+                            for($i = 0; $i< intval(count($arrposted['valCouleurs']));$i++){
+                                if(!empty($arrposted['qtyfabriq'][$i])){
+                                    $totalQtyfab  += $arrposted['qtyfabriq'][$i];
+                                }
+                                $arrCombi      = [];
+                                $arrCombi['1'] = $arrposted['valCouleurs'][$i];
+                                $arrCombi['2'] = $arrposted['valTailles'][$i];
+                                $arrOtherInfo  = [];
+                                $arrOtherInfo["quantite_commander"] = $arrposted['qtycomm'][$i];
+                                $arrOtherInfo["quantite_fabriquer"] = $arrposted['qtyfabriq'][$i];
+                                $arrOtherInfo["composition"]        = $arrposted['compfabriq'][$i];
+                                $arrOtherInfo["price_yuan"]         = floatval(str_replace(',','.',$arrposted['priceYuan'][$i]));
+                                $arrOtherInfo["price_euro"]         = floatval(str_replace(',','.',$arrposted['priceEuro'][$i]));
+                                $arrOtherInfo["poidsfabriq"]        = floatval(str_replace(',','.',$arrposted['poidsfabriq'][$i]));
+                                $arrOtherInfo["tauxChange"]        = floatval(str_replace(',','.',$arrposted['tauxChange'][$i]));
+                                $arrOtherInfo["ref_fab_frs"]        = GETPOST('ref_fab_frs');
+                                $arrOtherInfo["codebares"]          = $arrposted['codebares'][$i];
+                                $arrOtherInfo["product_type_txt"] = "fab";
+                                $prodcomb = new ProductCombination($db);
+                                $prodcomb->createProductCombination($user, $object, $arrCombi, array(), false, false, false, false,$arrOtherInfo);
+                            }
+                            
+                            $sqlCheckStock =  "SELECT fk_product from ".MAIN_DB_PREFIX."product_stock where fk_product = ".$id;
+                            $rescheckstock  = $db->query($sqlCheckStock);
+                            $resustock = $db->fetch_object($rescheckstock);
+                            if(empty($resustock->fk_product)){
+                                $curdt = date('Y-m-d H:i:s');
+                                $sqlUpdateStock = "INSERT INTO ".MAIN_DB_PREFIX."product_stock (tms,fk_product,fk_entrepot,reel) values ('".$curdt."',".$id.",1,".$totalQtyfab.")";
+                                $db->query($sqlUpdateStock);
+                            }
+                        }
+                        
+                        if($status_product && $status_product == "produitfab") {
+                            
+                        }else{
+                            $object->update($id, $user);
+                        }
                         
                         // Category association
                         $categories = GETPOST('categories', 'array');
@@ -585,7 +651,9 @@ if (empty($reshook))
                                 $db->query($sqlInsertInStockMouvement);
                                 $db->query($sqlUpdateProduct);
                             }
-                            if(GETPOST('dataPopupNewProduct') == 1) {
+                            if($status_product && $status_product == "produitfab") {
+                                header("Location: ".$_SERVER['PHP_SELF']."?action=edit&id=".$id."&status_product=produitfab");
+                            }elseif(GETPOST('dataPopupNewProduct') == 1) {
                                 ?>
                                 <script type="text/javascript">
                                     window.parent.location.reload()
@@ -617,17 +685,17 @@ if (empty($reshook))
         {
             if ($object->id > 0)
             {
-				$object->oldcopy = clone $object;
+		$object->oldcopy = clone $object;
 
                 $object->ref                    = $ref;
                 $object->label                  = GETPOST('label', $label_security_check);
                 $object->description            = dol_htmlcleanlastbr(GETPOST('desc', 'none'));
             	$object->url = GETPOST('url');
-    			if (!empty($conf->global->MAIN_DISABLE_NOTES_TAB))
-    			{
-                	$object->note_private = dol_htmlcleanlastbr(GETPOST('note_private', 'none'));
-                    $object->note = $object->note_private;
-    			}
+                if (!empty($conf->global->MAIN_DISABLE_NOTES_TAB))
+                {
+                $object->note_private = dol_htmlcleanlastbr(GETPOST('note_private', 'none'));
+                $object->note = $object->note_private;
+                }
                 $object->customcode             = GETPOST('customcode', 'alpha');
                 $object->country_id             = GETPOST('country_id', 'int');
                 $object->status                 = GETPOST('statut', 'int');
@@ -658,17 +726,16 @@ if (empty($reshook))
                 $object->volume_units           = GETPOST('volume_units'); // This is not the fk_unit but the power of unit
                 $object->finished               = GETPOST('finished', 'alpha');
 
-	            $units = GETPOST('units', 'int');
+                $units = GETPOST('units', 'int');
 
-	            if ($units > 0) {
-		            $object->fk_unit = $units;
-	            } else {
-		            $object->fk_unit = null;
-	            }
-
-	            $object->barcode_type = GETPOST('fk_barcode_type');
+                if ($units > 0) {
+                        $object->fk_unit = $units;
+                } else {
+                        $object->fk_unit = null;
+                }
+                $object->barcode_type = GETPOST('fk_barcode_type');
     	        //$object->barcode = GETPOST('barcode');
-                if(!empty(GETPOST('barcode'))) {
+                if(!empty(GETPOST('barcode')) && ($object->barcode !== GETPOST('barcode'))) {
                     require DOL_DOCUMENT_ROOT . '/barcodegen1d/generated/vendor/autoload.php';
                     if(!empty(GETPOST('fk_barcode_type'))) {
                         if(GETPOST('fk_barcode_type') == 1) { // ean8
@@ -689,7 +756,49 @@ if (empty($reshook))
                             $object->barcode = $code->getLabel().$code->getChecksum();
                         }
                     }
+                    if($status_product && $status_product == "produitfab") {
+                        $sqlupdateother = "UPDATE ".MAIN_DB_PREFIX."product set "
+                                    . " barcode = '".$object->barcode."' "
+                                    . " where rowid = ".$object->id;
+                        $db->query($sqlupdateother);
+                    }
                 }
+                $arrposted = $_POST;
+                $totalQtyfab = 0;
+                
+                if($arrposted['valCouleurs']){
+                    for($i = 0; $i< count($arrposted['valCouleurs']);$i++){
+                        if(!empty($arrposted['qtyfabriq'][$i])){
+                            $totalQtyfab  += $arrposted['qtyfabriq'][$i];
+                        }
+                        $arrCombi = [];
+                        $arrCombi['1'] = $arrposted['valCouleurs'][$i];
+                        $arrCombi['2'] = $arrposted['valTailles'][$i];
+                        $arrOtherInfo = [];
+                        $arrOtherInfo["quantite_commander"] = $arrposted['qtycomm'][$i];
+                        $arrOtherInfo["quantite_fabriquer"] = $arrposted['qtyfabriq'][$i];
+                        $arrOtherInfo["composition"] = $arrposted['compfabriq'][$i];
+                        $arrOtherInfo["price_yuan"] = floatval(str_replace(',','.',$arrposted['priceYuan'][$i]));
+                        $arrOtherInfo["price_euro"] = floatval(str_replace(',','.',$arrposted['priceEuro'][$i]));
+                        $arrOtherInfo["poidsfabriq"] = floatval(str_replace(',','.',$arrposted['poidsfabriq'][$i]));
+                        $arrOtherInfo["codebares"] = $arrposted['codebares'][$i];
+                        $arrOtherInfo["tauxChange"]  = floatval(str_replace(',','.',$arrposted['tauxChange'][$i]));
+                        $arrOtherInfo["ref_fab_frs"] = GETPOST("ref_fab_frs");
+                        $arrOtherInfo["product_type_txt"] = "fab";
+                        $prodcomb = new ProductCombination($db);
+                        $prodcomb->createProductCombination($user, $object, $arrCombi, array(), false, false, false, false,$arrOtherInfo);
+                    }
+
+                    $sqlCheckStock =  "SELECT fk_product from ".MAIN_DB_PREFIX."product_stock where fk_product = ".$id;
+                    $rescheckstock  = $db->query($sqlCheckStock);
+                    $resustock = $db->fetch_object($rescheckstock);
+                    if(empty($resustock->fk_product)){
+                        $curdt = date('Y-m-d H:i:s');
+                        $sqlUpdateStock = "INSERT INTO ".MAIN_DB_PREFIX."product_stock (tms,fk_product,fk_entrepot,reel) values ('".$curdt."',".$id.",1,".$totalQtyfab.")";
+                        $db->query($sqlUpdateStock);
+                    }
+                }
+                
     	        // Set barcode_type_xxx from barcode_type id
     	        $stdobject = new GenericObject($db);
     	        $stdobject->element = 'product';
@@ -712,39 +821,53 @@ if (empty($reshook))
     	        $accountancy_code_buy_intra = GETPOST('accountancy_code_buy_intra', 'alpha');
     	        $accountancy_code_buy_export = GETPOST('accountancy_code_buy_export', 'alpha');
 
-				if ($accountancy_code_sell <= 0) { $object->accountancy_code_sell = ''; } else { $object->accountancy_code_sell = $accountancy_code_sell; }
-				if ($accountancy_code_sell_intra <= 0) { $object->accountancy_code_sell_intra = ''; } else { $object->accountancy_code_sell_intra = $accountancy_code_sell_intra; }
-				if ($accountancy_code_sell_export <= 0) { $object->accountancy_code_sell_export = ''; } else { $object->accountancy_code_sell_export = $accountancy_code_sell_export; }
-				if ($accountancy_code_buy <= 0) { $object->accountancy_code_buy = ''; } else { $object->accountancy_code_buy = $accountancy_code_buy; }
-				if ($accountancy_code_buy_intra <= 0) { $object->accountancy_code_buy_intra = ''; } else { $object->accountancy_code_buy_intra = $accountancy_code_buy_intra; }
-				if ($accountancy_code_buy_export <= 0) { $object->accountancy_code_buy_export = ''; } else { $object->accountancy_code_buy_export = $accountancy_code_buy_export; }
+                if ($accountancy_code_sell <= 0) { $object->accountancy_code_sell = ''; } else { $object->accountancy_code_sell = $accountancy_code_sell; }
+                if ($accountancy_code_sell_intra <= 0) { $object->accountancy_code_sell_intra = ''; } else { $object->accountancy_code_sell_intra = $accountancy_code_sell_intra; }
+                if ($accountancy_code_sell_export <= 0) { $object->accountancy_code_sell_export = ''; } else { $object->accountancy_code_sell_export = $accountancy_code_sell_export; }
+                if ($accountancy_code_buy <= 0) { $object->accountancy_code_buy = ''; } else { $object->accountancy_code_buy = $accountancy_code_buy; }
+                if ($accountancy_code_buy_intra <= 0) { $object->accountancy_code_buy_intra = ''; } else { $object->accountancy_code_buy_intra = $accountancy_code_buy_intra; }
+                if ($accountancy_code_buy_export <= 0) { $object->accountancy_code_buy_export = ''; } else { $object->accountancy_code_buy_export = $accountancy_code_buy_export; }
 
                 // Fill array 'array_options' with data from add form
-        		$ret = $extrafields->setOptionalsFromPost(null, $object);
-				if ($ret < 0) $error++;
+        	$ret = $extrafields->setOptionalsFromPost(null, $object);
+		if ($ret < 0) $error++;
 
                 if (!$error && $object->check())
                 {
-                    if ($object->update($object->id, $user) > 0)
-                    {
-						// Category association
-						$categories = GETPOST('categories', 'array');
-						$object->setCategories($categories);
+                    if($status_product && $status_product == "produitfab") { 
+                        $sqlupdateother = "UPDATE ".MAIN_DB_PREFIX."product set "
+                                . " label = '".GETPOST('label', $label_security_check)."', "
+                                . " ref_fab_frs = '".GETPOST('ref_fab_frs')."' "
+                                . " where rowid = ".$object->id;
+                        $db->query($sqlupdateother);
+                    }else{
+                        if ($object->update($object->id, $user) > 0)
+                        {
+                            // Category association
+                            $categories = GETPOST('categories', 'array');
+                            $object->setCategories($categories);
 
-                        $action = 'view';
-                    }
-                    else
-					{
-						if (count($object->errors)) setEventMessages($object->error, $object->errors, 'errors');
-                    	else setEventMessages($langs->trans($object->error), null, 'errors');
-                        $action = 'edit';
+                            $action = 'view';
+                        }
+                        else
+                        {
+                            if (count($object->errors)) { setEventMessages($object->error, $object->errors, 'errors');}
+                            else {setEventMessages($langs->trans($object->error), null, 'errors');}
+                            $action = 'edit';
+                        }
                     }
                 }
                 else
-				{
-					if (count($object->errors)) setEventMessages($object->error, $object->errors, 'errors');
-                	else setEventMessages($langs->trans("ErrorProductBadRefOrLabel"), null, 'errors');
+		{
+                    if (count($object->errors)) { setEventMessages($object->error, $object->errors, 'errors');}
+                    else {setEventMessages($langs->trans("ErrorProductBadRefOrLabel"), null, 'errors');}
                     $action = 'edit';
+                }
+                
+                //?id=8495&status_product=produitfab&action=edit
+                if($status_product && $status_product == "produitfab") { 
+                    header("Location: ".$_SERVER['PHP_SELF']."?id=".$object->id."&status_product=produitfab&action=edit");
+                    exit;
                 }
             }
         }
@@ -1208,7 +1331,13 @@ else
         // $ref = GETPOST('ref', 'alpha');
         // GETPOST('label', $label_security_check)
         // GETPOST('nombre_produit_en_stock')
-        print '<form action="'.$_SERVER["PHP_SELF"].'" method="POST">';
+        //?leftmenu=product&action=create&type=0&status_product=produitfab&idmenu=36
+        if($status_product && $status_product == "produitfab") {
+            $url_post_action = $_SERVER["PHP_SELF"]."?status_product=produitfab";
+        }else{
+            $url_post_action = $_SERVER["PHP_SELF"];
+        }
+        print '<form action="'.$url_post_action.'" method="POST">';
         print '<input type="hidden" name="token" value="'.newToken().'">';
         print '<input type="hidden" name="action" value="add">';
         print '<input type="hidden" name="type" value="'.$type.'">'."\n";
@@ -1268,6 +1397,7 @@ else
         $isDisabled = "";
 	if (!empty($modCodeProduct->code_auto)) {
             $tmpcode = $modCodeProduct->getNextValue($object, $type);
+            //print_r($tmpcode);die();
             $isDisabled = "readonly";
         }
 	print '<td class="titlefieldcreate fieldrequired">'.$langs->trans("Ref").'</td><td colspan="3"><input id="ref" name="ref" class="maxwidth200" maxlength="128" value="'.dol_escape_htmltag(GETPOSTISSET('ref') ? GETPOST('ref', 'alphanohtml') : $tmpcode).'" '.$isDisabled.'>';
@@ -1278,24 +1408,36 @@ else
         print '</td></tr>';
 
         // Label
-        print '<tr><td class="fieldrequired">'.$langs->trans("Label").'</td><td colspan="3"><input name="label" class="minwidth300 maxwidth400onsmartphone" maxlength="255" value="'.dol_escape_htmltag(GETPOST('label', $label_security_check)).'"></td></tr>';
+        print '<tr><td class="fieldrequired">'.$langs->trans("Label").'</td><td colspan="3"><input name="label" required class="minwidth300 maxwidth400onsmartphone" maxlength="255" value="'.dol_escape_htmltag(GETPOST('label', $label_security_check)).'"></td></tr>';
+        
+        if($status_product && $status_product == "produitfab") { 
+            print '<tr>'
+            . '<td>Réf fab/frs</td>'
+            . '<td colspan="3">'
+            . '<input name="ref_fab_frs" class="minwidth300 maxwidth400onsmartphone" maxlength="255" value="'.dol_escape_htmltag(GETPOST('label', $label_security_check)).'">'
+            . '</td>'
+            . '</tr>';
+        }
         
         /*if($datapopup == 1)
         {*/
-        print '<tr><td class="">Nombre produit en stock</td><td colspan="3"><input name="nombre_produit_en_stock" type="number" class="minwidth300 maxwidth400onsmartphone" maxlength="255" value="'.GETPOST('nombre_produit_en_stock').'"></td></tr>';
-        //}
-        // On sell
-        print '<tr><td class="fieldrequired">'.$langs->trans("Status").' ('.$langs->trans("Sell").')</td><td colspan="3">';
-        $statutarray = array('1' => $langs->trans("OnSell"), '0' => $langs->trans("NotOnSell"));
-        print $form->selectarray('statut', $statutarray, GETPOST('statut'));
-        print '</td></tr>';
+        if($status_product && $status_product == "produitfab") { 
+            
+        }else{
+            print '<tr><td class="">Nombre produit en stock</td><td colspan="3"><input name="nombre_produit_en_stock" type="number" class="minwidth300 maxwidth400onsmartphone" maxlength="255" value="'.GETPOST('nombre_produit_en_stock').'"></td></tr>';
+            //}
+            // On sell
+            print '<tr><td class="fieldrequired">'.$langs->trans("Status").' ('.$langs->trans("Sell").')</td><td colspan="3">';
+            $statutarray = array('1' => $langs->trans("OnSell"), '0' => $langs->trans("NotOnSell"));
+            print $form->selectarray('statut', $statutarray, GETPOST('statut'));
+            print '</td></tr>';
 
-        // To buy
-        print '<tr><td class="fieldrequired">'.$langs->trans("Status").' ('.$langs->trans("Buy").')</td><td colspan="3">';
-        $statutarray = array('1' => $langs->trans("ProductStatusOnBuy"), '0' => $langs->trans("ProductStatusNotOnBuy"));
-        print $form->selectarray('statut_buy', $statutarray, GETPOST('statut_buy'));
-        print '</td></tr>';
-
+            // To buy
+            print '<tr><td class="fieldrequired">'.$langs->trans("Status").' ('.$langs->trans("Buy").')</td><td colspan="3">';
+            $statutarray = array('1' => $langs->trans("ProductStatusOnBuy"), '0' => $langs->trans("ProductStatusNotOnBuy"));
+            print $form->selectarray('statut_buy', $statutarray, GETPOST('statut_buy'));
+            print '</td></tr>';
+        }
 	    // Batch number management
 		if (!empty($conf->productbatch->enabled))
 		{
@@ -1325,8 +1467,13 @@ else
 	        print '</td>';
 	        if ($conf->browser->layout == 'phone') print '</tr><tr>';
 	        print '<td>'.$langs->trans("BarcodeValue").'</td><td>';
-	        $tmpcode = isset($_POST['barcode']) ?GETPOST('barcode') : $object->barcode;
-	        if (empty($tmpcode) && !empty($modBarCodeProduct->code_auto)) $tmpcode = $modBarCodeProduct->getNextValue($object, $type);
+	       /* $tmpcode = isset($_POST['barcode']) ?GETPOST('barcode') : $object->barcode;
+	        if (empty($tmpcode) && !empty($modBarCodeProduct->code_auto)) $tmpcode = $modBarCodeProduct->getNextValue($object, $type);*/
+                $cumulcodeProd = 0;
+                if (!empty($modCodeProduct->code_auto)) {
+                    $cumulcodeProd = $modCodeProduct->getNextValue($object, $type);
+                }
+	        $tmpcode = isset($_POST['barcode']) ? GETPOST('barcode') : ean13valideFromDigit($cumulcodeProd."0000");
 	        print '<input class="maxwidth100" type="text" name="barcode" value="'.dol_escape_htmltag($tmpcode).'">';
 	        print '</td></tr>';
         }
@@ -1338,48 +1485,52 @@ else
         $doleditor->Create();
 
         print "</td></tr>";
-
-        // Public URL
-        print '<tr><td>'.$langs->trans("PublicUrl").'</td><td colspan="3">';
-		print '<input type="text" name="url" class="quatrevingtpercent" value="'.GETPOST('url').'">';
-        print '</td></tr>';
-
-        if ($type != 1 && !empty($conf->stock->enabled))
-        {
-            // Default warehouse
-            print '<tr><td>'.$langs->trans("DefaultWarehouse").'</td><td>';
-            print $formproduct->selectWarehouses(GETPOST('fk_default_warehouse'), 'fk_default_warehouse', 'warehouseopen', 1);
-            print ' <a href="'.DOL_URL_ROOT.'/product/stock/card.php?action=create&amp;backtopage='.urlencode($_SERVER['PHP_SELF'].'?id='.$object->id.'&action=edit').'">';
-            print '<span class="fa fa-plus-circle valignmiddle paddingleft" title="'.$langs->trans("AddWarehouse").'"></span>';
-            print '</a>';
-            print '</td>';
-            print '</tr>';
-
-            // Stock min level
-            print '<tr><td>'.$form->textwithpicto($langs->trans("StockLimit"), $langs->trans("StockLimitDesc"), 1).'</td><td>';
-            print '<input name="seuil_stock_alerte" class="maxwidth50" value="'.GETPOST('seuil_stock_alerte').'">';
-            print '</td>';
-            if ($conf->browser->layout == 'phone') print '</tr><tr>';
-            // Stock desired level
-            print '<td>'.$form->textwithpicto($langs->trans("DesiredStock"), $langs->trans("DesiredStockDesc"), 1).'</td><td>';
-            print '<input name="desiredstock" class="maxwidth50" value="'.GETPOST('desiredstock').'">';
+        
+        if($status_product && $status_product == "produitfab") {
+            
+        }else{
+            // Public URL
+            print '<tr><td>'.$langs->trans("PublicUrl").'</td><td colspan="3">';
+                    print '<input type="text" name="url" class="quatrevingtpercent" value="'.GETPOST('url').'">';
             print '</td></tr>';
-        }
-        else
-        {
-            print '<input name="seuil_stock_alerte" type="hidden" value="0">';
-            print '<input name="desiredstock" type="hidden" value="0">';
-        }
 
-        // Duration
-        if ($type == 1)
-        {
-            print '<tr><td>'.$langs->trans("Duration").'</td><td colspan="3">';
-            print '<input name="duration_value" size="4" value="'.GETPOST('duration_value', 'int').'">';
-            print $formproduct->selectMeasuringUnits("duration_unit", "time", GETPOST('duration_value', 'alpha'), 0, 1);
-            print '</td></tr>';
-        }
+            if ($type != 1 && !empty($conf->stock->enabled))
+            {
+                // Default warehouse
+                print '<tr><td>'.$langs->trans("DefaultWarehouse").'</td><td>';
+                print $formproduct->selectWarehouses(GETPOST('fk_default_warehouse'), 'fk_default_warehouse', 'warehouseopen', 1);
+                print ' <a href="'.DOL_URL_ROOT.'/product/stock/card.php?action=create&amp;backtopage='.urlencode($_SERVER['PHP_SELF'].'?id='.$object->id.'&action=edit').'">';
+                print '<span class="fa fa-plus-circle valignmiddle paddingleft" title="'.$langs->trans("AddWarehouse").'"></span>';
+                print '</a>';
+                print '</td>';
+                print '</tr>';
 
+                // Stock min level
+                print '<tr><td>'.$form->textwithpicto($langs->trans("StockLimit"), $langs->trans("StockLimitDesc"), 1).'</td><td>';
+                print '<input name="seuil_stock_alerte" class="maxwidth50" value="'.GETPOST('seuil_stock_alerte').'">';
+                print '</td>';
+                if ($conf->browser->layout == 'phone') print '</tr><tr>';
+                // Stock desired level
+                print '<td>'.$form->textwithpicto($langs->trans("DesiredStock"), $langs->trans("DesiredStockDesc"), 1).'</td><td>';
+                print '<input name="desiredstock" class="maxwidth50" value="'.GETPOST('desiredstock').'">';
+                print '</td></tr>';
+            }
+            else
+            {
+                print '<input name="seuil_stock_alerte" type="hidden" value="0">';
+                print '<input name="desiredstock" type="hidden" value="0">';
+            }
+
+            // Duration
+            if ($type == 1)
+            {
+                print '<tr><td>'.$langs->trans("Duration").'</td><td colspan="3">';
+                print '<input name="duration_value" size="4" value="'.GETPOST('duration_value', 'int').'">';
+                print $formproduct->selectMeasuringUnits("duration_unit", "time", GETPOST('duration_value', 'alpha'), 0, 1);
+                print '</td></tr>';
+            }
+        
+        }
         if ($type != 1)	// Nature, Weight and volume only applies to products and not to services
         {
             // Nature
@@ -1397,41 +1548,45 @@ else
             print '<input name="weight" size="4" value="'.GETPOST('weight').'">';
             print $formproduct->selectMeasuringUnits("weight_units", "weight", GETPOSTISSET('weight_units') ?GETPOST('weight_units', 'alpha') : (empty($conf->global->MAIN_WEIGHT_DEFAULT_UNIT) ? 0 : $conf->global->MAIN_WEIGHT_DEFAULT_UNIT), 0, 2);
             print '</td></tr>';
+            
+            if($status_product && $status_product == "produitfab") {
+            
+            }else{
+                // Brut Length
+                if (empty($conf->global->PRODUCT_DISABLE_SIZE))
+                {
+                    print '<tr><td>'.$langs->trans("Length").' x '.$langs->trans("Width").' x '.$langs->trans("Height").'</td><td colspan="3">';
+                    print '<input name="size" class="width50" value="'.GETPOST('size').'"> x ';
+                    print '<input name="sizewidth" class="width50" value="'.GETPOST('sizewidth').'"> x ';
+                    print '<input name="sizeheight" class="width50" value="'.GETPOST('sizeheight').'">';
+                    print $formproduct->selectMeasuringUnits("size_units", "size", GETPOSTISSET('size_units') ?GETPOST('size_units', 'alpha') : '0', 0, 2);
+                    print '</td></tr>';
+                }
+                if (empty($conf->global->PRODUCT_DISABLE_SURFACE))
+                {
+                    // Brut Surface
+                    print '<tr><td>'.$langs->trans("Surface").'</td><td colspan="3">';
+                    print '<input name="surface" size="4" value="'.GETPOST('surface').'">';
+                    print $formproduct->selectMeasuringUnits("surface_units", "surface", GETPOSTISSET('surface_units') ?GETPOST('surface_units', 'alpha') : '0', 0, 2);
+                    print '</td></tr>';
+                }
+                if (empty($conf->global->PRODUCT_DISABLE_VOLUME))
+                {
+                    // Brut Volume
+                    print '<tr><td>'.$langs->trans("Volume").'</td><td colspan="3">';
+                    print '<input name="volume" size="4" value="'.GETPOST('volume').'">';
+                    print $formproduct->selectMeasuringUnits("volume_units", "volume", GETPOSTISSET('volume_units') ?GETPOST('volume_units', 'alpha') : '0', 0, 2);
+                    print '</td></tr>';
+                }
 
-            // Brut Length
-            if (empty($conf->global->PRODUCT_DISABLE_SIZE))
-            {
-                print '<tr><td>'.$langs->trans("Length").' x '.$langs->trans("Width").' x '.$langs->trans("Height").'</td><td colspan="3">';
-                print '<input name="size" class="width50" value="'.GETPOST('size').'"> x ';
-                print '<input name="sizewidth" class="width50" value="'.GETPOST('sizewidth').'"> x ';
-                print '<input name="sizeheight" class="width50" value="'.GETPOST('sizeheight').'">';
-                print $formproduct->selectMeasuringUnits("size_units", "size", GETPOSTISSET('size_units') ?GETPOST('size_units', 'alpha') : '0', 0, 2);
-                print '</td></tr>';
-            }
-            if (empty($conf->global->PRODUCT_DISABLE_SURFACE))
-            {
-                // Brut Surface
-                print '<tr><td>'.$langs->trans("Surface").'</td><td colspan="3">';
-                print '<input name="surface" size="4" value="'.GETPOST('surface').'">';
-                print $formproduct->selectMeasuringUnits("surface_units", "surface", GETPOSTISSET('surface_units') ?GETPOST('surface_units', 'alpha') : '0', 0, 2);
-                print '</td></tr>';
-            }
-            if (empty($conf->global->PRODUCT_DISABLE_VOLUME))
-            {
-                // Brut Volume
-                print '<tr><td>'.$langs->trans("Volume").'</td><td colspan="3">';
-                print '<input name="volume" size="4" value="'.GETPOST('volume').'">';
-                print $formproduct->selectMeasuringUnits("volume_units", "volume", GETPOSTISSET('volume_units') ?GETPOST('volume_units', 'alpha') : '0', 0, 2);
-                print '</td></tr>';
-            }
-
-            if (!empty($conf->global->PRODUCT_ADD_NET_MEASURE))
-            {
-	            // Net Measure
-	            print '<tr><td>'.$langs->trans("NetMeasure").'</td><td colspan="3">';
-	            print '<input name="net_measure" size="4" value="'.GETPOST('net_measure').'">';
-	            print $formproduct->selectMeasuringUnits("net_measure_units", '', GETPOSTISSET('net_measure_units') ?GETPOST('net_measure_units', 'alpha') : (empty($conf->global->MAIN_WEIGHT_DEFAULT_UNIT) ? 0 : $conf->global->MAIN_WEIGHT_DEFAULT_UNIT), 0, 0);
-	            print '</td></tr>';
+                if (!empty($conf->global->PRODUCT_ADD_NET_MEASURE))
+                {
+                        // Net Measure
+                        print '<tr><td>'.$langs->trans("NetMeasure").'</td><td colspan="3">';
+                        print '<input name="net_measure" size="4" value="'.GETPOST('net_measure').'">';
+                        print $formproduct->selectMeasuringUnits("net_measure_units", '', GETPOSTISSET('net_measure_units') ?GETPOST('net_measure_units', 'alpha') : (empty($conf->global->MAIN_WEIGHT_DEFAULT_UNIT) ? 0 : $conf->global->MAIN_WEIGHT_DEFAULT_UNIT), 0, 0);
+                        print '</td></tr>';
+                }
             }
         }
 
@@ -1443,29 +1598,32 @@ else
 		    print $form->selectUnits('', 'units');
 		    print '</td></tr>';
 	    }
-
-        // Custom code
-        if (empty($conf->global->PRODUCT_DISABLE_CUSTOM_INFO) && empty($type))
-        {
-	        print '<tr><td>'.$langs->trans("CustomCode").'</td><td><input name="customcode" class="maxwidth100onsmartphone" value="'.GETPOST('customcode').'"></td>';
-	        if ($conf->browser->layout == 'phone') print '</tr><tr>';
-	        // Origin country
-	        print '<td>'.$langs->trans("CountryOrigin").'</td>';
-	        print '<td>';
-	        print $form->select_country(GETPOST('country_id', 'int'), 'country_id');
-	        if ($user->admin) print info_admin($langs->trans("YouCanChangeValuesForThisListFromDictionarySetup"), 1);
-	        print '</td></tr>';
+            
+        if($status_product && $status_product == "produitfab") {
+            
+        }else{
+            // Custom code
+            if (empty($conf->global->PRODUCT_DISABLE_CUSTOM_INFO) && empty($type))
+            {
+                    print '<tr><td>'.$langs->trans("CustomCode").'</td><td><input name="customcode" class="maxwidth100onsmartphone" value="'.GETPOST('customcode').'"></td>';
+                    if ($conf->browser->layout == 'phone') print '</tr><tr>';
+                    // Origin country
+                    print '<td>'.$langs->trans("CountryOrigin").'</td>';
+                    print '<td>';
+                    print $form->select_country(GETPOST('country_id', 'int'), 'country_id');
+                    if ($user->admin) print info_admin($langs->trans("YouCanChangeValuesForThisListFromDictionarySetup"), 1);
+                    print '</td></tr>';
+            }
+        
+            // Other attributes
+            $parameters = array('colspan' => 3, 'cols' => '3');
+            $reshook = $hookmanager->executeHooks('formObjectOptions', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
+            print $hookmanager->resPrint;
+            if (empty($reshook))
+            {
+                    print $object->showOptionals($extrafields, 'edit', $parameters);
+            }
         }
-
-        // Other attributes
-        $parameters = array('colspan' => 3, 'cols' => '3');
-        $reshook = $hookmanager->executeHooks('formObjectOptions', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
-        print $hookmanager->resPrint;
-        if (empty($reshook))
-        {
-        	print $object->showOptionals($extrafields, 'edit', $parameters);
-        }
-
         // Note (private, no output on invoices, propales...)
         //if (! empty($conf->global->MAIN_DISABLE_NOTES_TAB))       available in create mode
         //{
@@ -1505,437 +1663,1035 @@ else
             print '<br>';
         }
         else
-		{
-            print '<table class="border centpercent">';
-
-            // Fournisseur
-            print '<tr><td class="fieldrequired">'.$langs->trans("SupplierOfProduct").'</td><td>';
-            print $form->select_company(GETPOST("id_fourn", 'alpha'), 'id_fourn', 'fournisseur=1', 'SelectThirdParty', 0, 0);
-            print '</td></tr>';
+	{
             
-            if (!empty($conf->global->FOURN_PRODUCT_AVAILABILITY))
-            {
+            if($status_product && $status_product == "produitfab") { 
+                // Price
+                print '<tr><td class="titlefieldcreate fieldrequired">'.$langs->trans("SellingPrice").'(TTC)</td>';
+                print '<td><input name="price" class="maxwidth50" value="'.GETPOST("price", 'alpha').'" id="price_ttc">';
+                print $form->selectPriceBaseType('TTC', "price_base_type");
+                print '</td></tr>';
+                
+                print '<div class="div-combination-pfab"><strong>'.$langs->trans("Newcombination").'</strong></div>';
+                print '<table class="border centpercent">';
+                print '<tr>';
+                print '<td class="width20percent">'.$langs->trans("CombinationAttribute").'</td>';
+                print '</tr>';
+                print '<tr>';
+                print '<td>&nbsp;</td>';
+                
+                $objectProductAttributes = new ProductAttribute($db);
+                $objectvalProductAttributes = new ProductAttributeValue($db);
+                print '<td colspan="2">
+                        <div style="margin: 0 34% 2%;">
+                            Filtrer taille(s) pour : <select class="flat" name="type_taille" id="type_taille">
+                                <option value="-1" selected="" data-select2-id="5">---- Tous ----</option>
+                                <option value="1">Femme</option>
+                                <option value="2">Fillette</option>
+                                <option value="3">Bébé</option>
+                            </select>
+                        </div>
+                <div class="div-main-content-optionh">';
+                foreach($objectProductAttributes->fetchAll() as $res){
+                    if($res->id == 1 || $res->id == 2) {
+                        $class_option_content = ($res->id == 1) ? "option-content-couleur" : "option-content-taille";
+                        $class_option_heading = ($res->id == 1) ? "option-heading" : "option-heading-taille";
+                        $class_option_heading_content = ($res->id == 1) ? "option-heading-content" : "option-heading-content-taille";
+                        $url_creation_decl = ($res->id == 1) ? 
+                        "<a href='".DOL_URL_ROOT."/variants/create_val.php?id=1&data_popup=1' target='_blank' class='button create_combination_popup'>Créer couleur</a>" : 
+                        "<a href='".DOL_URL_ROOT."/variants/create_val.php?id=2&data_popup=1' target='_blank' class='button create_combination_popup'>Créer taille</a>";
+                        print '<div class="'.$class_option_heading_content.'"><div class="'.$class_option_heading.'">'.$res->label.'</div><div class="'.$class_option_content.'">';
+                        foreach ($objectvalProductAttributes->fetchAllByProductAttribute($res->id) as $attrval) {
+                            if($attrval->code_couleur):
+                                print '<label class="container-declinaison" for="'.$attrval->value.'">'.$attrval->value.''
+                                    . '<input type="checkbox" id="'.$attrval->value.'" value="'.$attrval->id.'" name="choix_couleur" >'
+                                    . '<span class="checkmark-declinaison" style="background-color:'.$attrval->code_couleur.'"></span></label>';
+                            else:
+                                print '<label class="container-declinaison type_declinaison_'.$attrval->type_taille.'" for="'.$attrval->value.'">'.$attrval->value.''
+                                    . '<input type="checkbox" id="'.$attrval->value.'" value="'.$attrval->id.'" name="choix_taille">'
+                                    . '<span class="checkmark-declinaison" style="background-color:#eee;"></span></label>';
+                            endif;
+                        }
+                        print '</div>' ; 
+                        print $url_creation_decl;
+                        print '</div>';
+                    }
+                }
+                
+                print'</div></td>';
+                print '</tr>';
+                print '</table>';
+                $cumulcodeProd = 0;
+                
+                if (!empty($modCodeProduct->code_auto)) {
+                    $cumulcodeProd = $modCodeProduct->getNextValue($object, $type);
+                }
+                $cumulbarcode = isset($_POST['barcode']) ? GETPOST('barcode') : $object->barcode;
+	        if (empty($cumulbarcode) && !empty($modBarCodeProduct->code_auto)) {
+                    $cumulbarcode = $modBarCodeProduct->getNextValue($object, $type);
+                }
+                ?>
+                <div  style="width: 80%;"> 
+                        <button id="addBtn" type="button" class='button' style='margin-left:0px!important;background:#DAEBE1;border-collapse:collapse;border:none;'>Ajout déclinaison</button>
+                        <input type="hidden" id="id_declinaison" value="">
+                        <input type="hidden" id="id_rowx" value="">
+                        <table  style="max-width: 100%;display: block;" class="dynamic_lines"> 
+                            <thead> 
+                                <tr> 
+                                    <th class="text-align-left" style="display:none;">Numéro ligne</th> 
+                                    <th class="text-align-left">Supprimer ligne</th> 
+                                    <th class="text-align-left">Codebare</th> 
+                                    <th class="text-align-left">Couleur</th> 
+                                    <th class="text-align-left">Taille</th> 
+                                    <th class="text-align-left">Quantité commandé</th> 
+                                    <th class="text-align-left">Quantité fabriqué</th> 
+                                    <th class="text-align-left">Poids</th> 
+                                    <th class="text-align-left">Composition</th>
+                                    <th class="text-align-left">Prix Yuan</th> 
+                                    <th class="text-align-left">Taux</th> 
+                                    <th class="text-align-left">Prix Euro</th> 
+                                    
+                                </tr> 
+                            </thead> 
+                            <tbody id="tbody"> 
+
+                            </tbody> 
+                        </table> 
+                     
+                </div> 
+                <script type="text/javascript">
+                        jQuery(document).ready(function () {
+                            $("#select_price_base_type option:contains('HT')").attr("disabled","disabled").hide();
+                            $(".option-heading").on('click', function() {
+                                $(this).toggleClass('is-active').next(".option-content-couleur").stop().slideToggle(500);
+                            });
+                            $(".option-heading-taille").on('click', function() {
+                                $(this).toggleClass('is-active').next(".option-content-taille").stop().slideToggle(500);
+                            });
+                            $('a.create_combination_popup').click(function (e) {
+                                    e.preventDefault();
+                                    var page = $(this).attr("href")
+                                    var pagetitle = $(this).attr("title")
+                                    var $dialog = $('<div></div>')
+                                    .html('<iframe style="border: 0px; " src="' + page + '" width="100%" height="100%" id="newProductIframe"></iframe>')
+                                    .dialog({
+                                        autoOpen: false,
+                                        modal: true,
+                                        height: 500,
+                                        width: 500,
+                                        resizable: true,
+                                        title: pagetitle,
+                                        /*close: function(event, ui){
+                                            alert('aaa');
+                                        },*/
+                                        open: function(event, ui) {
+                                            $("#ui-id-3").css('overflow', 'hidden');
+                                        }
+                                    });
+                                    $dialog.dialog('open');
+                            });
+                            /*filtre taille*/
+                            $("#type_taille").change(function(){
+                                var valTailles = $(this).val();
+                                if (parseInt(valTailles) == 1){
+                                    $(".type_declinaison_3").hide();
+                                    $(".type_declinaison_2").hide();
+                                    $(".type_declinaison_1").show();
+                                }else if(parseInt(valTailles) == 2){
+                                    $(".type_declinaison_3").hide();
+                                    $(".type_declinaison_1").hide();
+                                    $(".type_declinaison_2").show();
+                                }else if(parseInt(valTailles) == 3) {
+                                    $(".type_declinaison_1").hide();
+                                    $(".type_declinaison_2").hide();
+                                    $(".type_declinaison_3").show();
+                                }else{
+                                    $(".type_declinaison_1").show();
+                                    $(".type_declinaison_2").show();
+                                    $(".type_declinaison_3").show();
+                                }
+                            });
+                            /* Transform checkbox en radio box
+                             * $('.option-content-couleur').on('click', ':checkbox', function(e) {
+                                $('.option-content-couleur :checkbox').each(function() {
+                                  if (this != e.target)
+                                    $(this).prop('checked', false);
+                                });
+                            });*/
+                            /*$('.option-content-taille').on('click', ':checkbox', function(e) {
+                                $('.option-content-taille :checkbox').each(function() {
+                                  if (this != e.target)
+                                    $(this).prop('checked', false);
+                                });
+                            });*/
+                            // Denotes total number of rows 
+                            var rowIdx = 0; 
+                              // jQuery button click event to add a row 
+                              $('#addBtn').on('click', function () { 
+                                  /* traitement couleurs et tailles */
+                                    var choixCouleur = "";
+                                    var valCouleur = "";
+                                    var choixTaille  = "";
+                                    var valTaille  = "";
+                                    var arrColors  = [];
+                                    var arrTailles = [];
+                                    $('input[name="choix_couleur"]:checked').each(function(){
+                                        var idVal =  $(this).attr('id');
+                                        valCouleur = $(this).val();
+                                        choixCouleur = $("label[for='"+idVal+"']").text();
+                                        arrColors.push(choixCouleur+"_"+valCouleur);
+                                    });
+                                    
+                                    $('input[name="choix_taille"]:checked').each(function(){
+                                        var idVal =  $(this).attr('id');
+                                        valTaille = $(this).val();
+                                        choixTaille = $("label[for='"+idVal+"']").text();
+                                        arrTailles.push(choixTaille+"_"+valTaille);
+                                    });
+                                    
+                                    /*console.log(arrColors);
+                                    console.log(arrTailles);*/
+                                    if(arrTailles.length>0) {
+                                        for(var cl =0;cl<arrTailles.length;cl++){
+                                            rowIdx++;
+                                            if(arrColors.length > 0){
+                                                
+                                            }else{
+                                                /* traitement réferences */
+                                                var refCumules = '<?php echo $cumulcodeProd; ?>';
+                                                /* traitement codebarre */
+                                                var refcodebare12 = parseInt(refCumules+"0000") + parseInt(`${rowIdx}`);
+                                                var codebarres = refcodebare12+""+getLastEan13Digit(refcodebare12.toString());
+                                                var splitArrTailles = arrTailles[cl].split('_');
+                                                
+                                                // test si on ne selectionne ou non une déclinaison quand on clique sur 'ajout déclinaison'
+                                                if((arrColors[cl] === "" && choixTaille === "")) {
+                                                    alert('Veuillez selectionner  au moins une déclinaison');
+                                                    return;
+                                                }
+                                                
+                                                // ajouter les valeur selectionnées dans le hidden
+                                                var oldVal = $('#id_declinaison').val();
+                                                $("#id_declinaison").val(oldVal+"|"+("_"+splitArrTailles[0]));
+                                                var oldValidx = $('#id_rowx').val();
+                                                $("#id_rowx").val(oldValidx+"|"+rowIdx);
+                                                
+                                                const findDuplicates = (arr) => {
+                                                    let sorted_arr = arr.slice().sort(); 
+                                                    let results = [];
+                                                    for (let i = 0; i < sorted_arr.length - 1; i++) {
+                                                      if (sorted_arr[i + 1] == sorted_arr[i]) {
+                                                        results.push(sorted_arr[i]);
+                                                      }
+                                                    }
+                                                    return results;
+                                                };
+                                                var arrvalDecl = $('#id_declinaison').val().split('|');
+                                                const uniqueArray = unique(arrvalDecl);
+                                                
+                                                if(findDuplicates(arrvalDecl).length > 0){
+                                                    var valdupl = findDuplicates(arrvalDecl)[0].split('_');
+                                                    alert("la déclinaison "+valdupl[0]+" "+valdupl[1]+" est déjà ajouté");
+                                                    $('#id_declinaison').val(uniqueArray.join('|'));
+                                                    rowIdx--;
+                                                    return;
+                                                }
+                                                $('#tbody').append(`<tr id="R${rowIdx}"> 
+                                                    <td class="row-index text-align-left" style="display:none;"> 
+                                                        <input type="text" value="${rowIdx}" readonly="readonly">
+                                                        <input type="hidden" value="${rowIdx}" id="row_idx_${rowIdx}">
+                                                    </td>
+                                                    <td class="text-align-left"> 
+                                                      <button class="btn btn-danger remove"
+                                                        type="button">Supprimer</button> 
+                                                      </td>
+                                                    <td class="codebares text-align-left"> 
+                                                        <input type="text" value="${codebarres}" readonly="readonly" name="codebares[]">
+                                                    </td>
+                                                    <td class="couleurs${rowIdx} text-align-left"> 
+                                                        <input type="hidden" value="" name="valCouleurs[]">
+                                                        <input type="hidden" value="" id="choix_couleur_${rowIdx}">
+                                                        <input type="text" value="" readonly="readonly" disabled class="couleursValue${rowIdx}">
+                                                    </td>
+                                                    <td class="tailles${rowIdx} text-align-left"> 
+                                                        <input type="hidden" value="${splitArrTailles[1]}" name="valTailles[]" >
+                                                        <input type="hidden" value="${splitArrTailles[0]}" id="choix_taille_${rowIdx}" >
+                                                        <input type="text" value="${splitArrTailles[0]}" readonly="readonly" disabled class="taillesValue${rowIdx}">
+                                                    </td>
+                                                    <td class="qtycomm text-align-left"> 
+                                                        <input type="number" value=""  name="qtycomm[]" >
+                                                    </td>
+                                                    <td class="qtyfabriq text-align-left"> 
+                                                        <input type="number" value=""  name="qtyfabriq[]" >
+                                                    </td>
+                                                    <td class="poidsfabriq text-align-left"> 
+                                                        <input type="text" value=""  name="poidsfabriq[]">
+                                                    </td>
+                                                    <td class="compfabriq text-align-left"> 
+                                                        <input type="text" value=""  name="compfabriq[]" id="composition_${rowIdx}" oninput="changeValueInputComp('composition_${rowIdx}','copie_val_comp_${rowIdx}')" >
+                                                        <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                    </td>
+                                                    <td class="priceYuan text-align-left" > 
+                                                        <input type="text" value=""  name="priceYuan[]" id="price_yuan_${rowIdx}"  oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_${rowIdx}')">
+                                                        <button class="btn btn-info" type="button" id="copie_val_${rowIdx}" style="display:none;" onclick="copyValuesOfRowPrixYuan('price_yuan_${rowIdx}','taux_change_${rowIdx}','price_euro_${rowIdx}','copie_val_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                    </td>
+                                                    <td class="tauxChange text-align-left"> 
+                                                        <input type="text" value="<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>" id="taux_change_${rowIdx}"  name="tauxChange[]" oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}')">
+                                                    </td>
+                                                    <td class="priceEuro text-align-left"> 
+                                                        <input type="text" value=""  name="priceEuro[]" id="price_euro_${rowIdx}">
+                                                    </td>
+                                                    </tr>
+                                                `);
+                                            }
+                                        }
+                                    }
+                                    
+                                    if(arrColors.length>0){
+                                        for(var cl =0;cl<arrColors.length;cl++){
+                                                if(arrTailles.length>0) {
+                                                    for(var tl =0;tl<arrTailles.length;tl++){
+                                                        rowIdx++;
+                                                        /* traitement réferences */
+                                                        var refCumules = '<?php echo $cumulcodeProd; ?>';
+                                                        //var references = parseInt(refCumules) + parseInt(`${rowIdx}`) + 1;
+                                                        /* traitement codebarre */
+                                                        //var refcodebare = '<?php echo $cumulbarcode; ?>';
+                                                        //var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + 1;
+                                                        var refcodebare12 = parseInt(refCumules+"0000") + parseInt(`${rowIdx}`);
+                                                        var codebarres = refcodebare12+""+getLastEan13Digit(refcodebare12.toString());
+                                                        var splitArrColors = arrColors[cl].split('_');
+                                                        var splitArrTailles = arrTailles[tl].split('_');
+
+                                                        // test si on ne selectionne ou non une déclinaison quand on clique sur 'ajout déclinaison'
+                                                        if((arrColors[cl] === "" && choixTaille === "")) {
+                                                            alert('Veuillez selectionner  au moins une déclinaison');
+                                                            return;
+                                                        }
+
+                                                        // ajouter les valeur selectionnées dans le hidden
+                                                        var oldVal = $('#id_declinaison').val();
+                                                        $("#id_declinaison").val(oldVal+"|"+(splitArrColors[0]+"_"+splitArrTailles[0]));
+                                                        var oldValidx = $('#id_rowx').val();
+                                                        $("#id_rowx").val(oldValidx+"|"+rowIdx);
+
+                                                        const findDuplicates = (arr) => {
+                                                                let sorted_arr = arr.slice().sort(); 
+                                                                let results = [];
+                                                                for (let i = 0; i < sorted_arr.length - 1; i++) {
+                                                                  if (sorted_arr[i + 1] == sorted_arr[i]) {
+                                                                    results.push(sorted_arr[i]);
+                                                                  }
+                                                                }
+                                                                return results;
+                                                            };
+                                                            var arrvalDecl = $('#id_declinaison').val().split('|');
+                                                            const uniqueArray = unique(arrvalDecl);
+
+                                                            if(findDuplicates(arrvalDecl).length > 0){
+                                                                var valdupl = findDuplicates(arrvalDecl)[0].split('_');
+                                                                alert("la déclinaison "+valdupl[0]+" "+valdupl[1]+" est déjà ajouté");
+                                                                $('#id_declinaison').val(uniqueArray.join('|'));
+                                                                rowIdx--;
+                                                                return;
+                                                            }
+                                                        $('#tbody').append(`<tr id="R${rowIdx}"> 
+                                                            <td class="row-index text-align-left" style="display:none;"> 
+                                                                <input type="text" value="${rowIdx}" readonly="readonly">
+                                                                <input type="hidden" value="${rowIdx}" id="row_idx_${rowIdx}">
+                                                            </td>
+                                                            <td class="text-align-left"> 
+                                                              <button class="btn btn-danger remove"
+                                                                type="button">Supprimer</button> 
+                                                              </td>
+                                                            <td class="codebares text-align-left"> 
+                                                                <input type="text" value="${codebarres}" readonly="readonly" name="codebares[]">
+                                                            </td>
+                                                            <td class="couleurs${rowIdx} text-align-left"> 
+                                                                <input type="hidden" value="${splitArrColors[1]}" name="valCouleurs[]">
+                                                                <input type="hidden" value="${splitArrColors[0]}" id="choix_couleur_${rowIdx}">
+                                                                <input type="text" value="${splitArrColors[0]}" readonly="readonly" disabled class="couleursValue${rowIdx}">
+                                                            </td>
+                                                            <td class="tailles${rowIdx} text-align-left"> 
+                                                                <input type="hidden" value="${splitArrTailles[1]}" name="valTailles[]" >
+                                                                <input type="hidden" value="${splitArrTailles[0]}" id="choix_taille_${rowIdx}" >
+                                                                <input type="text" value="${splitArrTailles[0]}" readonly="readonly" disabled class="taillesValue${rowIdx}">
+                                                            </td>
+                                                            <td class="qtycomm text-align-left"> 
+                                                                <input type="number" value=""  name="qtycomm[]" >
+                                                            </td>
+                                                            <td class="qtyfabriq text-align-left"> 
+                                                                <input type="number" value=""  name="qtyfabriq[]" >
+                                                            </td>
+                                                            <td class="poidsfabriq text-align-left"> 
+                                                                <input type="text" value=""  name="poidsfabriq[]">
+                                                            </td>
+                                                            <td class="compfabriq text-align-left"> 
+                                                                <input type="text" value=""  name="compfabriq[]" id="composition_${rowIdx}" oninput="changeValueInputComp('composition_${rowIdx}','copie_val_comp_${rowIdx}')" >
+                                                                <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                            </td>
+                                                            <td class="priceYuan text-align-left" > 
+                                                                <input type="text" value=""  name="priceYuan[]" id="price_yuan_${rowIdx}"  oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_${rowIdx}')">
+                                                                <button class="btn btn-info" type="button" id="copie_val_${rowIdx}" style="display:none;" onclick="copyValuesOfRowPrixYuan('price_yuan_${rowIdx}','taux_change_${rowIdx}','price_euro_${rowIdx}','copie_val_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                            </td>
+                                                            <td class="tauxChange text-align-left"> 
+                                                                <input type="text" value="<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>" id="taux_change_${rowIdx}"  name="tauxChange[]" oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}')">
+                                                            </td>
+                                                            <td class="priceEuro text-align-left"> 
+                                                                <input type="text" value=""  name="priceEuro[]" id="price_euro_${rowIdx}">
+                                                            </td>
+                                                            </tr>
+                                                        `);
+                                                    }
+                                                }else{
+                                                    rowIdx++;
+                                                    /* traitement réferences */
+                                                    var refCumules = '<?php echo $cumulcodeProd; ?>';
+                                                    //var references = parseInt(refCumules) + parseInt(`${rowIdx}`) + 1;
+                                                    /* traitement codebarre */
+                                                    //var refcodebare = '<?php echo $cumulbarcode; ?>';
+                                                    //var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + 1;
+                                                    var refcodebare12 = parseInt(refCumules+"0000") + parseInt(`${rowIdx}`);
+                                                    var codebarres = refcodebare12+""+getLastEan13Digit(refcodebare12.toString());
+                                                    var splitArrColors = arrColors[cl].split('_');
+                                                    
+                                                    // test si on ne selectionne ou non une déclinaison quand on clique sur 'ajout déclinaison'
+                                                    if((arrColors[cl] === "" && choixTaille === "")) {
+                                                        alert('Veuillez selectionner  au moins une déclinaison');
+                                                        return;
+                                                    }
+
+                                                    // ajouter les valeur selectionnées dans le hidden
+                                                    var oldVal = $('#id_declinaison').val();
+                                                    $("#id_declinaison").val(oldVal+"|"+(splitArrColors[0]+"_"));
+                                                    var oldValidx = $('#id_rowx').val();
+                                                    $("#id_rowx").val(oldValidx+"|"+rowIdx);
+
+                                                    const findDuplicates = (arr) => {
+                                                            let sorted_arr = arr.slice().sort(); 
+                                                            let results = [];
+                                                            for (let i = 0; i < sorted_arr.length - 1; i++) {
+                                                                if (sorted_arr[i + 1] == sorted_arr[i]) {
+                                                                    results.push(sorted_arr[i]);
+                                                                }
+                                                            }
+                                                            return results;
+                                                        };
+                                                        var arrvalDecl = $('#id_declinaison').val().split('|');
+                                                        const uniqueArray = unique(arrvalDecl);
+
+                                                        if(findDuplicates(arrvalDecl).length > 0){
+                                                            var valdupl = findDuplicates(arrvalDecl)[0].split('_');
+                                                            alert("la déclinaison "+valdupl[0]+" "+valdupl[1]+" est déjà ajouté");
+                                                            $('#id_declinaison').val(uniqueArray.join('|'));
+                                                            rowIdx--;
+                                                            return;
+                                                        }
+                                                    $('#tbody').append(`<tr id="R${rowIdx}"> 
+                                                        <td class="row-index text-align-left" style="display:none;"> 
+                                                            <input type="text" value="${rowIdx}" readonly="readonly">
+                                                            <input type="hidden" value="${rowIdx}" id="row_idx_${rowIdx}">
+                                                        </td>
+                                                        <td class="text-align-left"> 
+                                                          <button class="btn btn-danger remove"
+                                                            type="button">Supprimer</button> 
+                                                          </td>
+                                                        <td class="codebares text-align-left"> 
+                                                            <input type="text" value="${codebarres}" readonly="readonly" name="codebares[]">
+                                                        </td>
+                                                        <td class="couleurs${rowIdx} text-align-left"> 
+                                                            <input type="hidden" value="${splitArrColors[1]}" name="valCouleurs[]">
+                                                            <input type="hidden" value="${splitArrColors[0]}" id="choix_couleur_${rowIdx}">
+                                                            <input type="text" value="${splitArrColors[0]}" readonly="readonly" disabled class="couleursValue${rowIdx}">
+                                                        </td>
+                                                        <td class="tailles${rowIdx} text-align-left"> 
+                                                            <input type="hidden" value="" name="valTailles[]" >
+                                                            <input type="hidden" value="" id="choix_taille_${rowIdx}" >
+                                                            <input type="text" value="" readonly="readonly" disabled class="taillesValue${rowIdx}">
+                                                        </td>
+                                                        <td class="qtycomm text-align-left"> 
+                                                            <input type="number" value=""  name="qtycomm[]" >
+                                                        </td>
+                                                        <td class="qtyfabriq text-align-left"> 
+                                                            <input type="number" value=""  name="qtyfabriq[]" >
+                                                        </td>
+                                                        <td class="poidsfabriq text-align-left"> 
+                                                            <input type="text" value=""  name="poidsfabriq[]">
+                                                        </td>
+                                                        <td class="compfabriq text-align-left"> 
+                                                            <input type="text" value=""  name="compfabriq[]" id="composition_${rowIdx}" oninput="changeValueInputComp('composition_${rowIdx}','copie_val_comp_${rowIdx}')" >
+                                                            <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                        </td>
+                                                        <td class="priceYuan text-align-left" > 
+                                                            <input type="text" value=""  name="priceYuan[]" id="price_yuan_${rowIdx}"  oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_${rowIdx}')">
+                                                            <button class="btn btn-info" type="button" id="copie_val_${rowIdx}" style="display:none;" onclick="copyValuesOfRowPrixYuan('price_yuan_${rowIdx}','taux_change_${rowIdx}','price_euro_${rowIdx}','copie_val_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                        </td>
+                                                        <td class="tauxChange text-align-left"> 
+                                                            <input type="text" value="<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>" id="taux_change_${rowIdx}"  name="tauxChange[]" oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}')">
+                                                        </td>
+                                                        <td class="priceEuro text-align-left"> 
+                                                            <input type="text" value=""  name="priceEuro[]" id="price_euro_${rowIdx}">
+                                                        </td>
+                                                        </tr>
+                                                    `);
+                                                }
+                                            }   
+                                        }
+                                    });
+                            // jQuery button click event to remove a row. 
+                            $('#tbody').on('click', '.remove', function () { 
+                                    // delete current declinaison from hidden val
+                                    var hiddenDeclinaison = $('#id_declinaison').val().split('|');
+                                    var currentRow = $(this).closest('tr');
+                                    var currentRowId = currentRow.attr('id');
+                                    var currentDig = parseInt(currentRowId.substring(1));
+                                    var currentColors  = currentRow.find('.couleursValue' + currentDig).val();
+                                    var currentTailles  = currentRow.find('.taillesValue' + currentDig).val();
+                                    var hiddenResult = arrayRemove(hiddenDeclinaison, currentColors+"_"+currentTailles);
+                                    $('#id_declinaison').val(hiddenResult.join('|'));
+                                    
+                                    var hiddenRowIdx = $('#id_rowx').val().split('|');
+                                    var hiddenResRowIdx = arrayRemove(hiddenRowIdx, currentDig);
+                                    $('#id_rowx').val(hiddenResRowIdx.join('|'));
+                                    
+                                    // Getting all the rows next to the row
+                                    var child = $(this).closest('tr').nextAll();
+                                    child.each(function () {
+                                        // Getting <tr> id.
+                                        var id = $(this).attr('id');
+                                        // Getting the <p> inside the .row-index class.
+                                        var idx = $(this).children('.row-index').find('input');
+                                        var refs = $(this).children('.references').find('input');
+                                        var cdbares = $(this).children('.codebares').find('input');
+                                        // Gets the row number from <tr> id.
+                                        var dig = parseInt(id.substring(1));
+                                        // Modifying row index. 
+                                        idx.attr('value',`${dig - 1}`);
+                                        var refCumules = '<?php echo $cumulcodeProd; ?>';
+                                        var references = parseInt(refCumules+"0000") + parseInt(`${dig - 1}`);
+                                        refs.attr('value',`${references}`);
+                                        cdbares.attr('value',`${references}`+""+getLastEan13Digit(`${references}`));
+                                        // Modifying row id.
+                                        $(this).attr('id', `R${dig}`);
+                                    }); 
+                                    // Removing the current row. 
+                                    $(this).closest('tr').remove(); 
+                                    rowIdx--; 
+                            });
+                        });
+                        
+                        function changeEuro(yuan, euro, tauxchange, copyval){
+                            var resy = $("#"+yuan).val();
+                            var tauxchange = $("#"+tauxchange).val();
+                            /* traitement calcul prix euro */
+                            if(resy){
+                                $("#"+euro).val((parseFloat(resy.replace(',','.'))/parseFloat(tauxchange.replace(',','.'))).toFixed(2))
+                            }else{
+                                $("#"+euro).val(0)
+                            }
+                            /* traitement ajout boutton copy */
+                            if(resy !== ""){
+                                $("#"+copyval).show();
+                            }else{
+                                $("#"+copyval).hide();
+                            }
+                        }
+                        
+                        function changeValueInputComp(inputComp,copyval){
+                            var resy = $("#"+inputComp).val();
+                            /* traitement ajout boutton copy */
+                            if(resy !== ""){
+                                $("#"+copyval).show();
+                            }else{
+                                $("#"+copyval).hide();
+                            }
+                        }
+                        function copyValuesOfRowComposition(compositionInput,buttonInput){
+                            var hiddenRowIdx = $('#id_rowx').val().split('|');
+                            var valueCurrentComposition = $("#"+compositionInput).val();
+                            for(var i = 0; i < hiddenRowIdx.length; i++){
+                                $("#composition_"+hiddenRowIdx[i]).val(valueCurrentComposition);
+                            }
+                            $("#"+buttonInput).hide();
+                        }
+                        
+                        function copyValuesOfRowPrixYuan(yuanInput,tauxInput,euroInput,buttonInput){
+                            var hiddenRowIdx = $('#id_rowx').val().split('|');
+                            var valueCurrentYuan = $("#"+yuanInput).val();
+                            var valueCurrentTaux = $("#"+tauxInput).val();
+                            var valueCurrentEuro = $("#"+euroInput).val();
+                            for(var i = 0; i < hiddenRowIdx.length; i++){
+                                $("#price_yuan_"+hiddenRowIdx[i]).val(valueCurrentYuan);
+                                $("#taux_change_"+hiddenRowIdx[i]).val(valueCurrentTaux);
+                                $("#price_euro_"+hiddenRowIdx[i]).val(valueCurrentEuro);
+                            }
+                            $("#"+buttonInput).hide();
+                        }
+                        
+                        function unique(array){
+                            return array.filter(function(el, index, arr) {
+                                return index == arr.indexOf(el);
+                            });
+                        }
+                        
+                        function arrayRemove(arr, value) { 
+                            return arr.filter(function(ele){ 
+                                return ele != value; 
+                            });
+                        }
+                        
+                        function getLastEan13Digit(ean) { 
+                            if (!ean || ean.length !== 12) throw new Error('Invalid EAN 13, should have 12 digits'); 
+                            const multiply = [1, 3]; 
+                            let total = 0; 
+                            ean.split('').forEach((letter, index) => { 
+                              total += parseInt(letter, 10) * multiply[index % 2];
+                            });
+                            const base10Superior = Math.ceil(total / 10) * 10; 
+                            return base10Superior - total;
+                        }
+                    </script>
+                <?php
+            }else {
+                print '<table class="border centpercent">';
+
+                // Fournisseur
+                print '<tr><td class="fieldrequired">'.$langs->trans("SupplierOfProduct").'</td><td>';
+                print $form->select_company(GETPOST("id_fourn", 'alpha'), 'id_fourn', 'fournisseur=1', 'SelectThirdParty', 0, 0);
+                print '</td></tr>';
+                
+                if (!empty($conf->global->FOURN_PRODUCT_AVAILABILITY))
+                {
                     $langs->load("propal");
                     print '<tr><td>'.$langs->trans("Availability").'</td><td>';
                     $form->selectAvailabilityDelay($productFournisseur->fk_availability, "oselDispo", 1);
                     print '</td></tr>'."\n";
-            }
-            
-            // Option to define a transport cost on supplier price
-            if ($conf->global->PRODUCT_CHARGES)
-            {
-                if (!empty($conf->margin->enabled))
-                {
-                    print '<tr>';
-                    print '<td>'.$langs->trans("Charges").'</td>';
-                    print '<td><input class="flat" name="charges" size="8" value="'.(GETPOST('charges') ?price(GETPOST('charges')) : (isset($productFournisseur->fourn_charges) ?price($productFournisseur->fourn_charges) : '')).'">';
-                    print '</td>';
-                    print '</tr>';
                 }
+                
+                // Option to define a transport cost on supplier price
+                if ($conf->global->PRODUCT_CHARGES)
+                {
+                    if (!empty($conf->margin->enabled))
+                    {
+                        print '<tr>';
+                        print '<td>'.$langs->trans("Charges").'</td>';
+                        print '<td><input class="flat" name="charges" size="8" value="'.(GETPOST('charges') ?price(GETPOST('charges')) : (isset($productFournisseur->fourn_charges) ?price($productFournisseur->fourn_charges) : '')).'">';
+                        print '</td>';
+                        print '</tr>';
+                    }
+                }
+
+                // Ref produit fournisseur
+                $refProdParDefaut = "";
+                if (!empty($modCodeProduct->code_auto)) {
+                    $refProdParDefaut = $modCodeProduct->getNextValue($object, $type);
+                }
+                $refProdFourn = !empty(GETPOST("ref_prod_fourn", 'alpha'))?GETPOST("ref_prod_fourn", 'alpha'):$refProdParDefaut;
+                print '<tr><td  class="fieldrequired">'.$langs->trans("RefProduitFournisseur").'</td>';
+                print '<td><input name="ref_prod_fourn" class="maxwidth60" value="'.$refProdFourn.'">';
+                print '</td></tr>';
+
+                // best purchase price
+                print '<tr><td  class="fieldrequired">'.$langs->trans("BestPurchasePrice").'</td>';
+                print '<td> <input id="best_purchase_price_hidden" type="hidden"/>'
+                . ' <input id="best_purchase_price" onInput="doCalcul()" name="best_purchase_price" class="maxwidth50" value="'.GETPOST("best_purchase_price", 'alpha').'">&nbsp';
+                print $form->selectPriceBaseType("HT", "price_base_type_prd_frs");
+                print '</td></tr>';
+
+                // coefficient of return
+                print '<tr><td  class="fieldrequired">'.$langs->trans("CoefficientOfReturn").'</td>';
+                print '<td> <input type="hidden" id="coefficient_of_return_hidden">'
+                . '<input id="coefficient_of_return" onInput="doCalcul()" name="coefficient_of_return" class="maxwidth50" value="'.GETPOST("coefficient_of_return", 'alpha').'">';
+                print '</td></tr>';
+
+                print '<tr><td><hr></td></tr>';
+
+
+                // Cout de revient
+                print '<tr><td>'.$langs->trans("CostOfReturn").'</td>';
+                print '<td><input id="cost_of_return" name="cost_of_return" class="maxwidth50" value="'.GETPOST("cost_of_return", 'alpha').'" readonly>';
+                print '</td></tr>';
+
+                // Prix de revient
+                print '<tr><td>'.$langs->trans("PriceOfReturn").'</td>';
+                print '<td><input id="price_of_return" name="price_of_return" class="maxwidth50" value="'.GETPOST("price_of_return", 'alpha').'" readonly>';
+                print '</td></tr>';
+
+                // Prix moyen pondéré (pmp)
+                /*print '<tr><td>'.$langs->trans("AveragePriceWeighted").'</td>';
+                print '<td><input id="average_price_weighted" name="average_price_weighted" class="maxwidth50" value="'.GETPOST("average_price_weighted", 'alpha').'" readonly>';
+                print '</td></tr>';*/
+
+                print '<tr><td><hr></td></tr>';
+                // Coef vente
+                print '<tr><td>'.$langs->trans("CoeffVente").'</td>';
+                print '<td><input id="coef_vente" name="coef_vente" class="maxwidth50" value="'.$conf->global->COEFFICIENT_VENTE.'" readonly>';
+                print '</td></tr>';
+
+                // Marge
+                print '<tr><td>'.$langs->trans("Margin").'</td>';
+                print '<td><input id="margin_product" name="margin_product" class="maxwidth50" value="'.GETPOST("margin_product", 'alpha').'" readonly>';
+                print '</td></tr>';
+
+                // Prix suggeré
+                print '<tr><td>'.$langs->trans("SuggestPrice").'</td>';
+                print '<td><input id="suggest_price" name="suggest_price" class="maxwidth50" value="'.GETPOST("suggest_price", 'alpha').'" readonly>';
+                print '</td></tr>';
+
+                print '<tr><td><hr></td></tr>';
+
+                // Price
+                print '<tr><td class="titlefieldcreate fieldrequired">'.$langs->trans("SellingPrice").'(TTC)</td>';
+                print '<td><input name="price" class="maxwidth50" value="'.GETPOST("price", 'alpha').'" onInput="doCalcul()" id="price_ttc">';
+                print $form->selectPriceBaseType('TTC', "price_base_type");
+                print '</td></tr>';
+
+                // Min price
+                print '<tr style="display:none;"><td>'.$langs->trans("MinPrice").'</td>';
+                print '<td><input name="price_min" class="maxwidth50" value="'.$object->price_min.'"  style="display:none;">';
+                print '</td></tr>';
+
+                // VAT
+                print '<tr><td>'.$langs->trans("VATRate").'</td><td>';
+                $defaultva = get_default_tva($mysoc, $mysoc);
+
+                $sqlTauxTva = "SELECT t.taux as vat_rate, t.code as default_vat_code "
+                        . " FROM llx_c_tva as t, llx_c_country as c "
+                        . " WHERE t.active=1 AND t.fk_pays = c.rowid AND c.code='".$mysoc->country_code."' "
+                        . " ORDER BY t.taux DESC, t.code ASC, t.recuperableonly ASC "
+                        . " LIMIT 1";
+                $resqlTauxTva = $db->query($sqlTauxTva);
+                if ($resqlTauxTva)
+                {
+                    $objTauxTva = $db->fetch_object($resqlTauxTva);
+                    print '<input type="hidden" value="'.$objTauxTva->vat_rate.'" id="default_taux_tva">';
+                }
+                print $form->load_tva("tva_tx", $defaultva, $mysoc, $mysoc, 0, 0, '', false, 1);
+                print '</td></tr>';
+
+                print '<tr><td><hr></td></tr>';
+                // Coefficient de vente TTC
+                print '<tr><td>'.$langs->trans("CoeffVenteTTC").'</td>';
+                print '<td><input id="coeff_vente_ttc" name="coeff_vente_ttc" class="maxwidth50" value="'.GETPOST("coeff_vente_ttc", 'alpha').'" readonly>';
+                print '</td></tr>';
+
+
+                // Taux de marge en %
+                print '<tr><td>'.$langs->trans("MarginRateAsPercentage").'</td>';
+                print '<td><input id="margin_rate_as_percentage" name="margin_rate_as_percentage" class="maxwidth50" value="'.GETPOST("margin_rate_as_percentage", 'alpha').'" readonly>';
+                print '</td></tr>';
+
+                // Marge TTC
+                print '<tr><td>'.$langs->trans("MarginTTC").'</td>';
+                print '<td><input id="margin_ttc" name="margin_ttc" class="maxwidth50" value="'.GETPOST("margin_ttc", 'alpha').'" readonly>';
+                print '</td></tr>';
+
+                // Taux de marque %
+                print '<tr><td>'.$langs->trans("BrandRateInPercent").'</td>';
+                print '<td><input id="brand_rate_in_percent" name="brand_rate_in_percent" class="maxwidth50" value="'.GETPOST("brand_rate_in_percent", 'alpha').'" readonly>';
+                print '</td></tr>';
+
+                // Prix de vente HT
+                print '<tr><td>'.$langs->trans("SellingPriceExclTax").'</td>';
+                print '<td><input id="selling_price_excl_tax" name="selling_price_excl_tax" class="maxwidth50" value="'.GETPOST("selling_price_excl_tax", 'alpha').'" readonly>';
+                print '</td></tr>';
+
+                // TVA
+                print '<tr><td>'.$langs->trans("Vat").'(8,5%)</td>';
+                print '<td><input id="vat_price" name="vat_price" class="maxwidth50" value="'.GETPOST("vat_price", 'alpha').'" readonly>';
+                print '</td></tr>';
+
+                // Carte metisse 5%
+                print '<tr><td>Carte metisse 5%</td>';
+                print '<td><input id="carte_metisse" name="carte_metisse" class="maxwidth50" value="'.GETPOST("carte_metisse", 'alpha').'" readonly>';
+                print '</td></tr>';
+
+
+                print '</table>';
+            
+            ?>
+                    <script type="text/javascript">
+                        jQuery(document).ready(function () {
+                            $("#select_price_base_type option:contains('HT')").attr("disabled","disabled").hide();
+                            });
+                        function doCalcul() {
+                            /*best price edit*/
+                            var best_purchase_price = parseFloat((document.getElementById("best_purchase_price").value).replace(',','.'));
+                            var coefficient_of_return = parseFloat((document.getElementById("coefficient_of_return").value).replace(',','.'));
+                            var coef_vente = parseFloat(document.getElementById("coef_vente").value);
+                            var cost_of_return = (best_purchase_price*20)/100;
+                            var price_of_return = coefficient_of_return*best_purchase_price;
+                            var cost_of_return = price_of_return-best_purchase_price;
+
+                            //var average_price_weighted = coefficient_of_return*best_purchase_price;
+                            var suggest_price = price_of_return*coef_vente;
+                            var margin_product = suggest_price-price_of_return;
+
+                            if(isNaN(cost_of_return)) {
+                                document.getElementById("cost_of_return").value = "";
+                            }else {
+                                document.getElementById("cost_of_return").value = parseFloat(cost_of_return).toFixed(2);
+                                document.getElementById("cost_of_return").style.color = "grey";
+                            }
+
+                            if(isNaN(price_of_return)) {
+                                document.getElementById("price_of_return").value = "";
+                            } else {
+                                document.getElementById("price_of_return").value = parseFloat(price_of_return).toFixed(2);
+                                document.getElementById("price_of_return").style.color = "grey";
+                            }
+
+                            /*if(isNaN(average_price_weighted)) {
+                                document.getElementById("average_price_weighted").value = "";
+                            }else{
+                                document.getElementById("average_price_weighted").value = parseFloat(average_price_weighted).toFixed(2);
+                                document.getElementById("average_price_weighted").style.color = "grey";
+                            }*/
+
+                            if(isNaN(margin_product)) {
+                                document.getElementById("margin_product").value = "";
+                            }else{
+                                document.getElementById("margin_product").value = parseFloat(margin_product).toFixed(2);
+                                document.getElementById("margin_product").style.color = "grey";
+                            }
+
+                            if(isNaN(suggest_price)) {
+                                document.getElementById("suggest_price").value = "";
+                            }else{
+                                document.getElementById("suggest_price").value = parseFloat(suggest_price).toFixed(2);
+                                document.getElementById("suggest_price").style.color = "grey";
+                            }
+
+                            if(isNaN(best_purchase_price)) {
+                                document.getElementById("best_purchase_price_hidden").value = "";
+                            }else{
+                                document.getElementById("best_purchase_price_hidden").value = parseFloat(best_purchase_price).toFixed(2);
+                                document.getElementById("best_purchase_price_hidden").style.color = "grey";
+                            }
+
+                            if(isNaN(coefficient_of_return)) {
+                                document.getElementById("coefficient_of_return_hidden").value = "";
+                            }else{
+                                document.getElementById("coefficient_of_return_hidden").value = parseFloat(coefficient_of_return).toFixed(2);
+                                document.getElementById("coefficient_of_return_hidden").style.color = "grey";
+                            }
+
+
+                            /* price ttc edit */
+                            var default_taux_tva =  parseFloat((document.getElementById("default_taux_tva").value).replace(',','.'));
+                            var price_ttc =  parseFloat((document.getElementById("price_ttc").value).replace(',','.'));
+                            var price_of_return =  parseFloat((document.getElementById("price_of_return").value).replace(',','.'));
+                            var coefficient_of_return =  parseFloat((document.getElementById("coefficient_of_return_hidden").value).replace(',','.'));
+                            var best_purchase_price =  parseFloat((document.getElementById("best_purchase_price_hidden").value).replace(',','.'));
+                            var tva_calculated = (price_ttc/((default_taux_tva+100)/100))*(default_taux_tva/100);
+                            var price_ht_calculated = price_ttc-tva_calculated;
+
+                            var margin_ttc = price_ttc-price_of_return;
+                            var coeff_vente_ttc = price_ttc/price_of_return;
+                            var margin_rate_as_percentage = (margin_ttc*100)/price_of_return;
+                            var brand_rate_in_percent = (margin_ttc*100)/price_ttc;
+                            var carte_metisse = price_ttc*0.95;
+
+                            if(isNaN(tva_calculated)) {
+                                document.getElementById("vat_price").value ="";
+                            }else{
+                                document.getElementById("vat_price").value = parseFloat(tva_calculated).toFixed(2);
+                                document.getElementById("vat_price").style.color = "grey";
+                            }
+
+                            if(isNaN(price_ht_calculated) /*|| price_ht_calculated<0*/) {
+                                document.getElementById("selling_price_excl_tax").value = "";
+                            }else{
+                                document.getElementById("selling_price_excl_tax").value = parseFloat(price_ht_calculated).toFixed(2);
+                                document.getElementById("selling_price_excl_tax").style.color = "grey";
+                            }
+
+                            if(isNaN(brand_rate_in_percent) /*|| brand_rate_in_percent<0*/) {
+                                document.getElementById("brand_rate_in_percent").value = "";
+                            }else{
+                                document.getElementById("brand_rate_in_percent").value = parseFloat(brand_rate_in_percent).toFixed(2);
+                                document.getElementById("brand_rate_in_percent").style.color = "grey";
+                            }
+
+                            if(isNaN(margin_ttc) /*|| margin_ttc<0*/) {
+                                document.getElementById("margin_ttc").value = "";
+                            }else{
+                                document.getElementById("margin_ttc").value = parseFloat(margin_ttc).toFixed(2);
+                                document.getElementById("margin_ttc").style.color = "grey";
+                            }
+
+                            if(isNaN(coeff_vente_ttc)) {
+                                document.getElementById("coeff_vente_ttc").value = "";
+                            }else{
+                                document.getElementById("coeff_vente_ttc").value = parseFloat(coeff_vente_ttc).toFixed(2);
+                                document.getElementById("coeff_vente_ttc").style.color = "grey";
+                            }
+
+                            if(isNaN(margin_rate_as_percentage)) {
+                                document.getElementById("margin_rate_as_percentage").value = "";
+                            }else{
+                                document.getElementById("margin_rate_as_percentage").value = parseFloat(margin_rate_as_percentage).toFixed(2);
+                                document.getElementById("margin_rate_as_percentage").style.color = "grey";
+                            }
+
+                            if(isNaN(carte_metisse)) {
+                                document.getElementById("carte_metisse").value = "";
+                            }else{
+                                document.getElementById("carte_metisse").value = parseFloat(Math.floor(carte_metisse*10)/10).toFixed(2);
+                                document.getElementById("carte_metisse").style.color = "grey";
+                            }
+                        }
+                    </script>  
+                <?php
+                print '<br>';
             }
-            
-            // Ref produit fournisseur
-            $refProdParDefaut = "";
-            if (!empty($modCodeProduct->code_auto)) {
-                $refProdParDefaut = $modCodeProduct->getNextValue($object, $type);
-            }
-            $refProdFourn = !empty(GETPOST("ref_prod_fourn", 'alpha'))?GETPOST("ref_prod_fourn", 'alpha'):$refProdParDefaut;
-            print '<tr><td  class="fieldrequired">'.$langs->trans("RefProduitFournisseur").'</td>';
-            print '<td><input name="ref_prod_fourn" class="maxwidth60" value="'.$refProdFourn.'">';
-            print '</td></tr>';
-            
-            // best purchase price
-            print '<tr><td  class="fieldrequired">'.$langs->trans("BestPurchasePrice").'</td>';
-            print '<td> <input id="best_purchase_price_hidden" type="hidden"/>'
-            . ' <input id="best_purchase_price" onInput="doCalcul()" name="best_purchase_price" class="maxwidth50" value="'.GETPOST("best_purchase_price", 'alpha').'">&nbsp';
-            print $form->selectPriceBaseType("HT", "price_base_type_prd_frs");
-            print '</td></tr>';
+        }
+        
+        if($status_product && $status_product == "produitfab") { 
+                
+        }else{
+            // Accountancy codes
+            print '<table class="border centpercent">';
 
-            // coefficient of return
-            print '<tr><td  class="fieldrequired">'.$langs->trans("CoefficientOfReturn").'</td>';
-            print '<td> <input type="hidden" id="coefficient_of_return_hidden">'
-            . '<input id="coefficient_of_return" onInput="doCalcul()" name="coefficient_of_return" class="maxwidth50" value="'.GETPOST("coefficient_of_return", 'alpha').'">';
-            print '</td></tr>';
-            
-            print '<tr><td><hr></td></tr>';
-            
-            
-            // Cout de revient
-            print '<tr><td>'.$langs->trans("CostOfReturn").'</td>';
-            print '<td><input id="cost_of_return" name="cost_of_return" class="maxwidth50" value="'.GETPOST("cost_of_return", 'alpha').'" readonly>';
-            print '</td></tr>';
-            
-            // Prix de revient
-            print '<tr><td>'.$langs->trans("PriceOfReturn").'</td>';
-            print '<td><input id="price_of_return" name="price_of_return" class="maxwidth50" value="'.GETPOST("price_of_return", 'alpha').'" readonly>';
-            print '</td></tr>';
-            
-            // Prix moyen pondéré (pmp)
-            /*print '<tr><td>'.$langs->trans("AveragePriceWeighted").'</td>';
-            print '<td><input id="average_price_weighted" name="average_price_weighted" class="maxwidth50" value="'.GETPOST("average_price_weighted", 'alpha').'" readonly>';
-            print '</td></tr>';*/
-            
-            print '<tr><td><hr></td></tr>';
-            // Coef vente
-            print '<tr><td>'.$langs->trans("CoeffVente").'</td>';
-            print '<td><input id="coef_vente" name="coef_vente" class="maxwidth50" value="'.$conf->global->COEFFICIENT_VENTE.'" readonly>';
-            print '</td></tr>';
-            
-            // Marge
-            print '<tr><td>'.$langs->trans("Margin").'</td>';
-            print '<td><input id="margin_product" name="margin_product" class="maxwidth50" value="'.GETPOST("margin_product", 'alpha').'" readonly>';
-            print '</td></tr>';
-            
-            // Prix suggeré
-            print '<tr><td>'.$langs->trans("SuggestPrice").'</td>';
-            print '<td><input id="suggest_price" name="suggest_price" class="maxwidth50" value="'.GETPOST("suggest_price", 'alpha').'" readonly>';
-            print '</td></tr>';
-            
-            print '<tr><td><hr></td></tr>';
-             
-            // Price
-            print '<tr><td class="titlefieldcreate fieldrequired">'.$langs->trans("SellingPrice").'(TTC)</td>';
-            print '<td><input name="price" class="maxwidth50" value="'.GETPOST("price", 'alpha').'" onInput="doCalcul()" id="price_ttc">';
-            print $form->selectPriceBaseType('TTC', "price_base_type");
-            print '</td></tr>';
+                    if (!empty($conf->accounting->enabled))
+                    {
+                            // Accountancy_code_sell
+                            print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancySellCode").'</td>';
+                            print '<td>';
+                if ($type == 0) {
+                    $accountancy_code_sell = (GETPOSTISSET('accountancy_code_sell') ? GETPOST('accountancy_code_sell', 'alpha') : $conf->global->ACCOUNTING_PRODUCT_SOLD_ACCOUNT);
+                } else {
+                    $accountancy_code_sell = (GETPOSTISSET('accountancy_code_sell') ? GETPOST('accountancy_code_sell', 'alpha') : $conf->global->ACCOUNTING_SERVICE_SOLD_ACCOUNT);
+                }
+                print $formaccounting->select_account($accountancy_code_sell, 'accountancy_code_sell', 1, null, 1, 1, '');
+                            print '</td></tr>';
 
-            // Min price
-            print '<tr style="display:none;"><td>'.$langs->trans("MinPrice").'</td>';
-            print '<td><input name="price_min" class="maxwidth50" value="'.$object->price_min.'"  style="display:none;">';
-            print '</td></tr>';
+                            // Accountancy_code_sell_intra
+                            if ($mysoc->isInEEC())
+                            {
+                                    print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancySellIntraCode").'</td>';
+                                    print '<td>';
+                    if ($type == 0) {
+                        $accountancy_code_sell_intra = (GETPOSTISSET('accountancy_code_sell_intra') ? GETPOST('accountancy_code_sell_intra', 'alpha') : $conf->global->ACCOUNTING_PRODUCT_SOLD_INTRA_ACCOUNT);
+                    } else {
+                            $accountancy_code_sell_intra = (GETPOSTISSET('accountancy_code_sell_intra') ? GETPOST('accountancy_code_sell_intra', 'alpha') : $conf->global->ACCOUNTING_SERVICE_SOLD_INTRA_ACCOUNT);
+                    }
+                    print $formaccounting->select_account($accountancy_code_sell_intra, 'accountancy_code_sell_intra', 1, null, 1, 1, '');
+                    print '</td></tr>';
+                            }
 
-            // VAT
-            print '<tr><td>'.$langs->trans("VATRate").'</td><td>';
-            $defaultva = get_default_tva($mysoc, $mysoc);
-            
-            $sqlTauxTva = "SELECT t.taux as vat_rate, t.code as default_vat_code "
-                    . " FROM llx_c_tva as t, llx_c_country as c "
-                    . " WHERE t.active=1 AND t.fk_pays = c.rowid AND c.code='".$mysoc->country_code."' "
-                    . " ORDER BY t.taux DESC, t.code ASC, t.recuperableonly ASC "
-                    . " LIMIT 1";
-            $resqlTauxTva = $db->query($sqlTauxTva);
-            if ($resqlTauxTva)
-            {
-                $objTauxTva = $db->fetch_object($resqlTauxTva);
-                print '<input type="hidden" value="'.$objTauxTva->vat_rate.'" id="default_taux_tva">';
-            }
-            print $form->load_tva("tva_tx", $defaultva, $mysoc, $mysoc, 0, 0, '', false, 1);
-            print '</td></tr>';
-            
-            print '<tr><td><hr></td></tr>';
-            // Coefficient de vente TTC
-            print '<tr><td>'.$langs->trans("CoeffVenteTTC").'</td>';
-            print '<td><input id="coeff_vente_ttc" name="coeff_vente_ttc" class="maxwidth50" value="'.GETPOST("coeff_vente_ttc", 'alpha').'" readonly>';
-            print '</td></tr>';
-            
-            
-            // Taux de marge en %
-            print '<tr><td>'.$langs->trans("MarginRateAsPercentage").'</td>';
-            print '<td><input id="margin_rate_as_percentage" name="margin_rate_as_percentage" class="maxwidth50" value="'.GETPOST("margin_rate_as_percentage", 'alpha').'" readonly>';
-            print '</td></tr>';
-            
-            // Marge TTC
-            print '<tr><td>'.$langs->trans("MarginTTC").'</td>';
-            print '<td><input id="margin_ttc" name="margin_ttc" class="maxwidth50" value="'.GETPOST("margin_ttc", 'alpha').'" readonly>';
-            print '</td></tr>';
-            
-            // Taux de marque %
-            print '<tr><td>'.$langs->trans("BrandRateInPercent").'</td>';
-            print '<td><input id="brand_rate_in_percent" name="brand_rate_in_percent" class="maxwidth50" value="'.GETPOST("brand_rate_in_percent", 'alpha').'" readonly>';
-            print '</td></tr>';
-            
-            // Prix de vente HT
-            print '<tr><td>'.$langs->trans("SellingPriceExclTax").'</td>';
-            print '<td><input id="selling_price_excl_tax" name="selling_price_excl_tax" class="maxwidth50" value="'.GETPOST("selling_price_excl_tax", 'alpha').'" readonly>';
-            print '</td></tr>';
-            
-            // TVA
-            print '<tr><td>'.$langs->trans("Vat").'(8,5%)</td>';
-            print '<td><input id="vat_price" name="vat_price" class="maxwidth50" value="'.GETPOST("vat_price", 'alpha').'" readonly>';
-            print '</td></tr>';
-            
-            // Carte metisse 5%
-            print '<tr><td>Carte metisse 5%</td>';
-            print '<td><input id="carte_metisse" name="carte_metisse" class="maxwidth50" value="'.GETPOST("carte_metisse", 'alpha').'" readonly>';
-            print '</td></tr>';
-            
+                            // Accountancy_code_sell_export
+                            print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancySellExportCode").'</td>';
+                            print '<td>';
+                if ($type == 0)
+                {
+                    $accountancy_code_sell_export = (GETPOST('accountancy_code_sell_export') ? GETPOST('accountancy_code_sell_export', 'alpha') : $conf->global->ACCOUNTING_PRODUCT_SOLD_EXPORT_ACCOUNT);
+                } else {
+                    $accountancy_code_sell_export = (GETPOST('accountancy_code_sell_export') ? GETPOST('accountancy_code_sell_export', 'alpha') : $conf->global->ACCOUNTING_SERVICE_SOLD_EXPORT_ACCOUNT);
+                }
+                print $formaccounting->select_account($accountancy_code_sell_export, 'accountancy_code_sell_export', 1, null, 1, 1, '');
+                print '</td></tr>';
 
-            print '</table>';
-            ?> 
-                <script type="text/javascript">
-                    jQuery(document).ready(function () {
-                        $("#select_price_base_type option:contains('HT')").attr("disabled","disabled").hide();
-                    });
-                    function doCalcul() {
-                        /*best price edit*/
-                        var best_purchase_price = parseFloat((document.getElementById("best_purchase_price").value).replace(',','.'));
-                        var coefficient_of_return = parseFloat((document.getElementById("coefficient_of_return").value).replace(',','.'));
-                        var coef_vente = parseFloat(document.getElementById("coef_vente").value);
-                        var cost_of_return = (best_purchase_price*20)/100;
-                        var price_of_return = coefficient_of_return*best_purchase_price;
-			var cost_of_return = price_of_return-best_purchase_price;
-                        
-                        //var average_price_weighted = coefficient_of_return*best_purchase_price;
-                        var suggest_price = price_of_return*coef_vente;
-			var margin_product = suggest_price-price_of_return;
-                        
-                        if(isNaN(cost_of_return)) {
-                            document.getElementById("cost_of_return").value = "";
-                        }else {
-                            document.getElementById("cost_of_return").value = parseFloat(cost_of_return).toFixed(2);
-                            document.getElementById("cost_of_return").style.color = "grey";
-                        }
-                        
-                        if(isNaN(price_of_return)) {
-                            document.getElementById("price_of_return").value = "";
-                        } else {
-                            document.getElementById("price_of_return").value = parseFloat(price_of_return).toFixed(2);
-                            document.getElementById("price_of_return").style.color = "grey";
-                        }
-                        
-                        /*if(isNaN(average_price_weighted)) {
-                            document.getElementById("average_price_weighted").value = "";
+                            // Accountancy_code_buy
+                            print '<tr><td>'.$langs->trans("ProductAccountancyBuyCode").'</td>';
+                            print '<td>';
+                if ($type == 0)
+                {
+                    $accountancy_code_buy = (GETPOST('accountancy_code_buy', 'alpha') ? (GETPOST('accountancy_code_buy', 'alpha')) : $conf->global->ACCOUNTING_PRODUCT_BUY_ACCOUNT);
+                } else {
+                    $accountancy_code_buy = GETPOST('accountancy_code_buy', 'alpha');
+                }
+                            print $formaccounting->select_account($accountancy_code_buy, 'accountancy_code_buy', 1, null, 1, 1, '');
+                            print '</td></tr>';
+
+                            // Accountancy_code_buy_intra
+                            if ($mysoc->isInEEC())
+                            {
+                                    print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancyBuyIntraCode").'</td>';
+                                    print '<td>';
+                                    if ($type == 0) {
+                                            $accountancy_code_buy_intra = (GETPOSTISSET('accountancy_code_buy_intra') ? GETPOST('accountancy_code_buy_intra', 'alpha') : $conf->global->ACCOUNTING_PRODUCT_BUY_INTRA_ACCOUNT);
+                                    } else {
+                                            $accountancy_code_buy_intra = (GETPOSTISSET('accountancy_code_buy_intra') ? GETPOST('accountancy_code_buy_intra', 'alpha') : $conf->global->ACCOUNTING_SERVICE_BUY_INTRA_ACCOUNT);
+                                    }
+                                    print $formaccounting->select_account($accountancy_code_buy_intra, 'accountancy_code_buy_intra', 1, null, 1, 1, '');
+                                    print '</td></tr>';
+                            }
+
+                            // Accountancy_code_buy_export
+                            print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancyBuyExportCode").'</td>';
+                            print '<td>';
+                            if ($type == 0)
+                            {
+                                    $accountancy_code_buy_export = (GETPOST('accountancy_code_buy_export') ? GETPOST('accountancy_code_buy_export', 'alpha') : $conf->global->ACCOUNTING_PRODUCT_BUY_EXPORT_ACCOUNT);
+                            } else {
+                                    $accountancy_code_buy_export = (GETPOST('accountancy_code_buy_export') ? GETPOST('accountancy_code_buy_export', 'alpha') : $conf->global->ACCOUNTING_SERVICE_BUY_EXPORT_ACCOUNT);
+                            }
+                            print $formaccounting->select_account($accountancy_code_buy_export, 'accountancy_code_buy_export', 1, null, 1, 1, '');
+                            print '</td></tr>';
+                    }
+                    else // For external software
+                    {
+                            if (!empty($accountancy_code_sell)) { $object->accountancy_code_sell = $accountancy_code_sell; }
+                            if (!empty($accountancy_code_sell_intra)) { $object->accountancy_code_sell_intra = $accountancy_code_sell_intra; }
+                            if (!empty($accountancy_code_sell_export)) { $object->accountancy_code_sell_export = $accountancy_code_sell_export; }
+                            if (!empty($accountancy_code_buy)) { $object->accountancy_code_buy = $accountancy_code_buy; }
+                            if (!empty($accountancy_code_buy_intra)) { $object->accountancy_code_buy_intra = $accountancy_code_buy_intra; }
+                            if (!empty($accountancy_code_buy_export)) { $object->accountancy_code_buy_export = $accountancy_code_buy_export; }
+
+                            // Accountancy_code_sell
+                            print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancySellCode").'</td>';
+                            print '<td class="maxwidthonsmartphone"><input class="minwidth100" name="accountancy_code_sell" value="'.$object->accountancy_code_sell.'">';
+                            print '</td></tr>';
+
+                            // Accountancy_code_sell_intra
+                            if ($mysoc->isInEEC())
+                            {
+                                    print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancySellIntraCode").'</td>';
+                                    print '<td class="maxwidthonsmartphone"><input class="minwidth100" name="accountancy_code_sell_intra" value="'.$object->accountancy_code_sell_intra.'">';
+                                    print '</td></tr>';
+                            }
+
+                            // Accountancy_code_sell_export
+                            print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancySellExportCode").'</td>';
+                            print '<td class="maxwidthonsmartphone"><input class="minwidth100" name="accountancy_code_sell_export" value="'.$object->accountancy_code_sell_export.'">';
+                            print '</td></tr>';
+
+                            // Accountancy_code_buy
+                            print '<tr><td>'.$langs->trans("ProductAccountancyBuyCode").'</td>';
+                            print '<td class="maxwidthonsmartphone"><input class="minwidth100" name="accountancy_code_buy" value="'.$object->accountancy_code_buy.'">';
+                            print '</td></tr>';
+
+                            // Accountancy_code_buy_intra
+                            if ($mysoc->isInEEC())
+                            {
+                                    print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancyBuyIntraCode").'</td>';
+                                    print '<td class="maxwidthonsmartphone"><input class="minwidth100" name="accountancy_code_buy_intra" value="'.$object->accountancy_code_buy_intra.'">';
+                                    print '</td></tr>';
+                            }
+
+                            // Accountancy_code_buy_export
+                            print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancyBuyExportCode").'</td>';
+                            print '<td class="maxwidthonsmartphone"><input class="minwidth100" name="accountancy_code_buy_export" value="'.$object->accountancy_code_buy_export.'">';
+                            print '</td></tr>';
+                    }
+                    print '</table>';
+                }
+                    dol_fiche_end();
+
+                    print '<div class="center">';
+                    print '<input type="submit" class="button" value="'.$langs->trans("Create").'">';
+                    print ' &nbsp; &nbsp; ';
+                    if($datapopup != 1) {
+                        if($status_product && $status_product == "produitfab") {
+                            print '<a href="'.DOL_URL_ROOT.'/product/listproduitfab.php?leftmenu=product&type=0&idmenu=37"><input type="button" class="button" value="'.$langs->trans("Cancel").'"></a>';
                         }else{
-                            document.getElementById("average_price_weighted").value = parseFloat(average_price_weighted).toFixed(2);
-                            document.getElementById("average_price_weighted").style.color = "grey";
-                        }*/
-                        
-                        if(isNaN(margin_product)) {
-                            document.getElementById("margin_product").value = "";
-                        }else{
-                            document.getElementById("margin_product").value = parseFloat(margin_product).toFixed(2);
-                            document.getElementById("margin_product").style.color = "grey";
-                        }
-                        
-                        if(isNaN(suggest_price)) {
-                            document.getElementById("suggest_price").value = "";
-                        }else{
-                            document.getElementById("suggest_price").value = parseFloat(suggest_price).toFixed(2);
-                            document.getElementById("suggest_price").style.color = "grey";
-                        }
-                        
-                        if(isNaN(best_purchase_price)) {
-                            document.getElementById("best_purchase_price_hidden").value = "";
-                        }else{
-                            document.getElementById("best_purchase_price_hidden").value = parseFloat(best_purchase_price).toFixed(2);
-                            document.getElementById("best_purchase_price_hidden").style.color = "grey";
-                        }
-                        
-                        if(isNaN(coefficient_of_return)) {
-                            document.getElementById("coefficient_of_return_hidden").value = "";
-                        }else{
-                            document.getElementById("coefficient_of_return_hidden").value = parseFloat(coefficient_of_return).toFixed(2);
-                            document.getElementById("coefficient_of_return_hidden").style.color = "grey";
-                        }
-                        
-                        
-                        /* price ttc edit */
-                        var default_taux_tva =  parseFloat((document.getElementById("default_taux_tva").value).replace(',','.'));
-                        var price_ttc =  parseFloat((document.getElementById("price_ttc").value).replace(',','.'));
-                        var price_of_return =  parseFloat((document.getElementById("price_of_return").value).replace(',','.'));
-                        var coefficient_of_return =  parseFloat((document.getElementById("coefficient_of_return_hidden").value).replace(',','.'));
-                        var best_purchase_price =  parseFloat((document.getElementById("best_purchase_price_hidden").value).replace(',','.'));
-                        var tva_calculated = (price_ttc/((default_taux_tva+100)/100))*(default_taux_tva/100);
-                        var price_ht_calculated = price_ttc-tva_calculated;
-                        
-                        var margin_ttc = price_ttc-price_of_return;
-                        var coeff_vente_ttc = price_ttc/price_of_return;
-                        var margin_rate_as_percentage = (margin_ttc*100)/price_of_return;
-                        var brand_rate_in_percent = (margin_ttc*100)/price_ttc;
-                        var carte_metisse = price_ttc*0.95;
-                        
-                        if(isNaN(tva_calculated)) {
-                            document.getElementById("vat_price").value ="";
-                        }else{
-                            document.getElementById("vat_price").value = parseFloat(tva_calculated).toFixed(2);
-                            document.getElementById("vat_price").style.color = "grey";
-                        }
-                        
-                        if(isNaN(price_ht_calculated) /*|| price_ht_calculated<0*/) {
-                            document.getElementById("selling_price_excl_tax").value = "";
-                        }else{
-                            document.getElementById("selling_price_excl_tax").value = parseFloat(price_ht_calculated).toFixed(2);
-                            document.getElementById("selling_price_excl_tax").style.color = "grey";
-                        }
-                        
-                        if(isNaN(brand_rate_in_percent) /*|| brand_rate_in_percent<0*/) {
-                            document.getElementById("brand_rate_in_percent").value = "";
-                        }else{
-                            document.getElementById("brand_rate_in_percent").value = parseFloat(brand_rate_in_percent).toFixed(2);
-                            document.getElementById("brand_rate_in_percent").style.color = "grey";
-                        }
-                        
-                        if(isNaN(margin_ttc) /*|| margin_ttc<0*/) {
-                            document.getElementById("margin_ttc").value = "";
-                        }else{
-                            document.getElementById("margin_ttc").value = parseFloat(margin_ttc).toFixed(2);
-                            document.getElementById("margin_ttc").style.color = "grey";
-                        }
-                        
-                        if(isNaN(coeff_vente_ttc)) {
-                            document.getElementById("coeff_vente_ttc").value = "";
-                        }else{
-                            document.getElementById("coeff_vente_ttc").value = parseFloat(coeff_vente_ttc).toFixed(2);
-                            document.getElementById("coeff_vente_ttc").style.color = "grey";
-                        }
-                        
-                        if(isNaN(margin_rate_as_percentage)) {
-                            document.getElementById("margin_rate_as_percentage").value = "";
-                        }else{
-                            document.getElementById("margin_rate_as_percentage").value = parseFloat(margin_rate_as_percentage).toFixed(2);
-                            document.getElementById("margin_rate_as_percentage").style.color = "grey";
-                        }
-						
-			if(isNaN(carte_metisse)) {
-                            document.getElementById("carte_metisse").value = "";
-                        }else{
-                            document.getElementById("carte_metisse").value = parseFloat(Math.floor(carte_metisse*10)/10).toFixed(2);
-                            document.getElementById("carte_metisse").style.color = "grey";
+                            print '<input type="button" class="button" value="'.$langs->trans("Cancel").'" onClick="javascript:history.go(-1)">';
                         }
                     }
-                </script>  
-        <?php
-            print '<br>';
-        }
-
-        // Accountancy codes
-        print '<table class="border centpercent">';
-
-		if (!empty($conf->accounting->enabled))
-		{
-			// Accountancy_code_sell
-			print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancySellCode").'</td>';
-			print '<td>';
-            if ($type == 0) {
-                $accountancy_code_sell = (GETPOSTISSET('accountancy_code_sell') ? GETPOST('accountancy_code_sell', 'alpha') : $conf->global->ACCOUNTING_PRODUCT_SOLD_ACCOUNT);
-            } else {
-                $accountancy_code_sell = (GETPOSTISSET('accountancy_code_sell') ? GETPOST('accountancy_code_sell', 'alpha') : $conf->global->ACCOUNTING_SERVICE_SOLD_ACCOUNT);
-            }
-            print $formaccounting->select_account($accountancy_code_sell, 'accountancy_code_sell', 1, null, 1, 1, '');
-			print '</td></tr>';
-
-			// Accountancy_code_sell_intra
-			if ($mysoc->isInEEC())
-			{
-				print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancySellIntraCode").'</td>';
-				print '<td>';
-                if ($type == 0) {
-                    $accountancy_code_sell_intra = (GETPOSTISSET('accountancy_code_sell_intra') ? GETPOST('accountancy_code_sell_intra', 'alpha') : $conf->global->ACCOUNTING_PRODUCT_SOLD_INTRA_ACCOUNT);
-                } else {
-                	$accountancy_code_sell_intra = (GETPOSTISSET('accountancy_code_sell_intra') ? GETPOST('accountancy_code_sell_intra', 'alpha') : $conf->global->ACCOUNTING_SERVICE_SOLD_INTRA_ACCOUNT);
-                }
-                print $formaccounting->select_account($accountancy_code_sell_intra, 'accountancy_code_sell_intra', 1, null, 1, 1, '');
-                print '</td></tr>';
-			}
-
-			// Accountancy_code_sell_export
-			print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancySellExportCode").'</td>';
-			print '<td>';
-            if ($type == 0)
-            {
-                $accountancy_code_sell_export = (GETPOST('accountancy_code_sell_export') ? GETPOST('accountancy_code_sell_export', 'alpha') : $conf->global->ACCOUNTING_PRODUCT_SOLD_EXPORT_ACCOUNT);
-            } else {
-            	$accountancy_code_sell_export = (GETPOST('accountancy_code_sell_export') ? GETPOST('accountancy_code_sell_export', 'alpha') : $conf->global->ACCOUNTING_SERVICE_SOLD_EXPORT_ACCOUNT);
-            }
-            print $formaccounting->select_account($accountancy_code_sell_export, 'accountancy_code_sell_export', 1, null, 1, 1, '');
-            print '</td></tr>';
-
-			// Accountancy_code_buy
-			print '<tr><td>'.$langs->trans("ProductAccountancyBuyCode").'</td>';
-			print '<td>';
-            if ($type == 0)
-            {
-                $accountancy_code_buy = (GETPOST('accountancy_code_buy', 'alpha') ? (GETPOST('accountancy_code_buy', 'alpha')) : $conf->global->ACCOUNTING_PRODUCT_BUY_ACCOUNT);
-            } else {
-                $accountancy_code_buy = GETPOST('accountancy_code_buy', 'alpha');
-            }
-			print $formaccounting->select_account($accountancy_code_buy, 'accountancy_code_buy', 1, null, 1, 1, '');
-			print '</td></tr>';
-
-			// Accountancy_code_buy_intra
-			if ($mysoc->isInEEC())
-			{
-				print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancyBuyIntraCode").'</td>';
-				print '<td>';
-				if ($type == 0) {
-					$accountancy_code_buy_intra = (GETPOSTISSET('accountancy_code_buy_intra') ? GETPOST('accountancy_code_buy_intra', 'alpha') : $conf->global->ACCOUNTING_PRODUCT_BUY_INTRA_ACCOUNT);
-				} else {
-					$accountancy_code_buy_intra = (GETPOSTISSET('accountancy_code_buy_intra') ? GETPOST('accountancy_code_buy_intra', 'alpha') : $conf->global->ACCOUNTING_SERVICE_BUY_INTRA_ACCOUNT);
-				}
-				print $formaccounting->select_account($accountancy_code_buy_intra, 'accountancy_code_buy_intra', 1, null, 1, 1, '');
-				print '</td></tr>';
-			}
-
-			// Accountancy_code_buy_export
-			print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancyBuyExportCode").'</td>';
-			print '<td>';
-			if ($type == 0)
-			{
-				$accountancy_code_buy_export = (GETPOST('accountancy_code_buy_export') ? GETPOST('accountancy_code_buy_export', 'alpha') : $conf->global->ACCOUNTING_PRODUCT_BUY_EXPORT_ACCOUNT);
-			} else {
-				$accountancy_code_buy_export = (GETPOST('accountancy_code_buy_export') ? GETPOST('accountancy_code_buy_export', 'alpha') : $conf->global->ACCOUNTING_SERVICE_BUY_EXPORT_ACCOUNT);
-			}
-			print $formaccounting->select_account($accountancy_code_buy_export, 'accountancy_code_buy_export', 1, null, 1, 1, '');
-			print '</td></tr>';
-		}
-		else // For external software
-		{
-			if (!empty($accountancy_code_sell)) { $object->accountancy_code_sell = $accountancy_code_sell; }
-			if (!empty($accountancy_code_sell_intra)) { $object->accountancy_code_sell_intra = $accountancy_code_sell_intra; }
-			if (!empty($accountancy_code_sell_export)) { $object->accountancy_code_sell_export = $accountancy_code_sell_export; }
-			if (!empty($accountancy_code_buy)) { $object->accountancy_code_buy = $accountancy_code_buy; }
-			if (!empty($accountancy_code_buy_intra)) { $object->accountancy_code_buy_intra = $accountancy_code_buy_intra; }
-			if (!empty($accountancy_code_buy_export)) { $object->accountancy_code_buy_export = $accountancy_code_buy_export; }
-
-			// Accountancy_code_sell
-			print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancySellCode").'</td>';
-			print '<td class="maxwidthonsmartphone"><input class="minwidth100" name="accountancy_code_sell" value="'.$object->accountancy_code_sell.'">';
-			print '</td></tr>';
-
-			// Accountancy_code_sell_intra
-			if ($mysoc->isInEEC())
-			{
-				print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancySellIntraCode").'</td>';
-				print '<td class="maxwidthonsmartphone"><input class="minwidth100" name="accountancy_code_sell_intra" value="'.$object->accountancy_code_sell_intra.'">';
-				print '</td></tr>';
-			}
-
-			// Accountancy_code_sell_export
-			print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancySellExportCode").'</td>';
-			print '<td class="maxwidthonsmartphone"><input class="minwidth100" name="accountancy_code_sell_export" value="'.$object->accountancy_code_sell_export.'">';
-			print '</td></tr>';
-
-			// Accountancy_code_buy
-			print '<tr><td>'.$langs->trans("ProductAccountancyBuyCode").'</td>';
-			print '<td class="maxwidthonsmartphone"><input class="minwidth100" name="accountancy_code_buy" value="'.$object->accountancy_code_buy.'">';
-			print '</td></tr>';
-
-			// Accountancy_code_buy_intra
-			if ($mysoc->isInEEC())
-			{
-				print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancyBuyIntraCode").'</td>';
-				print '<td class="maxwidthonsmartphone"><input class="minwidth100" name="accountancy_code_buy_intra" value="'.$object->accountancy_code_buy_intra.'">';
-				print '</td></tr>';
-			}
-
-			// Accountancy_code_buy_export
-			print '<tr><td class="titlefieldcreate">'.$langs->trans("ProductAccountancyBuyExportCode").'</td>';
-			print '<td class="maxwidthonsmartphone"><input class="minwidth100" name="accountancy_code_buy_export" value="'.$object->accountancy_code_buy_export.'">';
-			print '</td></tr>';
-		}
-		print '</table>';
-
-		dol_fiche_end();
-
-		print '<div class="center">';
-		print '<input type="submit" class="button" value="'.$langs->trans("Create").'">';
-		print ' &nbsp; &nbsp; ';
-                if($datapopup != 1) {
-                    print '<input type="button" class="button" value="'.$langs->trans("Cancel").'" onClick="javascript:history.go(-1)">';
-                }
-		print '</div>';
-
-		print '</form>';
+                    print '</div>';
+            
+            print '</form>';
 	}
 
     /*
@@ -1945,8 +2701,8 @@ else
     elseif ($object->id > 0)
     {
         // Fiche en mode edition
-		if ($action == 'edit' && $usercancreate)
-		{
+        if ($action == 'edit' && $usercancreate)
+        {
             //WYSIWYG Editor
             require_once DOL_DOCUMENT_ROOT.'/core/class/doleditor.class.php';
 
@@ -1955,7 +2711,12 @@ else
             //print load_fiche_titre($langs->trans('Modify').' '.$type.' : '.(is_object($object->oldcopy)?$object->oldcopy->ref:$object->ref), "");
 
             // Main official, simple, and not duplicated code
-            print '<form action="'.$_SERVER['PHP_SELF'].'?id='.$object->id.'" method="POST">'."\n";
+            if($status_product && $status_product == "produitfab") {
+                $action_edit = $_SERVER['PHP_SELF'].'?id='.$object->id.'&status_product=produitfab&action=update';
+            }else{
+                $action_edit = $_SERVER['PHP_SELF'].'?id='.$object->id;
+            }
+            print '<form action="'.$action_edit.'" method="POST">'."\n";
             print '<input type="hidden" name="token" value="'.newToken().'">';
             print '<input type="hidden" name="action" value="update">';
             print '<input type="hidden" name="id" value="'.$object->id.'">';
@@ -1964,59 +2725,75 @@ else
             $head = product_prepare_head($object);
             $titre = $langs->trans("CardProduct".$object->type);
             $picto = ($object->type == Product::TYPE_SERVICE ? 'service' : 'product');
-            dol_fiche_head($head, 'card', $titre, 0, $picto);
-
+            
+            if($status_product && $status_product == "produitfab") {
+                //dol_fiche_head($head, 'card', $titre, 0, $picto);
+                print load_fiche_titre("Modification produit fab", "<a href='".DOL_URL_ROOT."/product/listproduitfab.php?leftmenu=product&type=0&idmenu=37'>Retour</a>", $picto);
+                echo "<hr>";
+            }else{
+                dol_fiche_head($head, 'card', $titre, 0, $picto);
+            }
+            
             print '<table class="border allwidth">';
 
             // Ref
             print '<tr><td class="titlefield fieldrequired">'.$langs->trans("Ref").'</td><td colspan="3"><input name="ref" class="maxwidth200" maxlength="128" value="'.dol_escape_htmltag($object->ref).'"></td></tr>';
 
             // Label
-            print '<tr><td class="fieldrequired">'.$langs->trans("Label").'</td><td colspan="3"><input name="label" class="minwidth300 maxwidth400onsmartphone" maxlength="255" value="'.dol_escape_htmltag($object->label).'"></td></tr>';
+            print '<tr><td class="fieldrequired">'.$langs->trans("Label").'</td><td colspan="3"><input name="label" class="minwidth300 maxwidth400onsmartphone" required maxlength="255" value="'.dol_escape_htmltag($object->label).'"></td></tr>';
+            
+            if($status_product && $status_product == "produitfab") {
+                print '<tr>'
+                . '<td >Réf fab/frs</td>'
+                . '<td colspan="3">'
+                . '<input name="ref_fab_frs" class="minwidth300 maxwidth400onsmartphone"  maxlength="255" value="'.dol_escape_htmltag($object->ref_fab_frs).'"></td></tr>';
+            }
+            if($status_product && $status_product == "produitfab") {
+                
+            }else{
+                // Status To sell
+                print '<tr><td class="fieldrequired">'.$langs->trans("Status").' ('.$langs->trans("Sell").')</td><td colspan="3">';
+                print '<select class="flat" name="statut">';
+                if ($object->status)
+                {
+                    print '<option value="1" selected>'.$langs->trans("OnSell").'</option>';
+                    print '<option value="0">'.$langs->trans("NotOnSell").'</option>';
+                }
+                else
+                {
+                    print '<option value="1">'.$langs->trans("OnSell").'</option>';
+                    print '<option value="0" selected>'.$langs->trans("NotOnSell").'</option>';
+                }
+                print '</select>';
+                print '</td></tr>';
 
-            // Status To sell
-            print '<tr><td class="fieldrequired">'.$langs->trans("Status").' ('.$langs->trans("Sell").')</td><td colspan="3">';
-            print '<select class="flat" name="statut">';
-            if ($object->status)
-            {
-                print '<option value="1" selected>'.$langs->trans("OnSell").'</option>';
-                print '<option value="0">'.$langs->trans("NotOnSell").'</option>';
+                // Status To Buy
+                print '<tr><td class="fieldrequired">'.$langs->trans("Status").' ('.$langs->trans("Buy").')</td><td colspan="3">';
+                print '<select class="flat" name="statut_buy">';
+                if ($object->status_buy)
+                {
+                    print '<option value="1" selected>'.$langs->trans("ProductStatusOnBuy").'</option>';
+                    print '<option value="0">'.$langs->trans("ProductStatusNotOnBuy").'</option>';
+                }
+                else
+                {
+                    print '<option value="1">'.$langs->trans("ProductStatusOnBuy").'</option>';
+                    print '<option value="0" selected>'.$langs->trans("ProductStatusNotOnBuy").'</option>';
+                }
+                print '</select>';
+                print '</td></tr>';
             }
-            else
+            // Batch number managment
+            if ($conf->productbatch->enabled)
             {
-                print '<option value="1">'.$langs->trans("OnSell").'</option>';
-                print '<option value="0" selected>'.$langs->trans("NotOnSell").'</option>';
+                    if ($object->isProduct() || !empty($conf->global->STOCK_SUPPORTS_SERVICES))
+                    {
+                            print '<tr><td>'.$langs->trans("ManageLotSerial").'</td><td colspan="3">';
+                            $statutarray = array('0' => $langs->trans("ProductStatusNotOnBatch"), '1' => $langs->trans("ProductStatusOnBatch"));
+                            print $form->selectarray('status_batch', $statutarray, $object->status_batch);
+                            print '</td></tr>';
+                    }
             }
-            print '</select>';
-            print '</td></tr>';
-
-            // Status To Buy
-            print '<tr><td class="fieldrequired">'.$langs->trans("Status").' ('.$langs->trans("Buy").')</td><td colspan="3">';
-            print '<select class="flat" name="statut_buy">';
-            if ($object->status_buy)
-            {
-                print '<option value="1" selected>'.$langs->trans("ProductStatusOnBuy").'</option>';
-                print '<option value="0">'.$langs->trans("ProductStatusNotOnBuy").'</option>';
-            }
-            else
-            {
-                print '<option value="1">'.$langs->trans("ProductStatusOnBuy").'</option>';
-                print '<option value="0" selected>'.$langs->trans("ProductStatusNotOnBuy").'</option>';
-            }
-            print '</select>';
-            print '</td></tr>';
-
-			// Batch number managment
-			if ($conf->productbatch->enabled)
-			{
-				if ($object->isProduct() || !empty($conf->global->STOCK_SUPPORTS_SERVICES))
-				{
-					print '<tr><td>'.$langs->trans("ManageLotSerial").'</td><td colspan="3">';
-					$statutarray = array('0' => $langs->trans("ProductStatusNotOnBatch"), '1' => $langs->trans("ProductStatusOnBatch"));
-					print $form->selectarray('status_batch', $statutarray, $object->status_batch);
-					print '</td></tr>';
-				}
-			}
 
             // Barcode
             $showbarcode = empty($conf->barcode->enabled) ? 0 : 1;
@@ -2024,7 +2801,7 @@ else
 
 	        if ($showbarcode)
 	        {
-		        print '<tr><td>'.$langs->trans('BarcodeType').'sefsef</td><td>';
+		        print '<tr><td>'.$langs->trans('BarcodeType').'</td><td>';
 		        if (isset($_POST['fk_barcode_type']))
 		        {
 		         	$fk_barcode_type = GETPOST('fk_barcode_type');
@@ -2035,12 +2812,12 @@ else
 		        	if (empty($fk_barcode_type) && !empty($conf->global->PRODUIT_DEFAULT_BARCODE_TYPE)) $fk_barcode_type = $conf->global->PRODUIT_DEFAULT_BARCODE_TYPE;
 		        }
 		        require_once DOL_DOCUMENT_ROOT.'/core/class/html.formbarcode.class.php';
-	            $formbarcode = new FormBarCode($db);
-                print $formbarcode->selectBarcodeType($fk_barcode_type, 'fk_barcode_type', 1);
+                        $formbarcode = new FormBarCode($db);
+                        print $formbarcode->selectBarcodeType($fk_barcode_type, 'fk_barcode_type', 1);
 		        print '</td><td>'.$langs->trans("BarcodeValue").'</td><td>';
 		        $tmpcode = isset($_POST['barcode']) ?GETPOST('barcode') : $object->barcode;
 		        if (empty($tmpcode) && !empty($modBarCodeProduct->code_auto)) $tmpcode = $modBarCodeProduct->getNextValue($object, $type);
-		        print '<input size="40" class="maxwidthonsmartphone" type="text" name="barcode" value="'.dol_escape_htmltag($tmpcode).'">';
+		        print '<input size="40" class="maxwidthonsmartphone" type="text" name="barcode" value="'.$object->barcode.'">';
 		        print '</td></tr>';
 	        }
 
@@ -2053,37 +2830,40 @@ else
 
             print "</td></tr>";
             print "\n";
-
-            // Public Url
-            print '<tr><td>'.$langs->trans("PublicUrl").'</td><td colspan="3">';
-            print '<input type="text" name="url" class="quatrevingtpercent" value="'.$object->url.'">';
-            print '</td></tr>';
-
-            // Stock
-            if ($object->isProduct() && !empty($conf->stock->enabled))
-            {
-                // Default warehouse
-                print '<tr><td>'.$langs->trans("DefaultWarehouse").'</td><td>';
-                print $formproduct->selectWarehouses($object->fk_default_warehouse, 'fk_default_warehouse', 'warehouseopen', 1);
-                print ' <a href="'.DOL_URL_ROOT.'/product/stock/card.php?action=create&amp;backtopage='.urlencode($_SERVER['PHP_SELF'].'?action=create&type='.GETPOST('type', 'int')).'"><span class="fa fa-plus-circle valignmiddle paddingleft" title="'.$langs->trans("AddWarehouse").'"></span></a>';
-                print '</td>';
-                /*
-                print "<tr>".'<td>'.$langs->trans("StockLimit").'</td><td>';
-                print '<input name="seuil_stock_alerte" size="4" value="'.$object->seuil_stock_alerte.'">';
-                print '</td>';
-
-                print '<td>'.$langs->trans("DesiredStock").'</td><td>';
-                print '<input name="desiredstock" size="4" value="'.$object->desiredstock.'">';
+            
+            if($status_product && $status_product == "produitfab") {
+                
+            }else{
+                // Public Url
+                print '<tr><td>'.$langs->trans("PublicUrl").'</td><td colspan="3">';
+                print '<input type="text" name="url" class="quatrevingtpercent" value="'.$object->url.'">';
                 print '</td></tr>';
-                */
-            }
-            /*
-            else
-            {
-                print '<input name="seuil_stock_alerte" type="hidden" value="'.$object->seuil_stock_alerte.'">';
-                print '<input name="desiredstock" type="hidden" value="'.$object->desiredstock.'">';
-            }*/
 
+                // Stock
+                if ($object->isProduct() && !empty($conf->stock->enabled))
+                {
+                    // Default warehouse
+                    print '<tr><td>'.$langs->trans("DefaultWarehouse").'</td><td>';
+                    print $formproduct->selectWarehouses($object->fk_default_warehouse, 'fk_default_warehouse', 'warehouseopen', 1);
+                    print ' <a href="'.DOL_URL_ROOT.'/product/stock/card.php?action=create&amp;backtopage='.urlencode($_SERVER['PHP_SELF'].'?action=create&type='.GETPOST('type', 'int')).'"><span class="fa fa-plus-circle valignmiddle paddingleft" title="'.$langs->trans("AddWarehouse").'"></span></a>';
+                    print '</td>';
+                    /*
+                    print "<tr>".'<td>'.$langs->trans("StockLimit").'</td><td>';
+                    print '<input name="seuil_stock_alerte" size="4" value="'.$object->seuil_stock_alerte.'">';
+                    print '</td>';
+
+                    print '<td>'.$langs->trans("DesiredStock").'</td><td>';
+                    print '<input name="desiredstock" size="4" value="'.$object->desiredstock.'">';
+                    print '</td></tr>';
+                    */
+                }
+                /*
+                else
+                {
+                    print '<input name="seuil_stock_alerte" type="hidden" value="'.$object->seuil_stock_alerte.'">';
+                    print '<input name="desiredstock" type="hidden" value="'.$object->desiredstock.'">';
+                }*/
+            }
             if ($object->isService())
             {
                 // Duration
@@ -2105,88 +2885,94 @@ else
                 print '<input name="weight" size="5" value="'.$object->weight.'"> ';
                 print $formproduct->selectMeasuringUnits("weight_units", "weight", $object->weight_units, 0, 2);
                 print '</td></tr>';
+                if($status_product && $status_product == "produitfab") {
+                
+                }else{
+                    if (empty($conf->global->PRODUCT_DISABLE_SIZE))
+                    {
+                                            // Brut Length
+                                            print '<tr><td>'.$langs->trans("Length").' x '.$langs->trans("Width").' x '.$langs->trans("Height").'</td><td colspan="3">';
+                                            print '<input name="size" size="5" value="'.$object->length.'">x';
+                                            print '<input name="sizewidth" size="5" value="'.$object->width.'">x';
+                                            print '<input name="sizeheight" size="5" value="'.$object->height.'"> ';
+                                            print $formproduct->selectMeasuringUnits("size_units", "size", $object->length_units, 0, 2);
+                                            print '</td></tr>';
+                    }
+                    if (empty($conf->global->PRODUCT_DISABLE_SURFACE))
+                    {
+                        // Brut Surface
+                        print '<tr><td>'.$langs->trans("Surface").'</td><td colspan="3">';
+                        print '<input name="surface" size="5" value="'.$object->surface.'"> ';
+                        print $formproduct->selectMeasuringUnits("surface_units", "surface", $object->surface_units, 0, 2);
+                        print '</td></tr>';
+                    }
+                    if (empty($conf->global->PRODUCT_DISABLE_VOLUME))
+                    {
+                        // Brut Volume
+                        print '<tr><td>'.$langs->trans("Volume").'</td><td colspan="3">';
+                        print '<input name="volume" size="5" value="'.$object->volume.'"> ';
+                        print $formproduct->selectMeasuringUnits("volume_units", "volume", $object->volume_units, 0, 2);
+                        print '</td></tr>';
+                    }
 
-                if (empty($conf->global->PRODUCT_DISABLE_SIZE))
-                {
-					// Brut Length
-					print '<tr><td>'.$langs->trans("Length").' x '.$langs->trans("Width").' x '.$langs->trans("Height").'</td><td colspan="3">';
-					print '<input name="size" size="5" value="'.$object->length.'">x';
-					print '<input name="sizewidth" size="5" value="'.$object->width.'">x';
-					print '<input name="sizeheight" size="5" value="'.$object->height.'"> ';
-					print $formproduct->selectMeasuringUnits("size_units", "size", $object->length_units, 0, 2);
-					print '</td></tr>';
-                }
-                if (empty($conf->global->PRODUCT_DISABLE_SURFACE))
-                {
-                    // Brut Surface
-                    print '<tr><td>'.$langs->trans("Surface").'</td><td colspan="3">';
-                    print '<input name="surface" size="5" value="'.$object->surface.'"> ';
-                    print $formproduct->selectMeasuringUnits("surface_units", "surface", $object->surface_units, 0, 2);
-                    print '</td></tr>';
-                }
-                if (empty($conf->global->PRODUCT_DISABLE_VOLUME))
-                {
-                    // Brut Volume
-                    print '<tr><td>'.$langs->trans("Volume").'</td><td colspan="3">';
-                    print '<input name="volume" size="5" value="'.$object->volume.'"> ';
-                    print $formproduct->selectMeasuringUnits("volume_units", "volume", $object->volume_units, 0, 2);
-                    print '</td></tr>';
-                }
-
-                if (!empty($conf->global->PRODUCT_ADD_NET_MEASURE))
-                {
-                	// Net Measure
-	                print '<tr><td>'.$langs->trans("NetMeasure").'</td><td colspan="3">';
-	                print '<input name="net_measure" size="5" value="'.$object->net_measure.'"> ';
-	                print $formproduct->selectMeasuringUnits("net_measure_units", "", $object->net_measure_units, 0, 0);
-	                print '</td></tr>';
+                    if (!empty($conf->global->PRODUCT_ADD_NET_MEASURE))
+                    {
+                            // Net Measure
+                            print '<tr><td>'.$langs->trans("NetMeasure").'</td><td colspan="3">';
+                            print '<input name="net_measure" size="5" value="'.$object->net_measure.'"> ';
+                            print $formproduct->selectMeasuringUnits("net_measure_units", "", $object->net_measure_units, 0, 0);
+                            print '</td></tr>';
+                    }
                 }
             }
-        	// Units
-	        if ($conf->global->PRODUCT_USE_UNITS)
-	        {
-		        print '<tr><td>'.$langs->trans('DefaultUnitToShow').'</td>';
-		        print '<td colspan="3">';
-		        print $form->selectUnits($object->fk_unit, 'units');
-		        print '</td></tr>';
-	        }
+            if($status_product && $status_product == "produitfab") {
+                
+            }else{
+                // Units
+                if ($conf->global->PRODUCT_USE_UNITS)
+                {
+                        print '<tr><td>'.$langs->trans('DefaultUnitToShow').'</td>';
+                        print '<td colspan="3">';
+                        print $form->selectUnits($object->fk_unit, 'units');
+                        print '</td></tr>';
+                }
 
-	        // Custom code
-    	    if (!$object->isService() && empty($conf->global->PRODUCT_DISABLE_CUSTOM_INFO))
-        	{
-	            print '<tr><td>'.$langs->trans("CustomCode").'</td><td><input name="customcode" class="maxwidth100onsmartphone" value="'.$object->customcode.'"></td>';
-	            // Origin country
-	            print '<td>'.$langs->trans("CountryOrigin").'</td><td>';
-	            print $form->select_country($object->country_id, 'country_id', '', 0, 'minwidth100 maxwidthonsmartphone');
-	            if ($user->admin) print info_admin($langs->trans("YouCanChangeValuesForThisListFromDictionarySetup"), 1);
-	            print '</td></tr>';
-        	}
+                    // Custom code
+                if (!$object->isService() && empty($conf->global->PRODUCT_DISABLE_CUSTOM_INFO))
+                    {
+                        print '<tr><td>'.$langs->trans("CustomCode").'</td><td><input name="customcode" class="maxwidth100onsmartphone" value="'.$object->customcode.'"></td>';
+                        // Origin country
+                        print '<td>'.$langs->trans("CountryOrigin").'</td><td>';
+                        print $form->select_country($object->country_id, 'country_id', '', 0, 'minwidth100 maxwidthonsmartphone');
+                        if ($user->admin) print info_admin($langs->trans("YouCanChangeValuesForThisListFromDictionarySetup"), 1);
+                        print '</td></tr>';
+                    }
 
-            // Other attributes
-            $parameters = array('colspan' => ' colspan="3"', 'cols' => 3);
-            $reshook = $hookmanager->executeHooks('formObjectOptions', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
-            print $hookmanager->resPrint;
-            if (empty($reshook))
-            {
-            	print $object->showOptionals($extrafields, 'edit', $parameters);
+                // Other attributes
+                $parameters = array('colspan' => ' colspan="3"', 'cols' => 3);
+                $reshook = $hookmanager->executeHooks('formObjectOptions', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
+                print $hookmanager->resPrint;
+                if (empty($reshook))
+                {
+                    print $object->showOptionals($extrafields, 'edit', $parameters);
+                }
             }
-
 			// Tags-Categories
             if ($conf->categorie->enabled)
-			{
-				print '<tr><td>'.$langs->trans("Categories").'</td><td colspan="3">';
-				$cate_arbo = $form->select_all_categories(Categorie::TYPE_PRODUCT, '', 'parent', 64, 0, 1);
-				$c = new Categorie($db);
-				$cats = $c->containing($object->id, Categorie::TYPE_PRODUCT);
-				$arrayselected = array();
-				if (is_array($cats)) {
-					foreach ($cats as $cat) {
-						$arrayselected[] = $cat->id;
-					}
-				}
-				print $form->multiselectarray('categories', $cate_arbo, $arrayselected, '', 0, '', 0, '100%');
-				print "</td></tr>";
-			}
+            {
+                    print '<tr><td>'.$langs->trans("Categories").'</td><td colspan="3">';
+                    $cate_arbo = $form->select_all_categories(Categorie::TYPE_PRODUCT, '', 'parent', 64, 0, 1);
+                    $c = new Categorie($db);
+                    $cats = $c->containing($object->id, Categorie::TYPE_PRODUCT);
+                    $arrayselected = array();
+                    if (is_array($cats)) {
+                            foreach ($cats as $cat) {
+                                    $arrayselected[] = $cat->id;
+                            }
+                    }
+                    print $form->multiselectarray('categories', $cate_arbo, $arrayselected, '', 0, '', 0, '100%');
+                    print "</td></tr>";
+            }
 
             // Note private
 			if (!empty($conf->global->MAIN_DISABLE_NOTES_TAB))
@@ -2202,103 +2988,711 @@ else
             print '</table>';
 
             print '<br>';
+            
+            if($status_product && $status_product == "produitfab") {
+                
+            }else{
+                print '<table class="border centpercent">';
 
-            print '<table class="border centpercent">';
+                if (!empty($conf->accounting->enabled))
+                {
+                        // Accountancy_code_sell
+                        print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancySellCode").'</td>';
+                        print '<td>';
+                        print $formaccounting->select_account($object->accountancy_code_sell, 'accountancy_code_sell', 1, '', 1, 1);
+                        print '</td></tr>';
 
-			if (!empty($conf->accounting->enabled))
-			{
-				// Accountancy_code_sell
-				print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancySellCode").'</td>';
-				print '<td>';
-				print $formaccounting->select_account($object->accountancy_code_sell, 'accountancy_code_sell', 1, '', 1, 1);
-				print '</td></tr>';
+                        // Accountancy_code_sell_intra
+                        if ($mysoc->isInEEC())
+                        {
+                                print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancySellIntraCode").'</td>';
+                                print '<td>';
+                                print $formaccounting->select_account($object->accountancy_code_sell_intra, 'accountancy_code_sell_intra', 1, '', 1, 1);
+                                print '</td></tr>';
+                        }
 
-				// Accountancy_code_sell_intra
-				if ($mysoc->isInEEC())
-				{
-					print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancySellIntraCode").'</td>';
-					print '<td>';
-					print $formaccounting->select_account($object->accountancy_code_sell_intra, 'accountancy_code_sell_intra', 1, '', 1, 1);
-					print '</td></tr>';
-				}
+                        // Accountancy_code_sell_export
+                        print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancySellExportCode").'</td>';
+                        print '<td>';
+                        print $formaccounting->select_account($object->accountancy_code_sell_export, 'accountancy_code_sell_export', 1, '', 1, 1);
+                        print '</td></tr>';
 
-				// Accountancy_code_sell_export
-				print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancySellExportCode").'</td>';
-				print '<td>';
-				print $formaccounting->select_account($object->accountancy_code_sell_export, 'accountancy_code_sell_export', 1, '', 1, 1);
-				print '</td></tr>';
+                        // Accountancy_code_buy
+                        print '<tr><td>'.$langs->trans("ProductAccountancyBuyCode").'</td>';
+                        print '<td>';
+                        print $formaccounting->select_account($object->accountancy_code_buy, 'accountancy_code_buy', 1, '', 1, 1);
+                        print '</td></tr>';
 
-				// Accountancy_code_buy
-				print '<tr><td>'.$langs->trans("ProductAccountancyBuyCode").'</td>';
-				print '<td>';
-				print $formaccounting->select_account($object->accountancy_code_buy, 'accountancy_code_buy', 1, '', 1, 1);
-				print '</td></tr>';
+                        // Accountancy_code_buy_intra
+                        if ($mysoc->isInEEC())
+                        {
+                                print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancyBuyIntraCode").'</td>';
+                                print '<td>';
+                                print $formaccounting->select_account($object->accountancy_code_buy_intra, 'accountancy_code_buy_intra', 1, '', 1, 1);
+                                print '</td></tr>';
+                        }
 
-				// Accountancy_code_buy_intra
-				if ($mysoc->isInEEC())
-				{
-					print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancyBuyIntraCode").'</td>';
-					print '<td>';
-					print $formaccounting->select_account($object->accountancy_code_buy_intra, 'accountancy_code_buy_intra', 1, '', 1, 1);
-					print '</td></tr>';
-				}
+                        // Accountancy_code_buy_export
+                        print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancyBuyExportCode").'</td>';
+                        print '<td>';
+                        print $formaccounting->select_account($object->accountancy_code_buy_export, 'accountancy_code_buy_export', 1, '', 1, 1);
+                        print '</td></tr>';
+                }
+                else // For external software
+                {
+                        // Accountancy_code_sell
+                        print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancySellCode").'</td>';
+                        print '<td><input name="accountancy_code_sell" class="maxwidth200" value="'.$object->accountancy_code_sell.'">';
+                        print '</td></tr>';
 
-				// Accountancy_code_buy_export
-				print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancyBuyExportCode").'</td>';
-				print '<td>';
-				print $formaccounting->select_account($object->accountancy_code_buy_export, 'accountancy_code_buy_export', 1, '', 1, 1);
-				print '</td></tr>';
-			}
-			else // For external software
-			{
-				// Accountancy_code_sell
-				print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancySellCode").'</td>';
-				print '<td><input name="accountancy_code_sell" class="maxwidth200" value="'.$object->accountancy_code_sell.'">';
-				print '</td></tr>';
+                        // Accountancy_code_sell_intra
+                        if ($mysoc->isInEEC())
+                        {
+                                print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancySellIntraCode").'</td>';
+                                print '<td><input name="accountancy_code_sell_intra" class="maxwidth200" value="'.$object->accountancy_code_sell_intra.'">';
+                                print '</td></tr>';
+                        }
 
-				// Accountancy_code_sell_intra
-				if ($mysoc->isInEEC())
-				{
-					print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancySellIntraCode").'</td>';
-					print '<td><input name="accountancy_code_sell_intra" class="maxwidth200" value="'.$object->accountancy_code_sell_intra.'">';
-					print '</td></tr>';
-				}
+                        // Accountancy_code_sell_export
+                        print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancySellExportCode").'</td>';
+                        print '<td><input name="accountancy_code_sell_export" class="maxwidth200" value="'.$object->accountancy_code_sell_export.'">';
+                        print '</td></tr>';
 
-				// Accountancy_code_sell_export
-				print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancySellExportCode").'</td>';
-				print '<td><input name="accountancy_code_sell_export" class="maxwidth200" value="'.$object->accountancy_code_sell_export.'">';
-				print '</td></tr>';
+                        // Accountancy_code_buy
+                        print '<tr><td>'.$langs->trans("ProductAccountancyBuyCode").'</td>';
+                        print '<td><input name="accountancy_code_buy" class="maxwidth200" value="'.$object->accountancy_code_buy.'">';
+                        print '</td></tr>';
 
-				// Accountancy_code_buy
-				print '<tr><td>'.$langs->trans("ProductAccountancyBuyCode").'</td>';
-				print '<td><input name="accountancy_code_buy" class="maxwidth200" value="'.$object->accountancy_code_buy.'">';
-				print '</td></tr>';
+                        // Accountancy_code_buy_intra
+                        if ($mysoc->isInEEC())
+                        {
+                                print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancyBuyIntraCode").'</td>';
+                                print '<td><input name="accountancy_code_buy_intra" class="maxwidth200" value="'.$object->accountancy_code_buy_intra.'">';
+                                print '</td></tr>';
+                        }
 
-				// Accountancy_code_buy_intra
-				if ($mysoc->isInEEC())
-				{
-					print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancyBuyIntraCode").'</td>';
-					print '<td><input name="accountancy_code_buy_intra" class="maxwidth200" value="'.$object->accountancy_code_buy_intra.'">';
-					print '</td></tr>';
-				}
+                        // Accountancy_code_buy_export
+                        print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancyBuyExportCode").'</td>';
+                        print '<td><input name="accountancy_code_buy_export" class="maxwidth200" value="'.$object->accountancy_code_buy_export.'">';
+                        print '</td></tr>';
+                }
+                print '</table>';
+            }
+            
+            /* formulaire modification déclinaison */
+            echo '<hr>';
+            $prodcombi = new ProductCombination($db);
+            $getattrval = $prodcombi->getAllCombinationAttributeValue($object->id);
+            $arrtmpValCoul = [];
+            $i = 0;
+            foreach($getattrval as $katt => $valatt) {
+                if($katt == 1 ){
+                    $getAttribute = $prodcombi->getAttributeById($katt);
+                    $affDescCouleur = $getAttribute['label'];
+                    foreach($valatt as $kvatt => $vvatt) {
+                        foreach($vvatt as $kvvvatt => $vvvatt) {
+                            $arrtmpValCoul[$katt."_".$kvvvatt][$i] = $vvvatt;
+                            $i++;
+                        }
+                    }
+                }
+            }
+            
+            /* last ean 13 */
+            $sql = "SELECT barcode FROM  ".MAIN_DB_PREFIX."product WHERE barcode like '%".$object->ref."%' order by rowid desc limit 1";
+            $resuDecls = $db->getRows($sql);
+            $lastEanProduct = strval($resuDecls[0]->barcode);
+            //$nextEanValidProduct = ean13valideFromDigit(strval($lastEanProduct));
+            
+            /* hidden value */
+            $hiddenValue = [];
+            foreach($arrtmpValCoul as $kaff => $vaff) {
+                    $valcoul = explode('_',$kaff);
+                    $attributes = $prodcombi->getAttributeById($valcoul[0]);
+                    $attributesValue = $prodcombi->getAttributeValueById($valcoul[1]);
+                    foreach($vaff as $idChilds){
+                        $tailles = $prodcombi->getProductTaille($object->id,$idChilds);
+                        $attributesVals = $prodcombi->getAttributeValueById($tailles[$idChilds][0]);
+                        $hiddenValue[] = $attributesValue["value"]."_".$attributesVals['value'];
+                    }
+            }
+            
+            if($status_product && $status_product == "produitfab") { 
+                $user->update($user);
+                $sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
+                $resuUser = $db->query($sql_user_group);
+                $reug = $db->fetch_object($resuUser);
+                $resu_fab = "";
+                if ($reug->fk_usergroup) {
+                    $sql_group = "select code from ".MAIN_DB_PREFIX."usergroup where rowid = ".$reug->fk_usergroup;
+                    $resuug = $db->query($sql_group);
+                    $resug = $db->fetch_object($resuug);
+                    $resu_fab = $resug->code;
+                }
+                if($resu_fab !== "fab"){
+                    print '<div class="div-combination-pfab"><strong>'.$langs->trans("Newcombination").'</strong></div>';
+                    print '<table class="border centpercent">';
+                    print '<tr>';
+                    print '<td class="width20percent">'.$langs->trans("CombinationAttribute").'</td>';
+                    print '</tr>';
+                    print '<tr>';
+                    print '<td>&nbsp;</td>';
+                    $objectProductAttributes = new ProductAttribute($db);
+                    $objectvalProductAttributes = new ProductAttributeValue($db);
+                    print '<td colspan="2">';
+                    print '<td colspan="2">
+                        <div style="margin: 0 34% 2%;">
+                            Filtrer taille(s) pour: <select class="flat" name="type_taille" id="type_taille">
+                                <option value="-1" selected="" data-select2-id="5">---- Tous ----</option>
+                                <option value="1">Femme</option>
+                                <option value="2">Fillette</option>
+                                <option value="3">Bébé</option>
+                            </select>
+                        </div>
+                    <div class="div-main-content-optionh">';
+                    foreach($objectProductAttributes->fetchAll() as $res){
+                        if($res->id == 1 || $res->id == 2) {
+                            $class_option_content = ($res->id == 1) ? "option-content-couleur" : "option-content-taille";
+                            $class_option_heading = ($res->id == 1) ? "option-heading" : "option-heading-taille";
+                            $class_option_heading_content = ($res->id == 1) ? "option-heading-content" : "option-heading-content-taille";
+                            $url_creation_decl = ($res->id == 1) ? 
+                            "<a href='".DOL_URL_ROOT."/variants/create_val.php?id=1&data_popup=1' target='_blank' class='button create_combination_popup'>Créer couleur</a>" : 
+                            "<a href='".DOL_URL_ROOT."/variants/create_val.php?id=2&data_popup=1' target='_blank' class='button create_combination_popup'>Créer taille</a>";
+                            print '<div class="'.$class_option_heading_content.'"><div class="'.$class_option_heading.'">'.$res->label.'</div><div class="'.$class_option_content.'">';
+                            foreach ($objectvalProductAttributes->fetchAllByProductAttribute($res->id) as $attrval) {
+                                if($attrval->code_couleur):
+                                    print '<label class="container-declinaison" for="'.$attrval->value.'">'.$attrval->value.''
+                                        . '<input type="checkbox" id="'.$attrval->value.'" value="'.$attrval->id.'" name="choix_couleur" >'
+                                        . '<span class="checkmark-declinaison" style="background-color:'.$attrval->code_couleur.'"></span></label>';
+                                else:
+                                    print '<label class="container-declinaison type_declinaison_'.$attrval->type_taille.'" for="'.$attrval->value.'">'.$attrval->value.''
+                                        . '<input type="checkbox" id="'.$attrval->value.'" value="'.$attrval->id.'" name="choix_taille">'
+                                        . '<span class="checkmark-declinaison" style="background-color:#eee;"></span></label>';
+                                endif;
+                            }
+                            print '</div>';
+                            print $url_creation_decl;
+                            print '</div>';
+                        }
+                    }  
+                    
+                    print'</div></td>';
+                    print '</tr>';
+                    print '</table>';
+                    $cumulcodeProd = 0;
+                    
+                    if (!empty($modCodeProduct->code_auto)) {
+                        $cumulcodeProd = $modCodeProduct->getNextValue($object, $type);
+                    }
+                    $cumulbarcode = GETPOST('barcode');
+                    if (empty($cumulbarcode) && !empty($modBarCodeProduct->code_auto)) {
+                        $cumulbarcode = $modBarCodeProduct->getNextValue($object, $type);
+                    }
+                    ?>
+                    <div  style="width: 80%;"> 
+                            <button id="addBtn" type="button" class='button' style='margin-left:0px!important;background:#DAEBE1;border-collapse:collapse;border:none;'>Ajout déclinaison</button>
+                            <input type="hidden" id="id_declinaison" value="<?php echo implode('|',$hiddenValue); ?>">
+                            <input type="hidden" id="id_rowx" value="">
+                            <table  class="dynamic_lines">
+                                <thead>
+                                    <tr>
+                                        <th class="text-align-left" style="display:none;">Numéro ligne</th>
+                                        <th class="text-align-left">Supprimer ligne</th>
+                                        <th class="text-align-left">Codebare</th>
+                                        <th class="text-align-left">Couleur</th>
+                                        <th class="text-align-left">Taille</th>
+                                        <th class="text-align-left">Quantité commandé</th>
+                                        <th class="text-align-left">Quantité fabriqué</th>
+                                        <th class="text-align-left">Poids</th>
+                                        <th class="text-align-left">Composition</th>
+                                        <th class="text-align-left">Prix Yuan</th>
+                                        <th class="text-align-left">Taux</th>
+                                        <th class="text-align-left">Prix Euro</th>
+                                        <!--th class="text-align-left">Total Yuan</th> 
+                                        <th class="text-align-left">Total Euro</th--> 
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody"> 
 
-				// Accountancy_code_buy_export
-				print '<tr><td class="titlefield">'.$langs->trans("ProductAccountancyBuyExportCode").'</td>';
-				print '<td><input name="accountancy_code_buy_export" class="maxwidth200" value="'.$object->accountancy_code_buy_export.'">';
-				print '</td></tr>';
-			}
-			print '</table>';
+                                </tbody> 
+                            </table> 
+                    </div> 
+                    <script type="text/javascript">
+                            jQuery(document).ready(function () {
+                                $("#select_price_base_type option:contains('HT')").attr("disabled","disabled").hide();
+                                $(".option-heading").on('click', function() {
+                                    $(this).toggleClass('is-active').next(".option-content-couleur").stop().slideToggle(500);
+                                });
+                                $(".option-heading-taille").on('click', function() {
+                                    $(this).toggleClass('is-active').next(".option-content-taille").stop().slideToggle(500);
+                                });
+                                /* filtre taille */
+                                $("#type_taille").change(function(){
+                                var valTailles = $(this).val();
+                                if (parseInt(valTailles) == 1){
+                                        $(".type_declinaison_3").hide();
+                                        $(".type_declinaison_2").hide();
+                                        $(".type_declinaison_1").show();
+                                    }else if(parseInt(valTailles) == 2){
+                                        $(".type_declinaison_3").hide();
+                                        $(".type_declinaison_1").hide();
+                                        $(".type_declinaison_2").show();
+                                    }else if(parseInt(valTailles) == 3) {
+                                        $(".type_declinaison_1").hide();
+                                        $(".type_declinaison_2").hide();
+                                        $(".type_declinaison_3").show();
+                                    }else{
+                                        $(".type_declinaison_1").show();
+                                        $(".type_declinaison_2").show();
+                                        $(".type_declinaison_3").show();
+                                    }
+                                });
+                                
+                                $('.option-content-couleur').on('click', ':checkbox', function(e) {
+                                    $('.option-content-couleur :checkbox').each(function() {
+                                      if (this != e.target)
+                                        $(this).prop('checked', false);
+                                    });
+                                });
+                                $('.option-content-taille').on('click', ':checkbox', function(e) {
+                                    $('.option-content-taille :checkbox').each(function() {
+                                      if (this != e.target)
+                                        $(this).prop('checked', false);
+                                    });
+                                });
+                                // Denotes total number of rows 
+                                var rowIdx = 0; 
+                                // jQuery button click event to add a row 
+                                $('#addBtn').on('click', function () { 
+                                        /* traitement réferences */
 
-			dol_fiche_end();
+                                        var refCumules = '<?php echo $cumulcodeProd; ?>';
+                                        var references = parseInt(refCumules) + parseInt(`${rowIdx}`) + 1;
+                                        /* traitement codebarre */
+                                        var refcodebare = '<?php echo $lastEanProduct; ?>';
+                                      
+                                        if($('.dynamic_lines tr:last').attr('id')){
+                                            var digs = parseInt($('.dynamic_lines tr:last').attr('id').substring(1));
+                                            var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + digs;
+                                        }else{
+                                          var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + 1;
+                                        }
+                                        var codebarres = refcodebare12+""+getLastEan13Digit(refcodebare12.toString());
+                                        /* traitement couleurs et tailles */
+                                        var choixCouleur = "";
+                                        var valCouleur = "";
+                                        var choixTaille  = "";
+                                        var valTaille  = "";
+                                        $('input[name="choix_couleur"]:checked').each(function(){
+                                            var idVal =  $(this).attr('id');
+                                            valCouleur = $(this).val();
+                                            choixCouleur = $("label[for='"+idVal+"']").text();
+                                        });
+                                        $('input[name="choix_taille"]:checked').each(function(){
+                                            var idVal =  $(this).attr('id');
+                                            valTaille = $(this).val();
+                                            choixTaille = $("label[for='"+idVal+"']").text();
+                                        });
+                                        // test si on ne selectionne ou non une déclinaison quand on clique sur 'ajout déclinaison'
+                                        if((choixCouleur === "" && choixTaille === "") || (choixCouleur === "" && choixTaille === "")) {
+                                            alert('Veuillez selectionner  au moins une déclinaison');
+                                            return;
+                                        }
+                                        // ajouter les valeur selectionnées dans le hidden
+                                        var oldVal = $('#id_declinaison').val();
+                                        $("#id_declinaison").val(oldVal+"|"+(choixCouleur+"_"+choixTaille));
+                                        
+                                        const findDuplicates = (arr) => {
+                                            let sorted_arr = arr.slice().sort(); 
+                                            let results = [];
+                                            for (let i = 0; i < sorted_arr.length - 1; i++) {
+                                              if (sorted_arr[i + 1] == sorted_arr[i]) {
+                                                results.push(sorted_arr[i]);
+                                              }
+                                            }
+                                            return results;
+                                        };
+                                        var arrvalDecl = $('#id_declinaison').val().split('|');
+                                        const uniqueArray = unique(arrvalDecl);
+                                        if(findDuplicates(arrvalDecl).length > 0){
+                                            var valdupl = findDuplicates(arrvalDecl)[0].split('_');
+                                            alert("la déclinaison "+valdupl[0]+" "+valdupl[1]+" est déjà dans la liste de déclinaison");
+                                            $('#id_declinaison').val(uniqueArray.join('|'));
+                                            /*$('#R'+`${rowIdx}`).remove();*/
+                                            return;
+                                        }
+                                      //if(confirm("Voulez vous vraiment ajouter la déclinaison =>  couleur : "+choixCouleur+", taille : "+choixTaille+"")){
+                                          $('#tbody').append(`<tr id="R${++rowIdx}"> 
+                                                <td class="row-index text-align-left" style="display:none;"> 
+                                                    <input type="text" value="${rowIdx}" readonly="readonly">
+                                                    <input type="hidden" value="${rowIdx}" id="row_idx_${rowIdx}">
+                                                </td> 
+                                                <td class="text-align-left"> 
+                                                  <button class="btn btn-danger remove"
+                                                    type="button">Supprimer</button> 
+                                                  </td> 
+                                                <td class="codebares text-align-left"> 
+                                                    <input type="text" value="${codebarres}" readonly="readonly" name="codebares[]" class="codebaresValue${rowIdx}">
+                                                </td>
+                                                <td class="couleurs${rowIdx} text-align-left"> 
+                                                    <input type="hidden" value="${valCouleur}" name="valCouleurs[]">
+                                                    <input type="hidden" value="${choixCouleur}" id="choix_couleur_${rowIdx}">
+                                                    <input type="text" value="${choixCouleur}" readonly="readonly" disabled class="couleursValue${rowIdx}">
+                                                </td>
+                                                <td class="tailles${rowIdx} text-align-left"> 
+                                                    <input type="hidden" value="${valTaille}" name="valTailles[]" >
+                                                    <input type="hidden" value="${choixTaille}" id="choix_taille_${rowIdx}" >
+                                                    <input type="text" value="${choixTaille}" readonly="readonly" disabled class="taillesValue${rowIdx}">
+                                                </td>
+                                                <td class="qtycomm text-align-left"> 
+                                                    <input type="number" value=""  name="qtycomm[]" >
+                                                </td>
+                                                <td class="qtyfabriq text-align-left"> 
+                                                    <input type="number" value=""  name="qtyfabriq[]" >
+                                                </td>
+                                                <td class="poidsfabriq text-align-left"> 
+                                                    <input type="text" value=""  name="poidsfabriq[]">
+                                                </td>
+                                                <td class="compfabriq text-align-left"> 
+                                                    <input type="text" value=""  name="compfabriq[]" id="composition_${rowIdx}" oninput="changeValueInputComp('composition_${rowIdx}','copie_val_comp_${rowIdx}')" >
+                                                    <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                </td>
+                                                <td class="priceYuan text-align-left" > 
+                                                    <input type="text" value=""  name="priceYuan[]" id="price_yuan_${rowIdx}"  oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_${rowIdx}')">
+                                                    <button class="btn btn-info" type="button" id="copie_val_${rowIdx}" style="display:none;" onclick="copyValuesOfRowPrixYuan('price_yuan_${rowIdx}','taux_change_${rowIdx}','price_euro_${rowIdx}','copie_val_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                </td>
+                                                <td class="tauxChange text-align-left"> 
+                                                    <input type="text" value="<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>" id="taux_change_${rowIdx}"  name="tauxChange[]" oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}')">
+                                                </td> 
+                                                <td class="priceEuro text-align-left"> 
+                                                    <input type="text" value=""  name="priceEuro[]" id="price_euro_${rowIdx}">
+                                                </td> 
+                                              </tr>
+                                          `);
+                                        var oldValidx = $('#id_rowx').val();
+                                        if($('.dynamic_lines tr:last').attr('id')){
+                                            var digs = parseInt($('.dynamic_lines tr:last').attr('id').substring(1));
+                                            $("#id_rowx").val(oldValidx+"|"+digs);
+                                        }else{
+                                            $("#id_rowx").val(oldValidx+"|"+rowIdx);
+                                        }
+                                      }); 
+                                // jQuery button click event to remove a row. 
+                                $('#tbody').on('click', '.remove', function () { 
+                                        // delete current declinaison from hidden val
+                                        var hiddenDeclinaison = $('#id_declinaison').val().split('|');
+                                        var currentRow = $(this).closest('tr');
+                                        var currentRowId = currentRow.attr('id');
+                                        var currentDig = parseInt(currentRowId.substring(1));
+                                        var currentColors  = currentRow.find('.couleursValue' + currentDig).val();
+                                        var currentTailles  = currentRow.find('.taillesValue' + currentDig).val();
+                                        var currentCodebares  = currentRow.find('.codebaresValue' + currentDig).val();
+                                        var hiddenResult = arrayRemove(hiddenDeclinaison, currentColors+"_"+currentTailles);
+                                        $('#id_declinaison').val(hiddenResult.join('|'));
+                                        
+                                        var hiddenRowIdx = $('#id_rowx').val().split('|');
+                                        var hiddenResRowIdx = arrayRemove(hiddenRowIdx, currentDig);
+                                        $('#id_rowx').val(hiddenResRowIdx.join('|'));
+                                        // Getting all the rows next to the row
+                                        var child = $(this).closest('tr').nextAll();
+                                        var cmtLigne = 0;
+                                        child.each(function () {
+                                            cmtLigne++;
+                                            // Getting <tr> id.
+                                            var id = $(this).attr('id');
+                                            // Getting the <p> inside the .row-index class.
+                                            var idx = $(this).children('.row-index').find('input');
+                                            var refs = $(this).children('.references').find('input');
+                                            var cdbares = $(this).children('.codebares').find('input');
+                                            // Gets the row number from <tr> id.
+                                            var dig = parseInt(id.substring(1));
+                                            // Modifying row index. 
+                                            idx.attr('value',`${dig - 1}`);
+                                            var refCumules = '<?php echo $object->ref; ?>';
+                                            
+                                            var references = parseInt(refCumules+"0000") + parseInt(`${dig - 1}`);
+                                            var codebarress = parseInt(currentCodebares.substring(0, currentCodebares.length - 1))+parseInt(cmtLigne);
+                                           
+                                            refs.attr('value',`${references}`);
+                                            cdbares.attr('value',codebarress.toString()+""+getLastEan13Digit(codebarress.toString()));
+                                            // Modifying row id.
+                                            $(this).attr('id', `R${dig}`);
+                                            
+                                        });
+                                        // Removing the current row. 
+                                        $(this).closest('tr').remove(); 
+                                        rowIdx--; 
+                                });
 
-			print '<div class="center">';
-			print '<input type="submit" class="button" value="'.$langs->trans("Save").'">';
-			print '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-			print '<input type="submit" class="button" name="cancel" value="'.$langs->trans("Cancel").'">';
-			print '</div>';
+                                $('a.edit_row_declinaison').click(function (e) {
+                                        e.preventDefault();
+                                        var page = $(this).attr("href")
+                                        var pagetitle = $(this).attr("title")
+                                        var $dialog = $('<div></div>')
+                                        .html('<iframe style="border: 0px; " src="' + page + '" width="100%" height="100%" id="newProductIframe"></iframe>')
+                                        .dialog({
+                                            autoOpen: false,
+                                            modal: true,
+                                            height: 400,
+                                            width: 400,
+                                            resizable: true,
+                                            title: pagetitle,
+                                            open: function(event, ui) {
+                                                $("#ui-id-3").css('overflow', 'hidden');
+                                            }
+                                        });
+                                        $dialog.dialog('open');
+                                });
+                                $('a.delete_row_declinaison').click(function (e) {
+                                        e.preventDefault();
+                                        var page = $(this).attr("href")
+                                        var pagetitle = $(this).attr("title")
+                                        var $dialog = $('<div></div>')
+                                        .html('<iframe style="border: 0px; " src="' + page + '" width="100%" height="100%" id="newProductIframe"></iframe>')
+                                        .dialog({
+                                            autoOpen: false,
+                                            modal: true,
+                                            height: 180,
+                                            width: 500,
+                                            resizable: true,
+                                            title: pagetitle,
+                                            open: function(event, ui) {
+                                                $("#ui-id-3").css('overflow', 'hidden');
+                                            }
+                                        });
+                                        $dialog.dialog('open');
+                                });
+                                
+                                $('a.create_combination_popup').click(function (e) {
+                                        e.preventDefault();
+                                        var page = $(this).attr("href")
+                                        var pagetitle = $(this).attr("title")
+                                        var $dialog = $('<div></div>')
+                                        .html('<iframe style="border: 0px; " src="' + page + '" width="100%" height="100%" id="newProductIframe"></iframe>')
+                                        .dialog({
+                                            autoOpen: false,
+                                            modal: true,
+                                            height: 500,
+                                            width: 500,
+                                            resizable: true,
+                                            title: pagetitle,
+                                            open: function(event, ui) {
+                                                $("#ui-id-3").css('overflow', 'hidden');
+                                            }
+                                        });
+                                        $dialog.dialog('open');
+                                });
 
-			print '</form>';
-		}
+                            });
+                            function changeEuro(yuan, euro, tauxchangeVal, copyval){
+                                var resy = $("#"+yuan).val();
+                                var tauxchange = $("#"+tauxchangeVal).val();
+                                /* traitement calcul prix euro */
+                                if(resy){
+                                    $("#"+euro).val((parseFloat(resy.replace(',','.'))/parseFloat(tauxchange.replace(',','.'))).toFixed(2))
+                                }else{
+                                    $("#"+euro).val(0)
+                                }
+                                /* traitement ajout boutton copy */
+                                if(resy !== ""){
+                                    $("#"+copyval).show();
+                                }else{
+                                    $("#"+copyval).hide();
+                                }
+                            }
+
+                            function changeValueInputComp(inputComp,copyval){
+                                var resy = $("#"+inputComp).val();
+                                /* traitement ajout boutton copy */
+                                if(resy !== ""){
+                                    $("#"+copyval).show();
+                                }else{
+                                    $("#"+copyval).hide();
+                                }
+                            }
+                            function copyValuesOfRowComposition(compositionInput,buttonInput){
+                                var hiddenRowIdx = $('#id_rowx').val().split('|');
+                                var valueCurrentComposition = $("#"+compositionInput).val();
+                                for(var i = 0; i < hiddenRowIdx.length; i++){
+                                    $("#composition_"+hiddenRowIdx[i]).val(valueCurrentComposition);
+                                }
+                                $("#"+buttonInput).hide();
+                            }
+
+                            function copyValuesOfRowPrixYuan(yuanInput,tauxInput,euroInput,buttonInput){
+                                var hiddenRowIdx = $('#id_rowx').val().split('|');
+                                var valueCurrentYuan = $("#"+yuanInput).val();
+                                var valueCurrentTaux = $("#"+tauxInput).val();
+                                var valueCurrentEuro = $("#"+euroInput).val();
+                                for(var i = 0; i < hiddenRowIdx.length; i++){
+                                    $("#price_yuan_"+hiddenRowIdx[i]).val(valueCurrentYuan);
+                                    $("#taux_change_"+hiddenRowIdx[i]).val(valueCurrentTaux);
+                                    $("#price_euro_"+hiddenRowIdx[i]).val(valueCurrentEuro);
+                                }
+                                $("#"+buttonInput).hide();
+                            }
+                            function unique(array){
+                                return array.filter(function(el, index, arr) {
+                                    return index == arr.indexOf(el);
+                                });
+                            }
+                            function arrayRemove(arr, value) { 
+                                return arr.filter(function(ele){ 
+                                    return ele != value; 
+                                });
+                            }
+                            function getLastEan13Digit(ean) { 
+                                if (!ean || ean.length !== 12) throw new Error('Invalid EAN 13, should have 12 digits'); 
+                                const multiply = [1, 3]; 
+                                let total = 0; 
+                                ean.split('').forEach((letter, index) => { 
+                                  total += parseInt(letter, 10) * multiply[index % 2]; 
+                                }); 
+                                const base10Superior = Math.ceil(total / 10) * 10; 
+                                return base10Superior - total;
+                            }
+                        </script> 
+                    <?php
+                    print '<input type="submit" class="button" value="Enregistrer les nouveaux déclinaison">';
+                }else{
+                
+                    ?>
+                    <script>
+                        jQuery(document).ready(function () {
+                                    $('a.edit_row_declinaison').click(function (e) {
+                                            e.preventDefault();
+                                            var page = $(this).attr("href")
+                                            var pagetitle = $(this).attr("title")
+                                            var $dialog = $('<div></div>')
+                                            .html('<iframe style="border: 0px; " src="' + page + '" width="100%" height="100%" id="newProductIframe"></iframe>')
+                                            .dialog({
+                                                autoOpen: false,
+                                                modal: true,
+                                                height: 400,
+                                                width: 400,
+                                                resizable: true,
+                                                title: pagetitle,
+                                                open: function(event, ui) {
+                                                    $("#ui-id-3").css('overflow', 'hidden');
+                                                }
+                                            });
+                                            $dialog.dialog('open');
+                                    });
+
+                                });
+                    </script>    
+                    <?php
+                }
+                // affichage liste declinaison
+                $grandTotalCommanderYuan = 0;
+                $grandTotalCommanderEuro = 0;
+                $grandTotalCommanderqtyCommander = 0;
+                $grandTotalCommanderqtyFabriquer = 0;
+                foreach($arrtmpValCoul as $kaff => $vaff) {
+                    $valcoul = explode('_',$kaff);
+                    $attributes = $prodcombi->getAttributeById($valcoul[0]);
+                    $attributesValue = $prodcombi->getAttributeValueById($valcoul[1]);
+                    $cdCouleur = !empty($attributesValue["code_couleur"]) ? '<span style="background-color:'.$attributesValue["code_couleur"].'">&nbsp;&nbsp;&nbsp;&nbsp;</span>' : "";
+                    print '<br>';
+                    print '<div class="div-combination-pfab"><strong>'.$attributes["label"]."  ".$attributesValue["value"].'&nbsp;&nbsp;'.$cdCouleur.'</strong></div>';
+                    print '<table class="border centpercent" border=1>';
+                    print '<tr>';
+                    print '<td style="font-weight:bold;">Taille</td>';
+                    print '<td style="font-weight:bold;">Quantité Commandé</td>';
+                    print '<td style="font-weight:bold;">Réference</td>';
+                    print '<td style="font-weight:bold;">Code barre</td>';
+                    print '<td style="font-weight:bold;background-color:#a9aaad;color:black">Quantité fabriqué</td>';
+                    print '<td style="font-weight:bold;background-color:#a9aaad;color:black">Poids</td>';
+                    print '<td style="font-weight:bold;background-color:#a9aaad;color:black">Composition</td>';
+                    print '<td style="font-weight:bold;background-color:#a9aaad;color:black">Prix yuan</td>';
+                    print '<td style="font-weight:bold;">Taux</td>';
+                    print '<td style="font-weight:bold;">Prix euro</td>';
+                    print '<td style="font-weight:bold;">Total yuan</td>';
+                    print '<td style="font-weight:bold;">Total euros</td>';
+                    print '<td style="font-weight:bold;" colspan=2>Action</td>';
+                    print '</tr>';
+                    $grandTotalYuan = 0;
+                    $grandTotalEuro = 0;
+                    $grandTotalqtyCommander = 0;
+                    $grandTotalqtyFabriquer = 0;
+                    foreach($vaff as $idChilds){
+                        $tailles = $prodcombi->getProductTaille($object->id,$idChilds);
+                        $attributesVals = $prodcombi->getAttributeValueById($tailles[$idChilds][0]);
+                        $prodChild = new Product($db);
+                        $prodChild->fetch($idChilds);
+                        print "<tr>";
+                        print "<td>".$attributesVals['value']."</td>";
+                        print "<td>".($prodChild->quantite_commander?$prodChild->quantite_commander:0)."</td>";
+                        print "<td>".$prodChild->ref."</td>";
+                        print "<td>".$prodChild->barcode."</td>";
+                        print "<td style='background-color:#a9aaad;color:black'>".($prodChild->quantite_fabriquer?$prodChild->quantite_fabriquer:0)."</td>";
+                        print "<td style='background-color:#a9aaad;color:black'>".$prodChild->weight_variant."</td>";
+                        print "<td style='background-color:#a9aaad;color:black'>".$prodChild->composition."</td>";
+                        print "<td style='background-color:#a9aaad;color:black'>".($prodChild->price_yuan?$prodChild->price_yuan:0)." ¥</td>";
+                        print "<td>".$prodChild->taux_euro_yuan."</td>";
+                        print "<td>".($prodChild->price_euro?$prodChild->price_euro:0)." €</td>";
+                        print "<td>".($prodChild->quantite_commander*$prodChild->price_yuan)." ¥</td>";
+                        print "<td>".($prodChild->quantite_commander*$prodChild->price_euro)." €</td>";
+                        print "<td><a class='custom_button edit_row_declinaison' href='".DOL_URL_ROOT."/product/variant/edit.php?productid=".$prodChild->id."&parentId=".$object->id."' target='_blank'>Modifier</a>"
+                                . "<a class='custom_button' href='".DOL_URL_ROOT."/barcode/printsheet.php?codebare=".$prodChild->barcode."' target='_blank'>Imprimer code</a>";
+                        if($resu_fab !== "fab"){
+                            print "<a class='custom_button_delete delete_row_declinaison' href='".DOL_URL_ROOT."/product/variant/delete.php?productid=".$prodChild->id."' target='_blank'>Supprimer</a>";
+                        }
+                        print "</td>";
+                        $grandTotalYuan += ($prodChild->quantite_commander*$prodChild->price_yuan);
+                        $grandTotalEuro += ($prodChild->quantite_commander*$prodChild->price_euro);
+                        $grandTotalqtyCommander += ($prodChild->quantite_commander?$prodChild->quantite_commander:0);
+                        $grandTotalqtyFabriquer += ($prodChild->quantite_fabriquer?$prodChild->quantite_fabriquer:0);
+                        print "</tr>";
+                    }
+                    print '<tr>';
+                    print '<td style="font-weight:bold;">Total</td>';
+                    print '<td style="font-weight:bold;">'.$grandTotalqtyCommander.'</td>';
+                    print '<td style="font-weight:bold;" colspan=2></td>';
+                    print '<td style="font-weight:bold;">'.$grandTotalqtyFabriquer.'</td>';
+                    print '<td style="font-weight:bold;" colspan=5></td>';
+                    print '<td style="font-weight:bold;">'.$grandTotalYuan.' ¥</td>';
+                    print '<td style="font-weight:bold;">'.$grandTotalEuro.' €</td>';
+                    print '</tr>';
+                   print '</table>';
+                   $grandTotalCommanderYuan +=  $grandTotalYuan;
+                   $grandTotalCommanderEuro +=  $grandTotalEuro;
+                   $grandTotalCommanderqtyCommander +=  $grandTotalqtyCommander;
+                   $grandTotalCommanderqtyFabriquer +=  $grandTotalqtyFabriquer;
+                }
+                print '<br>';
+                print '<table class="border centpercent" style="width:30%!important;float:right!important">';
+                
+                print '<tr>';
+                print '<td style="font-weight:bold;float:right;" >Total Quantité commandé : '.$grandTotalCommanderqtyCommander.' </td>';
+                print '</tr>';
+                print '<tr>';
+                print '<td style="font-weight:bold;float:right;" >Total Quantité fabriqué : '.$grandTotalCommanderqtyFabriquer.'</td>';
+                print '</tr>';
+                print '<tr>';
+                print '<td style="font-weight:bold;float:right;" >Total yuan : '.$grandTotalCommanderYuan.' ¥</td>';
+                print '</tr>';
+                print '<tr>';
+                print '<td style="font-weight:bold;float:right;" >Total Euro : '.$grandTotalCommanderEuro.' €</td>';
+                print '</tr>';
+                
+                print '</table>';
+            }
+            /* fin formulaire modification déclinaison */
+            dol_fiche_end();
+
+            print '<div class="center">';
+            if($status_product && $status_product == "produitfab") { 
+                
+            }else{
+                print '<input type="submit" class="button" value="'.$langs->trans("Save").'">';
+                print '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+                print '<input type="submit" class="button" name="cancel" value="'.$langs->trans("Cancel").'">';
+            }
+            print '</div>';
+
+            print '</form>';
+	}
         // Fiche en mode visu
         else
 		{
@@ -2381,7 +3775,7 @@ else
 					print '<input type="hidden" name="token" value="'.newToken().'">';
 					print '<input type="hidden" name="action" value="setbarcode">';
 					print '<input type="hidden" name="barcode_type_code" value="'.$object->barcode_type_code.'">';
-					print '<input size="40" class="maxwidthonsmartphone" type="text" name="barcode" value="'.$tmpcode.'">';
+					print '<input size="40" class="maxwidthonsmartphone" type="text" name="barcode" value="'.$object->barcode.'">';
 					print '&nbsp;<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
 					print '</form>';
                 }
