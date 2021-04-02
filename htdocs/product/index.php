@@ -33,6 +33,17 @@ require_once DOL_DOCUMENT_ROOT.'/product/class/product.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/date.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/product/dynamic_price/class/price_parser.class.php';
 
+$user->update($user);
+$sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
+$resuUser = $db->query($sql_user_group);
+$reug = $db->fetch_object($resuUser);
+$resu_fab = "";
+if ($reug->fk_usergroup) {
+    $sql_group = "select code from ".MAIN_DB_PREFIX."usergroup where rowid = ".$reug->fk_usergroup;
+    $resuug = $db->query($sql_group);
+    $resug = $db->fetch_object($resuug);
+    $resu_fab = $resug->code;
+}
 $type = GETPOST("type", 'int');
 if ($type == '' && !$user->rights->produit->lire) $type = '1'; // Force global page on service page only
 if ($type == '' && !$user->rights->service->lire) $type = '0'; // Force global page on product page only
@@ -81,7 +92,8 @@ print load_fiche_titre($transAreaType, $linkback, 'product');
 
 
 print '<div class="fichecenter"><div class="fichethirdleft">';
-
+if($resu_fab !== "fab"){
+   
 
 if (!empty($conf->global->MAIN_SEARCH_FORM_ON_HOME_AREAS))     // This is useless due to the global search combo
 {
@@ -407,6 +419,7 @@ print '</div></div></div>';
 $parameters = array('type' => $type, 'user' => $user);
 $reshook = $hookmanager->executeHooks('dashboardProductsServices', $parameters, $object); // Note that $action and $object may have been modified by hook
 
+}
 // End of page
 llxFooter();
 $db->close();
