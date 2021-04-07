@@ -11,3 +11,5 @@ alter table llx_product add ref_fab_frs VARCHAR(255) NULL;
 alter table llx_product add taux_euro_yuan double(24,3) DEFAULT NULL;
 
 alter TABLE llx_product MODIFY weight_variant double(24,3) DEFAULT NULL;
+
+alter table llx_product add ref_tissus_couleur VARCHAR(255) NULL;

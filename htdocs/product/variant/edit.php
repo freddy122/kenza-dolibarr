@@ -9,6 +9,7 @@ global $conf;
 $idProduct          = GETPOST("productid");
 $quantite_commander = GETPOST("quantite_commander");
 $quantite_fabriquer = GETPOST("quantite_fabriquer");
+$ref_tissus_couleur = GETPOST("ref_tissus_couleur");
 $weight_variant     = GETPOST("weight_variant");
 $composition        = GETPOST("composition");
 $price_yuan         = GETPOST("price_yuan");
@@ -119,6 +120,16 @@ if($_POST['posted_id']){
         }
     }
     
+    if(!empty($ref_tissus_couleur)){
+        $sqlUpdate       .= " ref_tissus_couleur = '".$ref_tissus_couleur."', " ;
+    }else{
+        if(!empty($prodChild->composition)){
+            $sqlUpdate       .= " ref_tissus_couleur = '".$prodChild->ref_tissus_couleur."', " ;
+        }else{
+            $sqlUpdate       .= " ref_tissus_couleur = '', " ;
+        }
+    }
+    
     if(!empty($taux_euro_yuan)){
         $sqlUpdate       .= " taux_euro_yuan = '".$taux_euro_yuan."', " ;
     }else{
@@ -139,7 +150,7 @@ if($_POST['posted_id']){
         }
     }
     
-    if($resu_fab !== 'fab' && !empty($price_euro)) {
+    if(!empty($price_euro)) {
         $sqlUpdate       .= " price_euro = ".floatval(str_replace(',','.',$price_euro)).", " ;
         $sqlUpdate       .= " price = ".floatval(str_replace(',','.',$price_euro)).", " ;
         $sqlUpdate       .= " price_ttc = ".floatval(str_replace(',','.',$price_euro)).", " ;
@@ -207,6 +218,11 @@ if($_POST['posted_id']){
             if($resu_fab !== 'fab') {
         ?>
         <tr>
+            <td class="titlefield fieldrequired">Réf tissus</td>
+            <td colspan="3"><input name="ref_tissus_couleur" class="maxwidth200" maxlength="128" value="<?php echo ($ref_tissus_couleur?$ref_tissus_couleur:$prodChild->ref_tissus_couleur); ?>">
+            </td>
+        </tr>
+        <tr>
             <td class="titlefield fieldrequired">Quantité Commandé</td>
             <td colspan="3">
                 <input name="quantite_commander" class="maxwidth200" maxlength="128" value="<?php echo ($quantite_commander?$quantite_commander:$prodChild->quantite_commander); ?>">
@@ -238,13 +254,13 @@ if($_POST['posted_id']){
         </tr>
         
         <tr>
-            <td class="titlefield fieldrequired" <?php  if($resu_fab == 'fab') { echo "style='display:none;'"; } ?>>Taux</td>
-            <td colspan="3" <?php  if($resu_fab == 'fab') { echo "style='display:none;'"; } ?>><input name="taux_euro_yuan" <?php  if($resu_fab == 'fab') { echo "readonly='readonly'"; } ?>  class="maxwidth200" id="taux_change" maxlength="128" oninput="changeEuro('price_yuan','price_euro','taux_change');" value="<?php echo $prodChild->taux_euro_yuan; ?>">
+            <td class="titlefield fieldrequired" <?php  /*if($resu_fab == 'fab') { echo "style='display:none;'"; } */?>>Taux</td>
+            <td colspan="3" <?php  /*if($resu_fab == 'fab') { echo "style='display:none;'"; }*/ ?>><input name="taux_euro_yuan" <?php  /*if($resu_fab == 'fab') { echo "readonly='readonly'"; }*/ ?>  class="maxwidth200" id="taux_change" maxlength="128" oninput="changeEuro('price_yuan','price_euro','taux_change');" value="<?php echo $prodChild->taux_euro_yuan; ?>">
             </td>
         </tr>
         <tr>
-            <td class="titlefield fieldrequired" <?php  if($resu_fab == 'fab') { echo "style='display:none;'"; } ?>>Prix euros</td>
-            <td colspan="3" <?php  if($resu_fab == 'fab') { echo "style='display:none;'"; } ?>><input name="price_euro" <?php  if($resu_fab == 'fab') { echo "readonly='readonly'"; } ?>  class="maxwidth200" id="price_euro" maxlength="128" value="<?php  echo ($price_euro?$price_euro:$prodChild->price_euro); ?>">
+            <td class="titlefield fieldrequired" <?php  /*if($resu_fab == 'fab') { echo "style='display:none;'"; }*/ ?>>Prix euros</td>
+            <td colspan="3" <?php  /*if($resu_fab == 'fab') { echo "style='display:none;'"; } */ ?>><input name="price_euro" <?php  /*if($resu_fab == 'fab') { echo "readonly='readonly'"; }*/ ?>  class="maxwidth200" id="price_euro" maxlength="128" value="<?php  echo ($price_euro?$price_euro:$prodChild->price_euro); ?>">
             </td>
         </tr>
          

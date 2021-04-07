@@ -119,9 +119,10 @@ $formfile->form_attach_new_file(
     $permission,
     $conf->browser->layout == 'phone' ? 40 : 60,
     $object,
-	'',
-	1,
-	$savingdocmask
+    '',
+    1,
+    $savingdocmask,
+    $isAddFormLien
 );
 
 // List of document
@@ -148,6 +149,10 @@ $formfile->list_of_documents(
 
 print "<br>";
 
+if($status_product && $status_product == "produitfab") {
+    
+}else{
 //List of links
 $formfile->listOfLinks($object, $permission, $action, GETPOST('linkid', 'int'), $param);
 print "<br>";
+}

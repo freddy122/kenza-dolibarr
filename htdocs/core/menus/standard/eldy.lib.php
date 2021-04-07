@@ -530,12 +530,39 @@ function print_eldy_menu($db, $atarget, $type_user, &$tabMenu, &$menu, $noout = 
 
 		print_end_menu_entry(4);
 	}
-
+    global $db;
+    global $user;
     if (empty($noout)) {
         foreach ($menu->liste as $menuval) {
-            print_start_menu_entry($menuval['idsel'], $menuval['classname'], $menuval['enabled']);
-            print_text_menu_entry($menuval['titre'], $menuval['enabled'], (($menuval['url'] != '#' && !preg_match('/^(http:\/\/|https:\/\/)/i', $menuval['url'])) ? DOL_URL_ROOT:'').$menuval['url'], $menuval['id'], $menuval['idsel'], $menuval['classname'], ($menuval['target'] ? $menuval['target'] : $atarget));
-            print_end_menu_entry($menuval['enabled']);
+            /*Modif fred*/
+            $sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
+            $resuUser = $db->query($sql_user_group);
+            $reug = $db->fetch_object($resuUser);
+            $resu_fab = "";
+            if ($reug->fk_usergroup) {
+                $sql_group = "select code from ".MAIN_DB_PREFIX."usergroup where rowid = ".$reug->fk_usergroup;
+                $resuug = $db->query($sql_group);
+                $resug = $db->fetch_object($resuug);
+                $resu_fab = $resug->code;
+            }
+            if($menuval['idsel'] == "products" && $resu_fab == "fab"){
+                echo "<style>"
+                . " .vmenu > .blockvmenusearch{display:none!important;}"
+                . " .vmenu > .blockvmenu > .menu_titre{display:none!important;}"
+                . " .vmenu > .blockvmenu > .menu_top{display:none!important;}"
+                . " .vmenu > .blockvmenu > .menu_end{display:none!important;}"
+                . "</style>";
+                $menuval['url'] = "/product/listproduitfab.php?leftmenu=product&type=0&idmenu=37";
+                print_start_menu_entry($menuval['idsel'], $menuval['classname'], $menuval['enabled']);
+                print_text_menu_entry($menuval['titre'], $menuval['enabled'], (($menuval['url'] != '#' && !preg_match('/^(http:\/\/|https:\/\/)/i', $menuval['url'])) ? DOL_URL_ROOT:'').$menuval['url'], $menuval['id'], $menuval['idsel'], $menuval['classname'], ($menuval['target'] ? $menuval['target'] : $atarget));
+                print_end_menu_entry($menuval['enabled']);
+            }
+            if($resu_fab != "fab"){
+                print_start_menu_entry($menuval['idsel'], $menuval['classname'], $menuval['enabled']);
+                print_text_menu_entry($menuval['titre'], $menuval['enabled'], (($menuval['url'] != '#' && !preg_match('/^(http:\/\/|https:\/\/)/i', $menuval['url'])) ? DOL_URL_ROOT:'').$menuval['url'], $menuval['id'], $menuval['idsel'], $menuval['classname'], ($menuval['target'] ? $menuval['target'] : $atarget));
+                print_end_menu_entry($menuval['enabled']);
+            }
+            
         }
     }
 
@@ -575,7 +602,7 @@ function print_start_menu_entry($idsel, $classname, $showmode)
 {
 	if ($showmode)
 	{
-		print '<li '.$classname.' id="mainmenutd_'.$idsel.'">';
+                print '<li '.$classname.' id="mainmenutd_'.$idsel.'">';
 		//print '<div class="tmenuleft tmenusep"></div>';
 		print '<div class="tmenucenter">';
 	}
@@ -2040,6 +2067,7 @@ function print_left_eldy_menu($db, $menu_array_before, $menu_array_after, &$tabM
 			// Menu level 0
 			if ($menu_array[$i]['level'] == 0)
 			{
+                                /*Modif fred*/
                                 $sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
                                 $resuUser = $db->query($sql_user_group);
                                 $reug = $db->fetch_object($resuUser);
@@ -2077,7 +2105,12 @@ function print_left_eldy_menu($db, $menu_array_before, $menu_array_after, &$tabM
 				}
 				elseif ($showmenu)                 // Not enabled but visible (so greyed)
 				{
-					print '<div class="menu_titre">'.$tabstring.'<font class="vmenudisabled">'.$menu_array[$i]['titre'].'</font></div>'."\n";
+                                        /* modif fred */
+                                        if($resu_fab  == "fab"){
+                                            print '<a class="vsmenu" title="Liste produit FAB" href="'.DOL_URL_ROOT.'/product/listproduitfab.php?leftmenu=product&amp;type=0&amp;idmenu=37">Liste produit FAB</a><br>';
+                                            break;
+                                        }
+                                        print '<div class="menu_titre">'.$tabstring.'<font class="vmenudisabled">'.$menu_array[$i]['titre'].'</font></div>'."\n";
 					$lastlevel0 = 'greyed';
 				}
 				else
@@ -2092,10 +2125,10 @@ function print_left_eldy_menu($db, $menu_array_before, $menu_array_after, &$tabM
 
 			// Menu level > 0
 			if ($menu_array[$i]['level'] > 0)
-			{
+			{       
 				$cssmenu = '';
 				if ($menu_array[$i]['url']) $cssmenu = ' menu_contenu'.dol_string_nospecial(preg_replace('/\.php.*$/', '', $menu_array[$i]['url']));
-                                
+                                /*Modif fred*/
                                 $sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
                                 $resuUser = $db->query($sql_user_group);
                                 $reug = $db->fetch_object($resuUser);

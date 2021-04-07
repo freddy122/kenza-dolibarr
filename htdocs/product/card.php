@@ -54,6 +54,15 @@ require DOL_DOCUMENT_ROOT.'/variants/class/ProductAttribute.class.php';
 require DOL_DOCUMENT_ROOT.'/variants/class/ProductAttributeValue.class.php';
 require_once DOL_DOCUMENT_ROOT.'/variants/class/ProductCombination.class.php';
 
+/*modif fred*/
+/* for document */
+require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/images.lib.php';
+if (!empty($conf->global->PRODUIT_PDF_MERGE_PROPAL)){
+	require_once DOL_DOCUMENT_ROOT.'/product/class/propalmergepdfproduct.class.php';
+}
+/* end for document */
+
 if (!empty($conf->propal->enabled))     require_once DOL_DOCUMENT_ROOT.'/comm/propal/class/propal.class.php';
 if (!empty($conf->facture->enabled))    require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';
 if (!empty($conf->commande->enabled))   require_once DOL_DOCUMENT_ROOT.'/commande/class/commande.class.php';
@@ -386,18 +395,18 @@ if (empty($reshook))
 	            }
 	        }
 
-	        $object->default_vat_code = $vatratecode;
-	        $object->tva_tx = $tva_tx;
-	        $object->tva_npr = $npr;
-	        $object->localtax1_tx = $localtax1;
-	        $object->localtax2_tx = $localtax2;
-	        $object->localtax1_type = $localtax1_type;
-	        $object->localtax2_type = $localtax2_type;
+            $object->default_vat_code = $vatratecode;
+            $object->tva_tx = $tva_tx;
+            $object->tva_npr = $npr;
+            $object->localtax1_tx = $localtax1;
+            $object->localtax2_tx = $localtax2;
+            $object->localtax1_type = $localtax1_type;
+            $object->localtax2_type = $localtax2_type;
                 
             $object->type               	 = $type;
             $object->status             	 = GETPOST('statut');
             $object->status_buy            = GETPOST('statut_buy');
-			$object->status_batch = GETPOST('status_batch');
+            $object->status_batch = GETPOST('status_batch');
 
             $object->barcode_type          = GETPOST('fk_barcode_type');
             //$object->barcode = GETPOST('barcode');
@@ -573,8 +582,10 @@ if (empty($reshook))
                             $object->product_type_txt = "fab";
                             $sqlUpdateProdType = "update ".MAIN_DB_PREFIX."product set "
                                     . " product_type_txt = 'fab', "
-                                    . " barcode='".GETPOST('barcode')."', "
-                                    . " ref_fab_frs='".GETPOST('ref_fab_frs')."' where rowid =  ".$id;
+                                    . " barcode = '".GETPOST('barcode')."', "
+                                    . " description = '".GETPOST('desc')."', "
+                                    . " tobuy = 1 , "
+                                    . " ref_fab_frs = '".GETPOST('ref_fab_frs')."' where rowid =  ".$id;
                             $db->query($sqlUpdateProdType);
                         }else{
                             $object->product_type_txt = "simple";
@@ -592,20 +603,20 @@ if (empty($reshook))
                                 $arrCombi['1'] = $arrposted['valCouleurs'][$i];
                                 $arrCombi['2'] = $arrposted['valTailles'][$i];
                                 $arrOtherInfo  = [];
+                                $arrOtherInfo["ref_tissus_couleur"] = $arrposted['ref_tissus_couleur'][$i];
                                 $arrOtherInfo["quantite_commander"] = $arrposted['qtycomm'][$i];
                                 $arrOtherInfo["quantite_fabriquer"] = $arrposted['qtyfabriq'][$i];
                                 $arrOtherInfo["composition"]        = $arrposted['compfabriq'][$i];
                                 $arrOtherInfo["price_yuan"]         = floatval(str_replace(',','.',$arrposted['priceYuan'][$i]));
                                 $arrOtherInfo["price_euro"]         = floatval(str_replace(',','.',$arrposted['priceEuro'][$i]));
                                 $arrOtherInfo["poidsfabriq"]        = floatval(str_replace(',','.',$arrposted['poidsfabriq'][$i]));
-                                $arrOtherInfo["tauxChange"]        = floatval(str_replace(',','.',$arrposted['tauxChange'][$i]));
+                                $arrOtherInfo["tauxChange"]         = floatval(str_replace(',','.',$arrposted['tauxChange'][$i]));
                                 $arrOtherInfo["ref_fab_frs"]        = GETPOST('ref_fab_frs');
                                 $arrOtherInfo["codebares"]          = $arrposted['codebares'][$i];
                                 $arrOtherInfo["product_type_txt"] = "fab";
                                 $prodcomb = new ProductCombination($db);
                                 $prodcomb->createProductCombination($user, $object, $arrCombi, array(), false, false, false, false,$arrOtherInfo);
                             }
-                            
                             $sqlCheckStock =  "SELECT fk_product from ".MAIN_DB_PREFIX."product_stock where fk_product = ".$id;
                             $rescheckstock  = $db->query($sqlCheckStock);
                             $resustock = $db->fetch_object($rescheckstock);
@@ -775,6 +786,7 @@ if (empty($reshook))
                         $arrCombi['1'] = $arrposted['valCouleurs'][$i];
                         $arrCombi['2'] = $arrposted['valTailles'][$i];
                         $arrOtherInfo = [];
+                        $arrOtherInfo["ref_tissus_couleur"] = $arrposted['ref_tissus_couleur'][$i];
                         $arrOtherInfo["quantite_commander"] = $arrposted['qtycomm'][$i];
                         $arrOtherInfo["quantite_fabriquer"] = $arrposted['qtyfabriq'][$i];
                         $arrOtherInfo["composition"] = $arrposted['compfabriq'][$i];
@@ -835,9 +847,20 @@ if (empty($reshook))
                 if (!$error && $object->check())
                 {
                     if($status_product && $status_product == "produitfab") { 
+                        
+                        /*$sql = "INSERT INTO ".MAIN_DB_PREFIX."product_price_by_qty (fk_product_price,price,unitprice,quantity,remise_percent,remise) values (";
+                        $sql .= $priceid.','.$price.','.$unitPrice.','.$quantity.','.$remise_percent.','.$remise.')';
+                        $result = $db->query($sql);*/
+                        //print_r($object->price);
                         $sqlupdateother = "UPDATE ".MAIN_DB_PREFIX."product set "
                                 . " label = '".GETPOST('label', $label_security_check)."', "
-                                . " ref_fab_frs = '".GETPOST('ref_fab_frs')."' "
+                                . " description='".GETPOST('desc')."', "
+                                . " ref_fab_frs = '".GETPOST('ref_fab_frs')."', "
+                                . " tobuy = 1 , "
+                                . " weight = ".floatval(str_replace(',','.',GETPOST('weight')))." , "
+                                . " weight_units = ".GETPOST('weight_units')." , "
+                                . " price = ". price2num(GETPOST('price')) .", "
+                                . " price_ttc = ". price2num(GETPOST('price')) ." "
                                 . " where rowid = ".$object->id;
                         $db->query($sqlupdateother);
                     }else{
@@ -1467,13 +1490,13 @@ else
 	        print '</td>';
 	        if ($conf->browser->layout == 'phone') print '</tr><tr>';
 	        print '<td>'.$langs->trans("BarcodeValue").'</td><td>';
-	       /* $tmpcode = isset($_POST['barcode']) ?GETPOST('barcode') : $object->barcode;
-	        if (empty($tmpcode) && !empty($modBarCodeProduct->code_auto)) $tmpcode = $modBarCodeProduct->getNextValue($object, $type);*/
-                $cumulcodeProd = 0;
+	        $tmpcode = isset($_POST['barcode']) ?GETPOST('barcode') : $object->barcode;
+	        if (empty($tmpcode) && !empty($modBarCodeProduct->code_auto)) $tmpcode = $modBarCodeProduct->getNextValue($object, $type);
+                /*$cumulcodeProd = 0;
                 if (!empty($modCodeProduct->code_auto)) {
                     $cumulcodeProd = $modCodeProduct->getNextValue($object, $type);
                 }
-	        $tmpcode = isset($_POST['barcode']) ? GETPOST('barcode') : ean13valideFromDigit($cumulcodeProd."0000");
+	        $tmpcode = isset($_POST['barcode']) ? GETPOST('barcode') : ean13valideFromDigit($cumulcodeProd."0000");*/
 	        print '<input class="maxwidth100" type="text" name="barcode" value="'.dol_escape_htmltag($tmpcode).'">';
 	        print '</td></tr>';
         }
@@ -1659,19 +1682,16 @@ else
             print $form->load_tva("tva_tx", $defaultva, $mysoc, $mysoc, 0, 0, '', false, 1);
             print '</td></tr>';
             print '</table>';
-
             print '<br>';
         }
         else
 	{
-            
             if($status_product && $status_product == "produitfab") { 
                 // Price
                 print '<tr><td class="titlefieldcreate fieldrequired">'.$langs->trans("SellingPrice").'(TTC)</td>';
                 print '<td><input name="price" class="maxwidth50" value="'.GETPOST("price", 'alpha').'" id="price_ttc">';
                 print $form->selectPriceBaseType('TTC', "price_base_type");
                 print '</td></tr>';
-                
                 print '<div class="div-combination-pfab"><strong>'.$langs->trans("Newcombination").'</strong></div>';
                 print '<table class="border centpercent">';
                 print '<tr>';
@@ -1679,7 +1699,6 @@ else
                 print '</tr>';
                 print '<tr>';
                 print '<td>&nbsp;</td>';
-                
                 $objectProductAttributes = new ProductAttribute($db);
                 $objectvalProductAttributes = new ProductAttributeValue($db);
                 print '<td colspan="2">
@@ -1717,12 +1736,10 @@ else
                         print '</div>';
                     }
                 }
-                
                 print'</div></td>';
                 print '</tr>';
                 print '</table>';
                 $cumulcodeProd = 0;
-                
                 if (!empty($modCodeProduct->code_auto)) {
                     $cumulcodeProd = $modCodeProduct->getNextValue($object, $type);
                 }
@@ -1743,6 +1760,7 @@ else
                                     <th class="text-align-left">Codebare</th> 
                                     <th class="text-align-left">Couleur</th> 
                                     <th class="text-align-left">Taille</th> 
+                                    <th class="text-align-left">Réf tissus</th> 
                                     <th class="text-align-left">Quantité commandé</th> 
                                     <th class="text-align-left">Quantité fabriqué</th> 
                                     <th class="text-align-left">Poids</th> 
@@ -1754,10 +1772,8 @@ else
                                 </tr> 
                             </thead> 
                             <tbody id="tbody"> 
-
                             </tbody> 
                         </table> 
-                     
                 </div> 
                 <script type="text/javascript">
                         jQuery(document).ready(function () {
@@ -1824,9 +1840,9 @@ else
                                     $(this).prop('checked', false);
                                 });
                             });*/
-                            // Denotes total number of rows 
+                            // Initialise la total deu ligne
                             var rowIdx = 0; 
-                              // jQuery button click event to add a row 
+                              // Cliquer bouton ajout ligne
                               $('#addBtn').on('click', function () { 
                                   /* traitement couleurs et tailles */
                                     var choixCouleur = "";
@@ -1841,16 +1857,12 @@ else
                                         choixCouleur = $("label[for='"+idVal+"']").text();
                                         arrColors.push(choixCouleur+"_"+valCouleur);
                                     });
-                                    
                                     $('input[name="choix_taille"]:checked').each(function(){
                                         var idVal =  $(this).attr('id');
                                         valTaille = $(this).val();
                                         choixTaille = $("label[for='"+idVal+"']").text();
                                         arrTailles.push(choixTaille+"_"+valTaille);
                                     });
-                                    
-                                    /*console.log(arrColors);
-                                    console.log(arrTailles);*/
                                     if(arrTailles.length>0) {
                                         for(var cl =0;cl<arrTailles.length;cl++){
                                             rowIdx++;
@@ -1858,24 +1870,24 @@ else
                                                 
                                             }else{
                                                 /* traitement réferences */
-                                                var refCumules = '<?php echo $cumulcodeProd; ?>';
+                                                //var refCumules = '<?php //echo $cumulcodeProd; ?>';
                                                 /* traitement codebarre */
-                                                var refcodebare12 = parseInt(refCumules+"0000") + parseInt(`${rowIdx}`);
+                                                /*var refcodebare12 = parseInt(refCumules+"0000") + parseInt(`${rowIdx}`);*/
+                                                var refcodebare = '<?php echo $cumulbarcode; ?>';
+                                                var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + 1;
+                                                
                                                 var codebarres = refcodebare12+""+getLastEan13Digit(refcodebare12.toString());
                                                 var splitArrTailles = arrTailles[cl].split('_');
-                                                
                                                 // test si on ne selectionne ou non une déclinaison quand on clique sur 'ajout déclinaison'
                                                 if((arrColors[cl] === "" && choixTaille === "")) {
                                                     alert('Veuillez selectionner  au moins une déclinaison');
                                                     return;
                                                 }
-                                                
                                                 // ajouter les valeur selectionnées dans le hidden
                                                 var oldVal = $('#id_declinaison').val();
                                                 $("#id_declinaison").val(oldVal+"|"+("_"+splitArrTailles[0]));
                                                 var oldValidx = $('#id_rowx').val();
                                                 $("#id_rowx").val(oldValidx+"|"+rowIdx);
-                                                
                                                 const findDuplicates = (arr) => {
                                                     let sorted_arr = arr.slice().sort(); 
                                                     let results = [];
@@ -1888,7 +1900,6 @@ else
                                                 };
                                                 var arrvalDecl = $('#id_declinaison').val().split('|');
                                                 const uniqueArray = unique(arrvalDecl);
-                                                
                                                 if(findDuplicates(arrvalDecl).length > 0){
                                                     var valdupl = findDuplicates(arrvalDecl)[0].split('_');
                                                     alert("la déclinaison "+valdupl[0]+" "+valdupl[1]+" est déjà ajouté");
@@ -1918,25 +1929,32 @@ else
                                                         <input type="hidden" value="${splitArrTailles[0]}" id="choix_taille_${rowIdx}" >
                                                         <input type="text" value="${splitArrTailles[0]}" readonly="readonly" disabled class="taillesValue${rowIdx}">
                                                     </td>
+                                                    <td class="ref_tissus_couleur text-align-left"> 
+                                                        <input type="text" value=""  name="ref_tissus_couleur[]" id="ref_tissus_couleur_${rowIdx}" oninput="changeValueInputRefTissus('ref_tissus_couleur_${rowIdx}','copie_val_reftissus_${rowIdx}')" class="class_color_input_${splitArrTailles[1]}">
+                                                        <button class="btn btn-info" type="button" id="copie_val_reftissus_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('ref_tissus_couleur_${rowIdx}','copie_val_reftissus_${rowIdx}','class_color_input_${splitArrTailles[1]}')">Copier pour ce couleur</button>
+                                                    </td>
                                                     <td class="qtycomm text-align-left"> 
-                                                        <input type="number" value=""  name="qtycomm[]" >
+                                                        <input type="number" value=""  name="qtycomm[]" id="qtycomm_${rowIdx}" oninput="changeValueInputComp('qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')" >
+                                                        <button class="btn btn-info" type="button" id="copie_val_qtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtycomm_','qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')">Copier pour toutes les lignes</button> 
                                                     </td>
                                                     <td class="qtyfabriq text-align-left"> 
-                                                        <input type="number" value=""  name="qtyfabriq[]" >
+                                                        <input type="number" value=""  name="qtyfabriq[]" id="qtyfabriq_${rowIdx}" oninput="changeValueInputComp('qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">
+                                                        <button class="btn btn-info" type="button" id="copie_val_qtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtyfabriq_','qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">Copier pour toutes les lignes</button>
                                                     </td>
                                                     <td class="poidsfabriq text-align-left"> 
                                                         <input type="text" value=""  name="poidsfabriq[]">
                                                     </td>
                                                     <td class="compfabriq text-align-left"> 
                                                         <input type="text" value=""  name="compfabriq[]" id="composition_${rowIdx}" oninput="changeValueInputComp('composition_${rowIdx}','copie_val_comp_${rowIdx}')" >
-                                                        <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                        <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_','composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
                                                     </td>
                                                     <td class="priceYuan text-align-left" > 
                                                         <input type="text" value=""  name="priceYuan[]" id="price_yuan_${rowIdx}"  oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_${rowIdx}')">
                                                         <button class="btn btn-info" type="button" id="copie_val_${rowIdx}" style="display:none;" onclick="copyValuesOfRowPrixYuan('price_yuan_${rowIdx}','taux_change_${rowIdx}','price_euro_${rowIdx}','copie_val_${rowIdx}')">Copier pour toutes les lignes</button> 
                                                     </td>
                                                     <td class="tauxChange text-align-left"> 
-                                                        <input type="text" value="<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>" id="taux_change_${rowIdx}"  name="tauxChange[]" oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}')">
+                                                        <input type="text" value="<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>" id="taux_change_${rowIdx}"  name="tauxChange[]" oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_taux_${rowIdx}')">
+                                                        <button class="btn btn-info" type="button" id="copie_val_taux_${rowIdx}" style="display:none;" onclick="copyValuesOfRowPrixYuan('price_yuan_${rowIdx}','taux_change_${rowIdx}','price_euro_${rowIdx}','copie_val_taux_${rowIdx}')">Copier pour toutes les lignes</button>
                                                     </td>
                                                     <td class="priceEuro text-align-left"> 
                                                         <input type="text" value=""  name="priceEuro[]" id="price_euro_${rowIdx}">
@@ -1946,7 +1964,6 @@ else
                                             }
                                         }
                                     }
-                                    
                                     if(arrColors.length>0){
                                         for(var cl =0;cl<arrColors.length;cl++){
                                                 if(arrTailles.length>0) {
@@ -1956,9 +1973,9 @@ else
                                                         var refCumules = '<?php echo $cumulcodeProd; ?>';
                                                         //var references = parseInt(refCumules) + parseInt(`${rowIdx}`) + 1;
                                                         /* traitement codebarre */
-                                                        //var refcodebare = '<?php echo $cumulbarcode; ?>';
-                                                        //var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + 1;
-                                                        var refcodebare12 = parseInt(refCumules+"0000") + parseInt(`${rowIdx}`);
+                                                        var refcodebare = '<?php echo $cumulbarcode; ?>';
+                                                        var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + 1;
+                                                        /*var refcodebare12 = parseInt(refCumules+"0000") + parseInt(`${rowIdx}`);*/
                                                         var codebarres = refcodebare12+""+getLastEan13Digit(refcodebare12.toString());
                                                         var splitArrColors = arrColors[cl].split('_');
                                                         var splitArrTailles = arrTailles[tl].split('_');
@@ -1968,13 +1985,11 @@ else
                                                             alert('Veuillez selectionner  au moins une déclinaison');
                                                             return;
                                                         }
-
                                                         // ajouter les valeur selectionnées dans le hidden
                                                         var oldVal = $('#id_declinaison').val();
                                                         $("#id_declinaison").val(oldVal+"|"+(splitArrColors[0]+"_"+splitArrTailles[0]));
                                                         var oldValidx = $('#id_rowx').val();
                                                         $("#id_rowx").val(oldValidx+"|"+rowIdx);
-
                                                         const findDuplicates = (arr) => {
                                                                 let sorted_arr = arr.slice().sort(); 
                                                                 let results = [];
@@ -2017,25 +2032,32 @@ else
                                                                 <input type="hidden" value="${splitArrTailles[0]}" id="choix_taille_${rowIdx}" >
                                                                 <input type="text" value="${splitArrTailles[0]}" readonly="readonly" disabled class="taillesValue${rowIdx}">
                                                             </td>
+                                                            <td class="ref_tissus_couleur text-align-left"> 
+                                                                <input type="text" value=""  name="ref_tissus_couleur[]" id="ref_tissus_couleur_${rowIdx}" oninput="changeValueInputRefTissus('ref_tissus_couleur_${rowIdx}','copie_val_reftissus_${rowIdx}')" class="class_color_input_${splitArrColors[1]}">
+                                                                <button class="btn btn-info" type="button" id="copie_val_reftissus_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('ref_tissus_couleur_${rowIdx}','copie_val_reftissus_${rowIdx}','class_color_input_${splitArrColors[1]}')">Copier pour ce couleur</button>
+                                                            </td>
                                                             <td class="qtycomm text-align-left"> 
-                                                                <input type="number" value=""  name="qtycomm[]" >
+                                                                <input type="number" value=""  name="qtycomm[]" id="qtycomm_${rowIdx}" oninput="changeValueInputComp('qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')" >
+                                                            <button class="btn btn-info" type="button" id="copie_val_qtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtycomm_','qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')">Copier pour toutes les lignes</button> 
                                                             </td>
                                                             <td class="qtyfabriq text-align-left"> 
-                                                                <input type="number" value=""  name="qtyfabriq[]" >
+                                                                <input type="number" value=""  name="qtyfabriq[]" id="qtyfabriq_${rowIdx}" oninput="changeValueInputComp('qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">
+                                                                <button class="btn btn-info" type="button" id="copie_val_qtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtyfabriq_','qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">Copier pour toutes les lignes</button>
                                                             </td>
                                                             <td class="poidsfabriq text-align-left"> 
                                                                 <input type="text" value=""  name="poidsfabriq[]">
                                                             </td>
                                                             <td class="compfabriq text-align-left"> 
                                                                 <input type="text" value=""  name="compfabriq[]" id="composition_${rowIdx}" oninput="changeValueInputComp('composition_${rowIdx}','copie_val_comp_${rowIdx}')" >
-                                                                <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                                <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_','composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
                                                             </td>
                                                             <td class="priceYuan text-align-left" > 
                                                                 <input type="text" value=""  name="priceYuan[]" id="price_yuan_${rowIdx}"  oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_${rowIdx}')">
                                                                 <button class="btn btn-info" type="button" id="copie_val_${rowIdx}" style="display:none;" onclick="copyValuesOfRowPrixYuan('price_yuan_${rowIdx}','taux_change_${rowIdx}','price_euro_${rowIdx}','copie_val_${rowIdx}')">Copier pour toutes les lignes</button> 
                                                             </td>
                                                             <td class="tauxChange text-align-left"> 
-                                                                <input type="text" value="<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>" id="taux_change_${rowIdx}"  name="tauxChange[]" oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}')">
+                                                                <input type="text" value="<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>" id="taux_change_${rowIdx}"  name="tauxChange[]" oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_taux_${rowIdx}')">
+                                                                <button class="btn btn-info" type="button" id="copie_val_taux_${rowIdx}" style="display:none;" onclick="copyValuesOfRowPrixYuan('price_yuan_${rowIdx}','taux_change_${rowIdx}','price_euro_${rowIdx}','copie_val_taux_${rowIdx}')">Copier pour toutes les lignes</button>
                                                             </td>
                                                             <td class="priceEuro text-align-left"> 
                                                                 <input type="text" value=""  name="priceEuro[]" id="price_euro_${rowIdx}">
@@ -2054,13 +2076,11 @@ else
                                                     var refcodebare12 = parseInt(refCumules+"0000") + parseInt(`${rowIdx}`);
                                                     var codebarres = refcodebare12+""+getLastEan13Digit(refcodebare12.toString());
                                                     var splitArrColors = arrColors[cl].split('_');
-                                                    
                                                     // test si on ne selectionne ou non une déclinaison quand on clique sur 'ajout déclinaison'
                                                     if((arrColors[cl] === "" && choixTaille === "")) {
                                                         alert('Veuillez selectionner  au moins une déclinaison');
                                                         return;
                                                     }
-
                                                     // ajouter les valeur selectionnées dans le hidden
                                                     var oldVal = $('#id_declinaison').val();
                                                     $("#id_declinaison").val(oldVal+"|"+(splitArrColors[0]+"_"));
@@ -2109,25 +2129,32 @@ else
                                                             <input type="hidden" value="" id="choix_taille_${rowIdx}" >
                                                             <input type="text" value="" readonly="readonly" disabled class="taillesValue${rowIdx}">
                                                         </td>
+                                                        <td class="ref_tissus_couleur text-align-left"> 
+                                                            <input type="text" value=""  name="ref_tissus_couleur[]" id="ref_tissus_couleur_${rowIdx}" oninput="changeValueInputRefTissus('ref_tissus_couleur_${rowIdx}','copie_val_reftissus_${rowIdx}')" class="class_color_input_${splitArrColors[1]}">
+                                                            <button class="btn btn-info" type="button" id="copie_val_reftissus_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('ref_tissus_couleur_${rowIdx}','copie_val_reftissus_${rowIdx}','class_color_input_${splitArrColors[1]}')">Copier pour ce couleur</button>
+                                                        </td>
                                                         <td class="qtycomm text-align-left"> 
-                                                            <input type="number" value=""  name="qtycomm[]" >
+                                                            <input type="number" value=""  name="qtycomm[]" id="qtycomm_${rowIdx}" oninput="changeValueInputComp('qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')" >
+                                                            <button class="btn btn-info" type="button" id="copie_val_qtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtycomm_','qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')">Copier pour toutes les lignes</button> 
                                                         </td>
                                                         <td class="qtyfabriq text-align-left"> 
-                                                            <input type="number" value=""  name="qtyfabriq[]" >
+                                                            <input type="number" value=""  name="qtyfabriq[]" id="qtyfabriq_${rowIdx}" oninput="changeValueInputComp('qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">
+                                                            <button class="btn btn-info" type="button" id="copie_val_qtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtyfabriq_','qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">Copier pour toutes les lignes</button>
                                                         </td>
                                                         <td class="poidsfabriq text-align-left"> 
                                                             <input type="text" value=""  name="poidsfabriq[]">
                                                         </td>
                                                         <td class="compfabriq text-align-left"> 
                                                             <input type="text" value=""  name="compfabriq[]" id="composition_${rowIdx}" oninput="changeValueInputComp('composition_${rowIdx}','copie_val_comp_${rowIdx}')" >
-                                                            <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                            <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_','composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
                                                         </td>
                                                         <td class="priceYuan text-align-left" > 
                                                             <input type="text" value=""  name="priceYuan[]" id="price_yuan_${rowIdx}"  oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_${rowIdx}')">
                                                             <button class="btn btn-info" type="button" id="copie_val_${rowIdx}" style="display:none;" onclick="copyValuesOfRowPrixYuan('price_yuan_${rowIdx}','taux_change_${rowIdx}','price_euro_${rowIdx}','copie_val_${rowIdx}')">Copier pour toutes les lignes</button> 
                                                         </td>
                                                         <td class="tauxChange text-align-left"> 
-                                                            <input type="text" value="<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>" id="taux_change_${rowIdx}"  name="tauxChange[]" oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}')">
+                                                            <input type="text" value="<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>" id="taux_change_${rowIdx}"  name="tauxChange[]" oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_taux_${rowIdx}')">
+                                                            <button class="btn btn-info" type="button" id="copie_val_taux_${rowIdx}" style="display:none;" onclick="copyValuesOfRowPrixYuan('price_yuan_${rowIdx}','taux_change_${rowIdx}','price_euro_${rowIdx}','copie_val_taux_${rowIdx}')">Copier pour toutes les lignes</button>
                                                         </td>
                                                         <td class="priceEuro text-align-left"> 
                                                             <input type="text" value=""  name="priceEuro[]" id="price_euro_${rowIdx}">
@@ -2149,11 +2176,9 @@ else
                                     var currentTailles  = currentRow.find('.taillesValue' + currentDig).val();
                                     var hiddenResult = arrayRemove(hiddenDeclinaison, currentColors+"_"+currentTailles);
                                     $('#id_declinaison').val(hiddenResult.join('|'));
-                                    
                                     var hiddenRowIdx = $('#id_rowx').val().split('|');
                                     var hiddenResRowIdx = arrayRemove(hiddenRowIdx, currentDig);
                                     $('#id_rowx').val(hiddenResRowIdx.join('|'));
-                                    
                                     // Getting all the rows next to the row
                                     var child = $(this).closest('tr').nextAll();
                                     child.each(function () {
@@ -2179,10 +2204,9 @@ else
                                     rowIdx--; 
                             });
                         });
-                        
-                        function changeEuro(yuan, euro, tauxchange, copyval){
+                        function changeEuro(yuan, euro, tauxchangeVal, copyval){
                             var resy = $("#"+yuan).val();
-                            var tauxchange = $("#"+tauxchange).val();
+                            var tauxchange = $("#"+tauxchangeVal).val();
                             /* traitement calcul prix euro */
                             if(resy){
                                 $("#"+euro).val((parseFloat(resy.replace(',','.'))/parseFloat(tauxchange.replace(',','.'))).toFixed(2))
@@ -2190,13 +2214,26 @@ else
                                 $("#"+euro).val(0)
                             }
                             /* traitement ajout boutton copy */
+                            if(resy !== "" || tauxchange !== ""){
+                                $("#"+copyval).show();
+                            }else{
+                                $("#"+copyval).hide();
+                            }
+                        }
+                        function changeValueInputRefTissus(inputComp,copyval){
+                            var resy = $("#"+inputComp).val();
+                            /* traitement ajout boutton copy */
                             if(resy !== ""){
                                 $("#"+copyval).show();
                             }else{
                                 $("#"+copyval).hide();
                             }
                         }
-                        
+                        function copyValuesOfRowRefTissus(refTissusInput,buttonInput,colorInput){
+                            var valueCurrentTissus = $("#"+refTissusInput).val();
+                            $("."+colorInput).val(valueCurrentTissus);
+                            $("#"+buttonInput).hide();
+                        }
                         function changeValueInputComp(inputComp,copyval){
                             var resy = $("#"+inputComp).val();
                             /* traitement ajout boutton copy */
@@ -2206,15 +2243,14 @@ else
                                 $("#"+copyval).hide();
                             }
                         }
-                        function copyValuesOfRowComposition(compositionInput,buttonInput){
+                        function copyValuesOfRowComposition(inputId,compositionInput,buttonInput){
                             var hiddenRowIdx = $('#id_rowx').val().split('|');
                             var valueCurrentComposition = $("#"+compositionInput).val();
                             for(var i = 0; i < hiddenRowIdx.length; i++){
-                                $("#composition_"+hiddenRowIdx[i]).val(valueCurrentComposition);
+                                $("#"+inputId+hiddenRowIdx[i]).val(valueCurrentComposition);
                             }
                             $("#"+buttonInput).hide();
                         }
-                        
                         function copyValuesOfRowPrixYuan(yuanInput,tauxInput,euroInput,buttonInput){
                             var hiddenRowIdx = $('#id_rowx').val().split('|');
                             var valueCurrentYuan = $("#"+yuanInput).val();
@@ -2227,19 +2263,16 @@ else
                             }
                             $("#"+buttonInput).hide();
                         }
-                        
                         function unique(array){
                             return array.filter(function(el, index, arr) {
                                 return index == arr.indexOf(el);
                             });
                         }
-                        
                         function arrayRemove(arr, value) { 
                             return arr.filter(function(ele){ 
                                 return ele != value; 
                             });
                         }
-                        
                         function getLastEan13Digit(ean) { 
                             if (!ean || ean.length !== 12) throw new Error('Invalid EAN 13, should have 12 digits'); 
                             const multiply = [1, 3]; 
@@ -2713,6 +2746,7 @@ else
             // Main official, simple, and not duplicated code
             if($status_product && $status_product == "produitfab") {
                 $action_edit = $_SERVER['PHP_SELF'].'?id='.$object->id.'&status_product=produitfab&action=update';
+                print '<style>div.tabBarWithBottom{padding-bottom: 0px!important;border-bottom: 0px solid #fff!important;}</style>';
             }else{
                 $action_edit = $_SERVER['PHP_SELF'].'?id='.$object->id;
             }
@@ -2729,7 +2763,19 @@ else
             if($status_product && $status_product == "produitfab") {
                 //dol_fiche_head($head, 'card', $titre, 0, $picto);
                 print load_fiche_titre("Modification produit fab", "<a href='".DOL_URL_ROOT."/product/listproduitfab.php?leftmenu=product&type=0&idmenu=37'>Retour</a>", $picto);
-                echo "<hr>";
+                //echo "<pre>";
+                $headProductFab = [];
+                foreach($head as $kFab => $resFab){
+                    if($resFab[2] == "card"){
+                        $resFab[0] = DOL_URL_ROOT."/product/card.php?id=".$object->id."&status_product=produitfab&action=edit";
+                        array_push($headProductFab,$resFab);
+                    }
+                    if($resFab[2] == "documents"){
+                        $resFab[0] = DOL_URL_ROOT."/product/document.php?id=".$object->id."&status_product=produitfab&action=edit";
+                        array_push($headProductFab,$resFab);
+                    }
+                }
+                dol_fiche_head($headProductFab, 'card', $titre, 0, $picto);
             }else{
                 dol_fiche_head($head, 'card', $titre, 0, $picto);
             }
@@ -2890,13 +2936,13 @@ else
                 }else{
                     if (empty($conf->global->PRODUCT_DISABLE_SIZE))
                     {
-                                            // Brut Length
-                                            print '<tr><td>'.$langs->trans("Length").' x '.$langs->trans("Width").' x '.$langs->trans("Height").'</td><td colspan="3">';
-                                            print '<input name="size" size="5" value="'.$object->length.'">x';
-                                            print '<input name="sizewidth" size="5" value="'.$object->width.'">x';
-                                            print '<input name="sizeheight" size="5" value="'.$object->height.'"> ';
-                                            print $formproduct->selectMeasuringUnits("size_units", "size", $object->length_units, 0, 2);
-                                            print '</td></tr>';
+                        // Brut Length
+                        print '<tr><td>'.$langs->trans("Length").' x '.$langs->trans("Width").' x '.$langs->trans("Height").'</td><td colspan="3">';
+                        print '<input name="size" size="5" value="'.$object->length.'">x';
+                        print '<input name="sizewidth" size="5" value="'.$object->width.'">x';
+                        print '<input name="sizeheight" size="5" value="'.$object->height.'"> ';
+                        print $formproduct->selectMeasuringUnits("size_units", "size", $object->length_units, 0, 2);
+                        print '</td></tr>';
                     }
                     if (empty($conf->global->PRODUCT_DISABLE_SURFACE))
                     {
@@ -2917,11 +2963,11 @@ else
 
                     if (!empty($conf->global->PRODUCT_ADD_NET_MEASURE))
                     {
-                            // Net Measure
-                            print '<tr><td>'.$langs->trans("NetMeasure").'</td><td colspan="3">';
-                            print '<input name="net_measure" size="5" value="'.$object->net_measure.'"> ';
-                            print $formproduct->selectMeasuringUnits("net_measure_units", "", $object->net_measure_units, 0, 0);
-                            print '</td></tr>';
+                        // Net Measure
+                        print '<tr><td>'.$langs->trans("NetMeasure").'</td><td colspan="3">';
+                        print '<input name="net_measure" size="5" value="'.$object->net_measure.'"> ';
+                        print $formproduct->selectMeasuringUnits("net_measure_units", "", $object->net_measure_units, 0, 0);
+                        print '</td></tr>';
                     }
                 }
             }
@@ -2975,15 +3021,15 @@ else
             }
 
             // Note private
-			if (!empty($conf->global->MAIN_DISABLE_NOTES_TAB))
-			{
+            if (!empty($conf->global->MAIN_DISABLE_NOTES_TAB))
+            {
                 print '<tr><td class="tdtop">'.$langs->trans("NoteNotVisibleOnBill").'</td><td colspan="3">';
 
                 $doleditor = new DolEditor('note_private', $object->note_private, '', 140, 'dolibarr_notes', '', false, true, $conf->global->FCKEDITOR_ENABLE_PRODUCTDESC, ROWS_4, '90%');
                 $doleditor->Create();
 
                 print "</td></tr>";
-			}
+            }
 
             print '</table>';
 
@@ -3116,7 +3162,6 @@ else
                         $hiddenValue[] = $attributesValue["value"]."_".$attributesVals['value'];
                     }
             }
-            
             if($status_product && $status_product == "produitfab") { 
                 $user->update($user);
                 $sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
@@ -3130,6 +3175,11 @@ else
                     $resu_fab = $resug->code;
                 }
                 if($resu_fab !== "fab"){
+                    print '<tr><td class="titlefieldcreate fieldrequired">'.$langs->trans("SellingPrice").'(TTC)</td>';
+                    print '<td><input name="price" class="maxwidth50" value="'.price($object->price).'" id="price_ttc">';
+                    print $form->selectPriceBaseType('TTC', "price_base_type");
+                    print '</td></tr>';
+                    
                     print '<div class="div-combination-pfab"><strong>'.$langs->trans("Newcombination").'</strong></div>';
                     print '<table class="border centpercent">';
                     print '<tr>';
@@ -3201,6 +3251,7 @@ else
                                         <th class="text-align-left">Codebare</th>
                                         <th class="text-align-left">Couleur</th>
                                         <th class="text-align-left">Taille</th>
+                                        <th class="text-align-left">Réf tissus</th>
                                         <th class="text-align-left">Quantité commandé</th>
                                         <th class="text-align-left">Quantité fabriqué</th>
                                         <th class="text-align-left">Poids</th>
@@ -3208,15 +3259,13 @@ else
                                         <th class="text-align-left">Prix Yuan</th>
                                         <th class="text-align-left">Taux</th>
                                         <th class="text-align-left">Prix Euro</th>
-                                        <!--th class="text-align-left">Total Yuan</th> 
-                                        <th class="text-align-left">Total Euro</th--> 
                                     </tr>
                                 </thead>
                                 <tbody id="tbody"> 
 
-                                </tbody> 
-                            </table> 
-                    </div> 
+                                </tbody>
+                            </table>
+                    </div>
                     <script type="text/javascript">
                             jQuery(document).ready(function () {
                                 $("#select_price_base_type option:contains('HT')").attr("disabled","disabled").hide();
@@ -3247,8 +3296,7 @@ else
                                         $(".type_declinaison_3").show();
                                     }
                                 });
-                                
-                                $('.option-content-couleur').on('click', ':checkbox', function(e) {
+                                /*$('.option-content-couleur').on('click', ':checkbox', function(e) {
                                     $('.option-content-couleur :checkbox').each(function() {
                                       if (this != e.target)
                                         $(this).prop('checked', false);
@@ -3259,116 +3307,364 @@ else
                                       if (this != e.target)
                                         $(this).prop('checked', false);
                                     });
-                                });
+                                });*/
                                 // Denotes total number of rows 
                                 var rowIdx = 0; 
                                 // jQuery button click event to add a row 
-                                $('#addBtn').on('click', function () { 
-                                        /* traitement réferences */
-
-                                        var refCumules = '<?php echo $cumulcodeProd; ?>';
-                                        var references = parseInt(refCumules) + parseInt(`${rowIdx}`) + 1;
-                                        /* traitement codebarre */
-                                        var refcodebare = '<?php echo $lastEanProduct; ?>';
-                                      
-                                        if($('.dynamic_lines tr:last').attr('id')){
-                                            var digs = parseInt($('.dynamic_lines tr:last').attr('id').substring(1));
-                                            var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + digs;
-                                        }else{
-                                          var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + 1;
-                                        }
-                                        var codebarres = refcodebare12+""+getLastEan13Digit(refcodebare12.toString());
+                                $('#addBtn').on('click', function () {
                                         /* traitement couleurs et tailles */
                                         var choixCouleur = "";
                                         var valCouleur = "";
                                         var choixTaille  = "";
                                         var valTaille  = "";
+                                        var arrColors  = [];
+                                        var arrTailles = [];
                                         $('input[name="choix_couleur"]:checked').each(function(){
                                             var idVal =  $(this).attr('id');
                                             valCouleur = $(this).val();
                                             choixCouleur = $("label[for='"+idVal+"']").text();
+                                            arrColors.push(choixCouleur+"_"+valCouleur);
                                         });
                                         $('input[name="choix_taille"]:checked').each(function(){
                                             var idVal =  $(this).attr('id');
                                             valTaille = $(this).val();
                                             choixTaille = $("label[for='"+idVal+"']").text();
+                                            arrTailles.push(choixTaille+"_"+valTaille);
                                         });
-                                        // test si on ne selectionne ou non une déclinaison quand on clique sur 'ajout déclinaison'
-                                        if((choixCouleur === "" && choixTaille === "") || (choixCouleur === "" && choixTaille === "")) {
-                                            alert('Veuillez selectionner  au moins une déclinaison');
-                                            return;
-                                        }
-                                        // ajouter les valeur selectionnées dans le hidden
-                                        var oldVal = $('#id_declinaison').val();
-                                        $("#id_declinaison").val(oldVal+"|"+(choixCouleur+"_"+choixTaille));
                                         
-                                        const findDuplicates = (arr) => {
-                                            let sorted_arr = arr.slice().sort(); 
-                                            let results = [];
-                                            for (let i = 0; i < sorted_arr.length - 1; i++) {
-                                              if (sorted_arr[i + 1] == sorted_arr[i]) {
-                                                results.push(sorted_arr[i]);
-                                              }
+                                        if(arrTailles.length>0) {
+                                            for(var cl =0;cl<arrTailles.length;cl++){
+                                                rowIdx++;
+                                                if(arrColors.length > 0){
+
+                                                }else{
+                                                    /* traitement réferences */
+                                                    //var refCumules = '<?php //echo $cumulcodeProd; ?>';
+                                                    //var references = parseInt(refCumules) + parseInt(`${rowIdx}`) + 1;
+                                                    /* traitement codebarre */
+                                                    /*var refcodebare = '<?php //echo $lastEanProduct; ?>';
+                                                    if($('.dynamic_lines tr:last').attr('id')){
+                                                        var digs = parseInt($('.dynamic_lines tr:last').attr('id').substring(1));
+                                                        var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + digs;
+                                                    }else{
+                                                        var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + 1;
+                                                    }*/
+                                                    if($('.dynamic_lines tr:last').attr('id')){
+                                                        var digs = parseInt($('.dynamic_lines tr:last').attr('id').substring(1));
+                                                        var refcodebare = '<?php echo $cumulbarcode; ?>';
+                                                        var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + digs;
+                                                    }else{
+                                                        var refcodebare = '<?php echo $cumulbarcode; ?>';
+                                                        var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + 1;
+                                                    }
+                                                    var codebarres = refcodebare12+""+getLastEan13Digit(refcodebare12.toString());
+                                                    var splitArrTailles = arrTailles[cl].split('_');
+                                                    // test si on ne selectionne ou non une déclinaison quand on clique sur 'ajout déclinaison'
+                                                    if((arrColors[cl] === "" && choixTaille === "")) {
+                                                        alert('Veuillez selectionner  au moins une déclinaison');
+                                                        return;
+                                                    }
+                                                    // ajouter les valeur selectionnées dans le hidden
+                                                    var oldVal = $('#id_declinaison').val();
+                                                    $("#id_declinaison").val(oldVal+"|"+("_"+splitArrTailles[0]));
+                                                    var oldValidx = $('#id_rowx').val();
+                                                    $("#id_rowx").val(oldValidx+"|"+rowIdx);
+                                                    const findDuplicates = (arr) => {
+                                                        let sorted_arr = arr.slice().sort(); 
+                                                        let results = [];
+                                                        for (let i = 0; i < sorted_arr.length - 1; i++) {
+                                                          if (sorted_arr[i + 1] == sorted_arr[i]) {
+                                                            results.push(sorted_arr[i]);
+                                                          }
+                                                        }
+                                                        return results;
+                                                    };
+                                                    var arrvalDecl = $('#id_declinaison').val().split('|');
+                                                    const uniqueArray = unique(arrvalDecl);
+                                                    if(findDuplicates(arrvalDecl).length > 0){
+                                                        var valdupl = findDuplicates(arrvalDecl)[0].split('_');
+                                                        alert("la déclinaison "+valdupl[0]+" "+valdupl[1]+" est déjà ajouté");
+                                                        $('#id_declinaison').val(uniqueArray.join('|'));
+                                                        rowIdx--;
+                                                        return;
+                                                    }
+                                                    $('#tbody').append(`<tr id="R${rowIdx}"> 
+                                                        <td class="row-index text-align-left" style="display:none;"> 
+                                                            <input type="text" value="${rowIdx}" readonly="readonly">
+                                                            <input type="hidden" value="${rowIdx}" id="row_idx_${rowIdx}">
+                                                        </td>
+                                                        <td class="text-align-left"> 
+                                                          <button class="btn btn-danger remove"
+                                                            type="button">Supprimer</button> 
+                                                          </td>
+                                                        <td class="codebares text-align-left"> 
+                                                            <input type="text" value="${codebarres}" readonly="readonly" name="codebares[]" class="codebaresValue${rowIdx}">
+                                                        </td>
+                                                        <td class="couleurs${rowIdx} text-align-left"> 
+                                                            <input type="hidden" value="" name="valCouleurs[]">
+                                                            <input type="hidden" value="" id="choix_couleur_${rowIdx}">
+                                                            <input type="text" value="" readonly="readonly" disabled class="couleursValue${rowIdx}">
+                                                        </td>
+                                                        <td class="tailles${rowIdx} text-align-left"> 
+                                                            <input type="hidden" value="${splitArrTailles[1]}" name="valTailles[]" >
+                                                            <input type="hidden" value="${splitArrTailles[0]}" id="choix_taille_${rowIdx}" >
+                                                            <input type="text" value="${splitArrTailles[0]}" readonly="readonly" disabled class="taillesValue${rowIdx}">
+                                                        </td>
+                                                        <td class="ref_tissus_couleur text-align-left"> 
+                                                            <input type="text" value=""  name="ref_tissus_couleur[]" id="ref_tissus_couleur_${rowIdx}" oninput="changeValueInputRefTissus('ref_tissus_couleur_${rowIdx}','copie_val_reftissus_${rowIdx}')" class="class_color_input_${splitArrTailles[1]}">
+                                                            <button class="btn btn-info" type="button" id="copie_val_reftissus_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('ref_tissus_couleur_${rowIdx}','copie_val_reftissus_${rowIdx}','class_color_input_${splitArrTailles[1]}')">Copier pour ce couleur</button>
+                                                        </td>
+                                                        <td class="qtycomm text-align-left"> 
+                                                            <input type="number" value=""  name="qtycomm[]" id="qtycomm_${rowIdx}" oninput="changeValueInputComp('qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')" >
+                                                        <button class="btn btn-info" type="button" id="copie_val_qtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtycomm_','qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                        </td>
+                                                        <td class="qtyfabriq text-align-left"> 
+                                                            <input type="number" value=""  name="qtyfabriq[]" id="qtyfabriq_${rowIdx}" oninput="changeValueInputComp('qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">
+                                                            <button class="btn btn-info" type="button" id="copie_val_qtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtyfabriq_','qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">Copier pour toutes les lignes</button>
+                                                        </td>
+                                                        <td class="poidsfabriq text-align-left"> 
+                                                            <input type="text" value=""  name="poidsfabriq[]">
+                                                        </td>
+                                                        <td class="compfabriq text-align-left"> 
+                                                            <input type="text" value=""  name="compfabriq[]" id="composition_${rowIdx}" oninput="changeValueInputComp('composition_${rowIdx}','copie_val_comp_${rowIdx}')" >
+                                                            <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                        </td>
+                                                        <td class="priceYuan text-align-left" > 
+                                                            <input type="text" value=""  name="priceYuan[]" id="price_yuan_${rowIdx}"  oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_${rowIdx}')">
+                                                            <button class="btn btn-info" type="button" id="copie_val_${rowIdx}" style="display:none;" onclick="copyValuesOfRowPrixYuan('price_yuan_${rowIdx}','taux_change_${rowIdx}','price_euro_${rowIdx}','copie_val_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                        </td>
+                                                        <td class="tauxChange text-align-left"> 
+                                                            <input type="text" value="<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>" id="taux_change_${rowIdx}"  name="tauxChange[]" oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_taux_${rowIdx}')">
+                                                            <button class="btn btn-info" type="button" id="copie_val_taux_${rowIdx}" style="display:none;" onclick="copyValuesOfRowPrixYuan('price_yuan_${rowIdx}','taux_change_${rowIdx}','price_euro_${rowIdx}','copie_val_taux_${rowIdx}')">Copier pour toutes les lignes</button>
+                                                        </td>
+                                                        <td class="priceEuro text-align-left">
+                                                            <input type="text" value=""  name="priceEuro[]" id="price_euro_${rowIdx}">
+                                                        </td>
+                                                        </tr>
+                                                    `);
+                                                }
                                             }
-                                            return results;
-                                        };
-                                        var arrvalDecl = $('#id_declinaison').val().split('|');
-                                        const uniqueArray = unique(arrvalDecl);
-                                        if(findDuplicates(arrvalDecl).length > 0){
-                                            var valdupl = findDuplicates(arrvalDecl)[0].split('_');
-                                            alert("la déclinaison "+valdupl[0]+" "+valdupl[1]+" est déjà dans la liste de déclinaison");
-                                            $('#id_declinaison').val(uniqueArray.join('|'));
-                                            /*$('#R'+`${rowIdx}`).remove();*/
-                                            return;
                                         }
-                                      //if(confirm("Voulez vous vraiment ajouter la déclinaison =>  couleur : "+choixCouleur+", taille : "+choixTaille+"")){
-                                          $('#tbody').append(`<tr id="R${++rowIdx}"> 
-                                                <td class="row-index text-align-left" style="display:none;"> 
-                                                    <input type="text" value="${rowIdx}" readonly="readonly">
-                                                    <input type="hidden" value="${rowIdx}" id="row_idx_${rowIdx}">
-                                                </td> 
-                                                <td class="text-align-left"> 
-                                                  <button class="btn btn-danger remove"
-                                                    type="button">Supprimer</button> 
-                                                  </td> 
-                                                <td class="codebares text-align-left"> 
-                                                    <input type="text" value="${codebarres}" readonly="readonly" name="codebares[]" class="codebaresValue${rowIdx}">
-                                                </td>
-                                                <td class="couleurs${rowIdx} text-align-left"> 
-                                                    <input type="hidden" value="${valCouleur}" name="valCouleurs[]">
-                                                    <input type="hidden" value="${choixCouleur}" id="choix_couleur_${rowIdx}">
-                                                    <input type="text" value="${choixCouleur}" readonly="readonly" disabled class="couleursValue${rowIdx}">
-                                                </td>
-                                                <td class="tailles${rowIdx} text-align-left"> 
-                                                    <input type="hidden" value="${valTaille}" name="valTailles[]" >
-                                                    <input type="hidden" value="${choixTaille}" id="choix_taille_${rowIdx}" >
-                                                    <input type="text" value="${choixTaille}" readonly="readonly" disabled class="taillesValue${rowIdx}">
-                                                </td>
-                                                <td class="qtycomm text-align-left"> 
-                                                    <input type="number" value=""  name="qtycomm[]" >
-                                                </td>
-                                                <td class="qtyfabriq text-align-left"> 
-                                                    <input type="number" value=""  name="qtyfabriq[]" >
-                                                </td>
-                                                <td class="poidsfabriq text-align-left"> 
-                                                    <input type="text" value=""  name="poidsfabriq[]">
-                                                </td>
-                                                <td class="compfabriq text-align-left"> 
-                                                    <input type="text" value=""  name="compfabriq[]" id="composition_${rowIdx}" oninput="changeValueInputComp('composition_${rowIdx}','copie_val_comp_${rowIdx}')" >
-                                                    <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
-                                                </td>
-                                                <td class="priceYuan text-align-left" > 
-                                                    <input type="text" value=""  name="priceYuan[]" id="price_yuan_${rowIdx}"  oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_${rowIdx}')">
-                                                    <button class="btn btn-info" type="button" id="copie_val_${rowIdx}" style="display:none;" onclick="copyValuesOfRowPrixYuan('price_yuan_${rowIdx}','taux_change_${rowIdx}','price_euro_${rowIdx}','copie_val_${rowIdx}')">Copier pour toutes les lignes</button> 
-                                                </td>
-                                                <td class="tauxChange text-align-left"> 
-                                                    <input type="text" value="<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>" id="taux_change_${rowIdx}"  name="tauxChange[]" oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}')">
-                                                </td> 
-                                                <td class="priceEuro text-align-left"> 
-                                                    <input type="text" value=""  name="priceEuro[]" id="price_euro_${rowIdx}">
-                                                </td> 
-                                              </tr>
-                                          `);
+                                        
+                                        if(arrColors.length>0){
+                                            for(var cl =0;cl<arrColors.length;cl++){
+                                                if(arrTailles.length>0) {
+                                                    for(var tl =0;tl<arrTailles.length;tl++){
+                                                        
+                                                        /* traitement réferences */
+                                                        //var refCumules = '<?php //echo $cumulcodeProd; ?>';
+                                                        //var references = parseInt(refCumules) + parseInt(`${rowIdx}`) + 1;
+                                                        /* traitement codebarre */
+                                                        /*var refcodebare = '<?php //echo $lastEanProduct; ?>';
+                                                        if($('.dynamic_lines tr:last').attr('id')){
+                                                            var digs = parseInt($('.dynamic_lines tr:last').attr('id').substring(1));
+                                                            var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + digs;
+                                                        }else{
+                                                            var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + 1;
+                                                        }*/
+                                                        var refcodebare = '<?php echo $cumulbarcode; ?>';
+                                                        var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + 1;
+                                                        
+                                                        var codebarres = refcodebare12+""+getLastEan13Digit(refcodebare12.toString());
+                                                        var splitArrColors = arrColors[cl].split('_');
+                                                        var splitArrTailles = arrTailles[tl].split('_');
+                                                        // test si on ne selectionne ou non une déclinaison quand on clique sur 'ajout déclinaison'
+                                                        if((arrColors[cl] === "" && choixTaille === "")) {
+                                                            alert('Veuillez selectionner  au moins une déclinaison');
+                                                            return;
+                                                        }
+                                                        // ajouter les valeur selectionnées dans le hidden
+                                                        var oldVal = $('#id_declinaison').val();
+                                                        $("#id_declinaison").val(oldVal+"|"+(splitArrColors[0]+"_"+splitArrTailles[0]));
+                                                        var oldValidx = $('#id_rowx').val();
+                                                        $("#id_rowx").val(oldValidx+"|"+rowIdx);
+
+                                                        const findDuplicates = (arr) => {
+                                                                let sorted_arr = arr.slice().sort(); 
+                                                                let results = [];
+                                                                for (let i = 0; i < sorted_arr.length - 1; i++) {
+                                                                  if (sorted_arr[i + 1] == sorted_arr[i]) {
+                                                                    results.push(sorted_arr[i]);
+                                                                  }
+                                                                }
+                                                                return results;
+                                                            };
+                                                            var arrvalDecl = $('#id_declinaison').val().split('|');
+                                                            const uniqueArray = unique(arrvalDecl);
+
+                                                            if(findDuplicates(arrvalDecl).length > 0){
+                                                                var valdupl = findDuplicates(arrvalDecl)[0].split('_');
+                                                                alert("la déclinaison "+valdupl[0]+" "+valdupl[1]+" est déjà ajouté");
+                                                                $('#id_declinaison').val(uniqueArray.join('|'));
+                                                                rowIdx--;
+                                                                return;
+                                                            }
+                                                        $('#tbody').append(`<tr id="R${rowIdx}"> 
+                                                            <td class="row-index text-align-left" style="display:none;"> 
+                                                                <input type="text" value="${rowIdx}" readonly="readonly">
+                                                                <input type="hidden" value="${rowIdx}" id="row_idx_${rowIdx}">
+                                                            </td>
+                                                            <td class="text-align-left"> 
+                                                              <button class="btn btn-danger remove"
+                                                                type="button">Supprimer</button> 
+                                                              </td>
+                                                            <td class="codebares text-align-left"> 
+                                                                <input type="text" value="${codebarres}" readonly="readonly" name="codebares[]" class="codebaresValue${rowIdx}">
+                                                            </td>
+                                                            <td class="couleurs${rowIdx} text-align-left"> 
+                                                                <input type="hidden" value="${splitArrColors[1]}" name="valCouleurs[]">
+                                                                <input type="hidden" value="${splitArrColors[0]}" id="choix_couleur_${rowIdx}">
+                                                                <input type="text" value="${splitArrColors[0]}" readonly="readonly" disabled class="couleursValue${rowIdx}">
+                                                            </td>
+                                                            <td class="tailles${rowIdx} text-align-left"> 
+                                                                <input type="hidden" value="${splitArrTailles[1]}" name="valTailles[]" >
+                                                                <input type="hidden" value="${splitArrTailles[0]}" id="choix_taille_${rowIdx}" >
+                                                                <input type="text" value="${splitArrTailles[0]}" readonly="readonly" disabled class="taillesValue${rowIdx}">
+                                                            </td>
+                                                            <td class="ref_tissus_couleur text-align-left"> 
+                                                                <input type="text" value=""  name="ref_tissus_couleur[]" id="ref_tissus_couleur_${rowIdx}" oninput="changeValueInputRefTissus('ref_tissus_couleur_${rowIdx}','copie_val_reftissus_${rowIdx}')" class="class_color_input_${splitArrColors[1]}">
+                                                                <button class="btn btn-info" type="button" id="copie_val_reftissus_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('ref_tissus_couleur_${rowIdx}','copie_val_reftissus_${rowIdx}','class_color_input_${splitArrColors[1]}')">Copier pour ce couleur</button>
+                                                            </td>
+                                                            <td class="qtycomm text-align-left"> 
+                                                                <input type="number" value=""  name="qtycomm[]" id="qtycomm_${rowIdx}" oninput="changeValueInputComp('qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')" >
+                                                            <button class="btn btn-info" type="button" id="copie_val_qtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtycomm_','qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                            </td>
+                                                            <td class="qtyfabriq text-align-left"> 
+                                                                <input type="number" value=""  name="qtyfabriq[]" id="qtyfabriq_${rowIdx}" oninput="changeValueInputComp('qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">
+                                                                <button class="btn btn-info" type="button" id="copie_val_qtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtyfabriq_','qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">Copier pour toutes les lignes</button>
+                                                            </td>
+                                                            <td class="poidsfabriq text-align-left"> 
+                                                                <input type="text" value=""  name="poidsfabriq[]">
+                                                            </td>
+                                                            <td class="compfabriq text-align-left"> 
+                                                                <input type="text" value=""  name="compfabriq[]" id="composition_${rowIdx}" oninput="changeValueInputComp('composition_${rowIdx}','copie_val_comp_${rowIdx}')" >
+                                                                <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                            </td>
+                                                            <td class="priceYuan text-align-left" > 
+                                                                <input type="text" value=""  name="priceYuan[]" id="price_yuan_${rowIdx}"  oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_${rowIdx}')">
+                                                                <button class="btn btn-info" type="button" id="copie_val_${rowIdx}" style="display:none;" onclick="copyValuesOfRowPrixYuan('price_yuan_${rowIdx}','taux_change_${rowIdx}','price_euro_${rowIdx}','copie_val_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                            </td>
+                                                            <td class="tauxChange text-align-left"> 
+                                                                <input type="text" value="<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>" id="taux_change_${rowIdx}"  name="tauxChange[]" oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_taux_${rowIdx}')">
+                                                                <button class="btn btn-info" type="button" id="copie_val_taux_${rowIdx}" style="display:none;" onclick="copyValuesOfRowPrixYuan('price_yuan_${rowIdx}','taux_change_${rowIdx}','price_euro_${rowIdx}','copie_val_taux_${rowIdx}')">Copier pour toutes les lignes</button>
+                                                            </td>
+                                                            <td class="priceEuro text-align-left"> 
+                                                                <input type="text" value=""  name="priceEuro[]" id="price_euro_${rowIdx}">
+                                                            </td>
+                                                            </tr>
+                                                        `);
+                                                        rowIdx++;
+                                                    }
+                                                }else{
+                                                    rowIdx++;
+                                                    /* traitement réferences */
+                                                    //var refCumules = '<?php //echo $cumulcodeProd; ?>';
+                                                    //var references = parseInt(refCumules) + parseInt(`${rowIdx}`) + 1;
+                                                    /* traitement codebarre */
+                                                    /*var refcodebare = '<?php //echo $lastEanProduct; ?>';
+                                                    if($('.dynamic_lines tr:last').attr('id')){
+                                                        var digs = parseInt($('.dynamic_lines tr:last').attr('id').substring(1));
+                                                        var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + digs;
+                                                    }else{
+                                                        var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + 1;
+                                                    }*/
+                                                    if($('.dynamic_lines tr:last').attr('id')){
+                                                        var digs = parseInt($('.dynamic_lines tr:last').attr('id').substring(1));
+                                                        var refcodebare = '<?php echo $cumulbarcode; ?>';
+                                                        var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + digs;
+                                                    }else{
+                                                        var refcodebare = '<?php echo $cumulbarcode; ?>';
+                                                        var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + 1;
+                                                    }
+                                                    var codebarres = refcodebare12+""+getLastEan13Digit(refcodebare12.toString());
+                                                    var splitArrColors = arrColors[cl].split('_');
+                                                    // test si on ne selectionne ou non une déclinaison quand on clique sur 'ajout déclinaison'
+                                                    if((arrColors[cl] === "" && choixTaille === "")) {
+                                                        alert('Veuillez selectionner  au moins une déclinaison');
+                                                        return;
+                                                    }
+                                                    // ajouter les valeur selectionnées dans le hidden
+                                                    var oldVal = $('#id_declinaison').val();
+                                                    $("#id_declinaison").val(oldVal+"|"+(splitArrColors[0]+"_"));
+                                                    var oldValidx = $('#id_rowx').val();
+                                                    $("#id_rowx").val(oldValidx+"|"+rowIdx);
+                                                    const findDuplicates = (arr) => {
+                                                            let sorted_arr = arr.slice().sort(); 
+                                                            let results = [];
+                                                            for (let i = 0; i < sorted_arr.length - 1; i++) {
+                                                                if (sorted_arr[i + 1] == sorted_arr[i]) {
+                                                                    results.push(sorted_arr[i]);
+                                                                }
+                                                            }
+                                                            return results;
+                                                        };
+                                                        var arrvalDecl = $('#id_declinaison').val().split('|');
+                                                        const uniqueArray = unique(arrvalDecl);
+
+                                                        if(findDuplicates(arrvalDecl).length > 0){
+                                                            var valdupl = findDuplicates(arrvalDecl)[0].split('_');
+                                                            alert("la déclinaison "+valdupl[0]+" "+valdupl[1]+" est déjà ajouté");
+                                                            $('#id_declinaison').val(uniqueArray.join('|'));
+                                                            rowIdx--;
+                                                            return;
+                                                        }
+                                                    $('#tbody').append(`<tr id="R${rowIdx}"> 
+                                                        <td class="row-index text-align-left" style="display:none;"> 
+                                                            <input type="text" value="${rowIdx}" readonly="readonly">
+                                                            <input type="hidden" value="${rowIdx}" id="row_idx_${rowIdx}">
+                                                        </td>
+                                                        <td class="text-align-left"> 
+                                                          <button class="btn btn-danger remove"
+                                                            type="button">Supprimer</button> 
+                                                          </td>
+                                                        <td class="codebares text-align-left"> 
+                                                            <input type="text" value="${codebarres}" readonly="readonly" name="codebares[]" class="codebaresValue${rowIdx}">
+                                                        </td>
+                                                        <td class="couleurs${rowIdx} text-align-left"> 
+                                                            <input type="hidden" value="${splitArrColors[1]}" name="valCouleurs[]">
+                                                            <input type="hidden" value="${splitArrColors[0]}" id="choix_couleur_${rowIdx}">
+                                                            <input type="text" value="${splitArrColors[0]}" readonly="readonly" disabled class="couleursValue${rowIdx}">
+                                                        </td>
+                                                        <td class="tailles${rowIdx} text-align-left"> 
+                                                            <input type="hidden" value="" name="valTailles[]" >
+                                                            <input type="hidden" value="" id="choix_taille_${rowIdx}" >
+                                                            <input type="text" value="" readonly="readonly" disabled class="taillesValue${rowIdx}">
+                                                        </td>
+                                                        <td class="ref_tissus_couleur text-align-left"> 
+                                                            <input type="text" value=""  name="ref_tissus_couleur[]" id="ref_tissus_couleur_${rowIdx}" oninput="changeValueInputRefTissus('ref_tissus_couleur_${rowIdx}','copie_val_reftissus_${rowIdx}')" class="class_color_input_${splitArrColors[1]}">
+                                                            <button class="btn btn-info" type="button" id="copie_val_reftissus_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('ref_tissus_couleur_${rowIdx}','copie_val_reftissus_${rowIdx}','class_color_input_${splitArrColors[1]}')">Copier pour ce couleur</button>
+                                                        </td>
+                                                        <td class="qtycomm text-align-left"> 
+                                                            <input type="number" value=""  name="qtycomm[]" >
+                                                        </td>
+                                                        <td class="qtycomm text-align-left"> 
+                                                            <input type="number" value=""  name="qtycomm[]" id="qtycomm_${rowIdx}" oninput="changeValueInputComp('qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')" >
+                                                        <button class="btn btn-info" type="button" id="copie_val_qtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtycomm_','qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                        </td>
+                                                        <td class="qtyfabriq text-align-left"> 
+                                                            <input type="number" value=""  name="qtyfabriq[]" id="qtyfabriq_${rowIdx}" oninput="changeValueInputComp('qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">
+                                                            <button class="btn btn-info" type="button" id="copie_val_qtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtyfabriq_','qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">Copier pour toutes les lignes</button>
+                                                        </td>
+                                                        <td class="compfabriq text-align-left"> 
+                                                            <input type="text" value=""  name="compfabriq[]" id="composition_${rowIdx}" oninput="changeValueInputComp('composition_${rowIdx}','copie_val_comp_${rowIdx}')" >
+                                                            <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                        </td>
+                                                        <td class="priceYuan text-align-left" > 
+                                                            <input type="text" value=""  name="priceYuan[]" id="price_yuan_${rowIdx}"  oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_${rowIdx}')">
+                                                            <button class="btn btn-info" type="button" id="copie_val_${rowIdx}" style="display:none;" onclick="copyValuesOfRowPrixYuan('price_yuan_${rowIdx}','taux_change_${rowIdx}','price_euro_${rowIdx}','copie_val_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                        </td>
+                                                        <td class="tauxChange text-align-left"> 
+                                                            <input type="text" value="<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>" id="taux_change_${rowIdx}"  name="tauxChange[]" oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_taux_${rowIdx}')">
+                                                            <button class="btn btn-info" type="button" id="copie_val_taux_${rowIdx}" style="display:none;" onclick="copyValuesOfRowPrixYuan('price_yuan_${rowIdx}','taux_change_${rowIdx}','price_euro_${rowIdx}','copie_val_taux_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                        </td>
+                                                        <td class="priceEuro text-align-left"> 
+                                                            <input type="text" value=""  name="priceEuro[]" id="price_euro_${rowIdx}">
+                                                        </td>
+                                                        </tr>
+                                                    `);
+                                                }
+                                            }
+                                        }
                                         var oldValidx = $('#id_rowx').val();
                                         if($('.dynamic_lines tr:last').attr('id')){
                                             var digs = parseInt($('.dynamic_lines tr:last').attr('id').substring(1));
@@ -3409,21 +3705,17 @@ else
                                             // Modifying row index. 
                                             idx.attr('value',`${dig - 1}`);
                                             var refCumules = '<?php echo $object->ref; ?>';
-                                            
                                             var references = parseInt(refCumules+"0000") + parseInt(`${dig - 1}`);
                                             var codebarress = parseInt(currentCodebares.substring(0, currentCodebares.length - 1))+parseInt(cmtLigne);
-                                           
                                             refs.attr('value',`${references}`);
                                             cdbares.attr('value',codebarress.toString()+""+getLastEan13Digit(codebarress.toString()));
                                             // Modifying row id.
                                             $(this).attr('id', `R${dig}`);
-                                            
                                         });
                                         // Removing the current row. 
                                         $(this).closest('tr').remove(); 
                                         rowIdx--; 
                                 });
-
                                 $('a.edit_row_declinaison').click(function (e) {
                                         e.preventDefault();
                                         var page = $(this).attr("href")
@@ -3462,7 +3754,6 @@ else
                                         });
                                         $dialog.dialog('open');
                                 });
-                                
                                 $('a.create_combination_popup').click(function (e) {
                                         e.preventDefault();
                                         var page = $(this).attr("href")
@@ -3494,31 +3785,12 @@ else
                                     $("#"+euro).val(0)
                                 }
                                 /* traitement ajout boutton copy */
-                                if(resy !== ""){
+                                if(resy !== "" || tauxchange !== ""){
                                     $("#"+copyval).show();
                                 }else{
                                     $("#"+copyval).hide();
                                 }
                             }
-
-                            function changeValueInputComp(inputComp,copyval){
-                                var resy = $("#"+inputComp).val();
-                                /* traitement ajout boutton copy */
-                                if(resy !== ""){
-                                    $("#"+copyval).show();
-                                }else{
-                                    $("#"+copyval).hide();
-                                }
-                            }
-                            function copyValuesOfRowComposition(compositionInput,buttonInput){
-                                var hiddenRowIdx = $('#id_rowx').val().split('|');
-                                var valueCurrentComposition = $("#"+compositionInput).val();
-                                for(var i = 0; i < hiddenRowIdx.length; i++){
-                                    $("#composition_"+hiddenRowIdx[i]).val(valueCurrentComposition);
-                                }
-                                $("#"+buttonInput).hide();
-                            }
-
                             function copyValuesOfRowPrixYuan(yuanInput,tauxInput,euroInput,buttonInput){
                                 var hiddenRowIdx = $('#id_rowx').val().split('|');
                                 var valueCurrentYuan = $("#"+yuanInput).val();
@@ -3529,6 +3801,38 @@ else
                                     $("#taux_change_"+hiddenRowIdx[i]).val(valueCurrentTaux);
                                     $("#price_euro_"+hiddenRowIdx[i]).val(valueCurrentEuro);
                                 }
+                                $("#"+buttonInput).hide();
+                            }
+                            function changeValueInputComp(inputComp,copyval){
+                                var resy = $("#"+inputComp).val();
+                                /* traitement ajout boutton copy */
+                                if(resy !== ""){
+                                    $("#"+copyval).show();
+                                }else{
+                                    $("#"+copyval).hide();
+                                }
+                            }
+                            function copyValuesOfRowComposition(inputId,compositionInput,buttonInput){
+                                var hiddenRowIdx = $('#id_rowx').val().split('|');
+                                var valueCurrentComposition = $("#"+compositionInput).val();
+                                for(var i = 0; i < hiddenRowIdx.length; i++){
+                                    $("#"+inputId+hiddenRowIdx[i]).val(valueCurrentComposition);
+                                }
+                                $("#"+buttonInput).hide();
+                            }
+                            
+                            function changeValueInputRefTissus(inputComp,copyval){
+                            var resy = $("#"+inputComp).val();
+                                /* traitement ajout boutton copy */
+                                if(resy !== ""){
+                                    $("#"+copyval).show();
+                                }else{
+                                    $("#"+copyval).hide();
+                                }
+                            }
+                            function copyValuesOfRowRefTissus(refTissusInput,buttonInput,colorInput){
+                                var valueCurrentTissus = $("#"+refTissusInput).val();
+                                $("."+colorInput).val(valueCurrentTissus);
                                 $("#"+buttonInput).hide();
                             }
                             function unique(array){
@@ -3553,33 +3857,32 @@ else
                             }
                         </script> 
                     <?php
-                    print '<input type="submit" class="button" value="Enregistrer les nouveaux déclinaison">';
+                    print '<input type="submit" class="button" value="Modifier" style="float:right;"><br><br>';
                 }else{
-                
                     ?>
                     <script>
-                        jQuery(document).ready(function () {
-                                    $('a.edit_row_declinaison').click(function (e) {
-                                            e.preventDefault();
-                                            var page = $(this).attr("href")
-                                            var pagetitle = $(this).attr("title")
-                                            var $dialog = $('<div></div>')
-                                            .html('<iframe style="border: 0px; " src="' + page + '" width="100%" height="100%" id="newProductIframe"></iframe>')
-                                            .dialog({
-                                                autoOpen: false,
-                                                modal: true,
-                                                height: 400,
-                                                width: 400,
-                                                resizable: true,
-                                                title: pagetitle,
-                                                open: function(event, ui) {
-                                                    $("#ui-id-3").css('overflow', 'hidden');
-                                                }
-                                            });
-                                            $dialog.dialog('open');
-                                    });
-
+                    jQuery(document).ready(function () {
+                    $('a.edit_row_declinaison').click(function (e) {
+                                e.preventDefault();
+                                var page = $(this).attr("href")
+                                var pagetitle = $(this).attr("title")
+                                var $dialog = $('<div></div>')
+                                .html('<iframe style="border: 0px; " src="' + page + '" width="100%" height="100%" id="newProductIframe"></iframe>')
+                                .dialog({
+                                    autoOpen: false,
+                                    modal: true,
+                                    height: 400,
+                                    width: 400,
+                                    resizable: true,
+                                    title: pagetitle,
+                                    open: function(event, ui) {
+                                        $("#ui-id-3").css('overflow', 'hidden');
+                                    }
                                 });
+                                $dialog.dialog('open');
+                        });
+
+                    });
                     </script>    
                     <?php
                 }
@@ -3594,12 +3897,17 @@ else
                     $attributesValue = $prodcombi->getAttributeValueById($valcoul[1]);
                     $cdCouleur = !empty($attributesValue["code_couleur"]) ? '<span style="background-color:'.$attributesValue["code_couleur"].'">&nbsp;&nbsp;&nbsp;&nbsp;</span>' : "";
                     print '<br>';
-                    print '<div class="div-combination-pfab"><strong>'.$attributes["label"]."  ".$attributesValue["value"].'&nbsp;&nbsp;'.$cdCouleur.'</strong></div>';
+                    if(!empty($attributesValue["value"])){
+                        print '<div class="div-combination-pfab"><strong>'.$attributes["label"]."  ".$attributesValue["value"].'&nbsp;&nbsp;'.$cdCouleur.'</strong></div>';
+                    }else{
+                        print '<div class="div-combination-pfab"><strong>Aucun couleur</strong></div>';
+                    }
                     print '<table class="border centpercent" border=1>';
                     print '<tr>';
                     print '<td style="font-weight:bold;">Taille</td>';
                     print '<td style="font-weight:bold;">Quantité Commandé</td>';
-                    print '<td style="font-weight:bold;">Réference</td>';
+                    print '<td style="font-weight:bold;">Réf tissus</td>';
+                    print '<td style="font-weight:bold;">Réf produit</td>';
                     print '<td style="font-weight:bold;">Code barre</td>';
                     print '<td style="font-weight:bold;background-color:#a9aaad;color:black">Quantité fabriqué</td>';
                     print '<td style="font-weight:bold;background-color:#a9aaad;color:black">Poids</td>';
@@ -3623,6 +3931,7 @@ else
                         print "<tr>";
                         print "<td>".$attributesVals['value']."</td>";
                         print "<td>".($prodChild->quantite_commander?$prodChild->quantite_commander:0)."</td>";
+                        print "<td>".$prodChild->ref_tissus_couleur."</td>";
                         print "<td>".$prodChild->ref."</td>";
                         print "<td>".$prodChild->barcode."</td>";
                         print "<td style='background-color:#a9aaad;color:black'>".($prodChild->quantite_fabriquer?$prodChild->quantite_fabriquer:0)."</td>";
@@ -3634,7 +3943,7 @@ else
                         print "<td>".($prodChild->quantite_commander*$prodChild->price_yuan)." ¥</td>";
                         print "<td>".($prodChild->quantite_commander*$prodChild->price_euro)." €</td>";
                         print "<td><a class='custom_button edit_row_declinaison' href='".DOL_URL_ROOT."/product/variant/edit.php?productid=".$prodChild->id."&parentId=".$object->id."' target='_blank'>Modifier</a>"
-                                . "<a class='custom_button' href='".DOL_URL_ROOT."/barcode/printsheet.php?codebare=".$prodChild->barcode."' target='_blank'>Imprimer code</a>";
+                                . "<a class='custom_button' href='".DOL_URL_ROOT."/barcode/printsheet.php?codebare=".$prodChild->barcode."&parentId=".$object->id."' target='_blank'>Imprimer code</a>";
                         if($resu_fab !== "fab"){
                             print "<a class='custom_button_delete delete_row_declinaison' href='".DOL_URL_ROOT."/product/variant/delete.php?productid=".$prodChild->id."' target='_blank'>Supprimer</a>";
                         }
@@ -3648,7 +3957,7 @@ else
                     print '<tr>';
                     print '<td style="font-weight:bold;">Total</td>';
                     print '<td style="font-weight:bold;">'.$grandTotalqtyCommander.'</td>';
-                    print '<td style="font-weight:bold;" colspan=2></td>';
+                    print '<td style="font-weight:bold;" colspan=3></td>';
                     print '<td style="font-weight:bold;">'.$grandTotalqtyFabriquer.'</td>';
                     print '<td style="font-weight:bold;" colspan=5></td>';
                     print '<td style="font-weight:bold;">'.$grandTotalYuan.' ¥</td>';

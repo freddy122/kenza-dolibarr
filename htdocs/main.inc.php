@@ -1909,11 +1909,24 @@ function top_menu_user($hideloginname = 0, $urllogout = '')
 	            <div class="user-body">'.$dropdownBody.'</div>
 
 	            <!-- Menu Footer-->
-	            <div class="user-footer">
-	                <div class="pull-left">
+	            <div class="user-footer">';
+                /*Modif fred*/
+                $sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
+                $resuUser = $db->query($sql_user_group);
+                $reug = $db->fetch_object($resuUser);
+                $resu_fab = "";
+                if ($reug->fk_usergroup) {
+                    $sql_group = "select code from ".MAIN_DB_PREFIX."usergroup where rowid = ".$reug->fk_usergroup;
+                    $resuug = $db->query($sql_group);
+                    $resug = $db->fetch_object($resuug);
+                    $resu_fab = $resug->code;
+                }
+                if($resu_fab !== "fab") {
+                    $btnUser .= '<div class="pull-left">
 	                    '.$profilLink.'
-	                </div>
-	                <div class="pull-right">
+	                </div>';
+                }
+	        $btnUser .= '<div class="pull-right">
 	                    '.$logoutLink.'
 	                </div>
 	                <div style="clear:both;"></div>

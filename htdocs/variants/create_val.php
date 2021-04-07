@@ -23,7 +23,32 @@ require 'class/ProductAttributeValue.class.php';
 $id = GETPOST('id', 'int');
 $ref = GETPOST('ref', 'alpha');
 $value = GETPOST('value', 'alpha');
+$code_couleur = GETPOST('code_couleur', 'alpha');
+$type_taille = GETPOST('type_taille', 'alpha');
+$dataPopup = GETPOST('data_popup');
 
+if($dataPopup && $dataPopup == 1){
+    print '<style>
+            #tmenu_tooltip {
+                display:none!important;
+            }
+            .side-nav{
+                display:none!important;
+            }
+            #topmenu-login-dropdown {
+                display:none!important
+            }
+            .login_block_other {
+                display:none!important
+            }
+            .table-fiche-title{
+                display:none!important
+            }
+            .tabs{
+                display:none!important
+            }
+        </style>';
+}
 $action = GETPOST('action', 'alpha');
 $cancel = GETPOST('cancel', 'alpha');
 $backtopage = GETPOST('backtopage', 'alpha');
@@ -64,13 +89,24 @@ if ($action == 'add')
 		$objectval->fk_product_attribute = $object->id;
 		$objectval->ref = $ref;
 		$objectval->value = $value;
+		$objectval->code_couleur = $code_couleur;
+		$objectval->type_taille = $type_taille;
 
 		if ($objectval->create($user) > 0) {
+                    if($dataPopup && $dataPopup == 1){
+			print '<script type="text/javascript">
+                                    window.parent.location.reload()
+                                </script> ';
+                    }else{
+                         
 			setEventMessages($langs->trans('RecordSaved'), null, 'mesgs');
 			header('Location: '.DOL_URL_ROOT.'/variants/card.php?id='.$object->id);
 			exit();
+                    }
 		} else {
 			setEventMessages($langs->trans('ErrorCreatingProductAttributeValue'), $objectval->errors, 'errors');
+                        header('Location: '.DOL_URL_ROOT.'/variants/create_val.php?id='.$object->id."&data_popup=1");
+			exit();
 		}
 	}
 }
@@ -123,14 +159,43 @@ dol_fiche_head();
 
 ?>
 	<table class="border" style="width: 100%">
-		<tr>
-			<td class="titlefield fieldrequired"><label for="ref"><?php echo $langs->trans('Ref') ?></label></td>
-			<td><input id="ref" type="text" name="ref" value="<?php echo $ref ?>"></td>
-		</tr>
-		<tr>
-			<td class="fieldrequired"><label for="value"><?php echo $langs->trans('Label') ?></label></td>
-			<td><input id="value" type="text" name="value" value="<?php echo $value ?>"></td>
-		</tr>
+            <input type ="hidden" value="<?php echo $dataPopup ; ?>" name="data_popup">
+            <tr>
+                    <td class="titlefield fieldrequired"><label for="ref"><?php echo $langs->trans('Ref') ?></label></td>
+                    <td><input id="ref" type="text" name="ref" value="<?php echo $ref ?>" required></td>
+            </tr>
+            <tr>
+                    <td class="fieldrequired"><label for="value"><?php echo $langs->trans('Label') ?></label></td>
+                    <td><input id="value" type="text" name="value" value="<?php echo $value ?>" required></td>
+            </tr>
+            <?php if($object->id == 2): ?>
+                <tr>
+                    <td class="fieldrequired"><label for="value">Catégorie taille</label></td>
+                    <td>
+                        <select name="type_taille">
+                            <option value="1" selected="selected" >Femme</option>
+                            <option value="2" >Fillette</option>
+                            <option value="3" >Bébé</option>
+                        </select>
+                    </td>
+                </tr>
+            <?php endif; ?>
+            <?php if($object->id == 1): ?>
+                <tr>
+                        <td class="fieldrequired"><label for="value">Couleur</label></td>
+                        <td>
+                            <input id="code_couleur" type="text" name="code_couleur" value="#fff152">
+                            <input id="code_couleur_pick" type="color"  value="#fff152" >
+                            <script>
+                                $(document).ready(function(){
+                                    $("#code_couleur_pick").change(function(){
+                                        $("#code_couleur").val($(this).val());
+                                    });
+                                });
+                            </script>
+                        </td>
+                </tr>
+            <?php endif; ?>
 	</table>
 <?php
 

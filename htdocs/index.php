@@ -39,6 +39,7 @@ $hookmanager->initHooks(array('index'));
 /*
  * Actions
  */
+/*modif fred*/
 $user->update($user);
 $sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
 $resuUser = $db->query($sql_user_group);
@@ -50,6 +51,12 @@ if ($reug->fk_usergroup) {
     $resug = $db->fetch_object($resuug);
     $resu_fab = $resug->code;
 }
+
+if($resu_fab == "fab"){
+    header("Location: ".DOL_URL_ROOT."/product/listproduitfab.php?leftmenu=product&type=0&idmenu=37");
+    exit;
+}
+
 // Check if company name is defined (first install)
 if (!isset($conf->global->MAIN_INFO_SOCIETE_NOM) || empty($conf->global->MAIN_INFO_SOCIETE_NOM))
 {

@@ -683,6 +683,7 @@ class ProductCombination
                     $newproduct->weight = floatval($arrayOtherInformation['poidsfabriq']);
                     $newproduct->weight_variant = floatval($arrayOtherInformation['poidsfabriq']);
                     $newproduct->quantite_commander = $arrayOtherInformation['quantite_commander'];
+                    $newproduct->ref_tissus_couleur = $arrayOtherInformation['ref_tissus_couleur'];
                     $newproduct->quantite_fabriquer = $arrayOtherInformation['quantite_fabriquer'];
                     $newproduct->composition = strval($arrayOtherInformation['composition']);
                     $newproduct->ref_fab_frs = strval($arrayOtherInformation['ref_fab_frs']);
@@ -807,10 +808,15 @@ class ProductCombination
                             . " price_ttc = ".floatval($arrayOtherInformation['price_euro']).", "
                             . " barcode = ".$arrayOtherInformation['codebares'].", "
                             . " weight=".floatval($arrayOtherInformation['poidsfabriq']).", "
+                            . " tobuy = 1 , "
                             . " weight_variant=".floatval($arrayOtherInformation['poidsfabriq']).", ";
                     
                     if(!empty($arrayOtherInformation['ref_fab_frs'])){
                         $sqlupdateother .= " ref_fab_frs='".$arrayOtherInformation['ref_fab_frs']."', ";
+                    }
+                    
+                    if(!empty($arrayOtherInformation['ref_tissus_couleur'])){
+                        $sqlupdateother .= " ref_tissus_couleur='".$arrayOtherInformation['ref_tissus_couleur']."', ";
                     }
                     
                     $sqlupdateother .= " taux_euro_yuan=".$tauxEurYuan." "

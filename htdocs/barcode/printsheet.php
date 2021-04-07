@@ -42,12 +42,14 @@ $mode = GETPOST('mode');
 $modellabel = GETPOST("modellabel"); // Doc template to use
 $numberofsticker = GETPOST('numberofsticker', 'int');
 $isShowLabel = GETPOST("choix_labels");
+$parentId = !empty(GETPOST("parentId")) ? GETPOST("parentId") : "";
 
 $mesg = '';
 
 $action = GETPOST('action', 'aZ09');
 
 $producttmp = new Product($db);
+$productParent = new Product($db);
 $thirdpartytmp = new Societe($db);
 
 if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("submitproduct"))) {
@@ -108,7 +110,14 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
         ob_end_clean();
         $imgDataFromPng =  base64_encode($images);
         
-        $carteMetisse = floor($producttmp->price_ttc*0.95*10)/10;
+        if(!empty($parentId)){
+            $productParent->fetch(intval($parentId));
+            $carteMetisse = floor($productParent->price_ttc*0.95*10)/10;
+            $priceTTc = price($productParent->price_ttc);
+        }else{
+            $carteMetisse = floor($producttmp->price_ttc*0.95*10)/10;
+            $priceTTc = price($producttmp->price_ttc);
+        }
         $htmlDataToPrint  = "<div style='width:437;display:none;margin-top:1%' id='print_codebare'>";
         $htmlDataToPrint .= "<style>
             @media print {
@@ -163,7 +172,7 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
             $htmlDataToPrint .= "</td>";
             if($isShowLabel == 1){
                 $htmlDataToPrint .= "<td style='width:40%;padding-top:".$paddingTop.";'>";
-                $htmlDataToPrint .= "<p style='float:right;font-weight:bold;font-family: Arial, Helvetica, sans-serif;font-size:22px'>".price($producttmp->price_ttc). " €"."</p>";
+                $htmlDataToPrint .= "<p style='float:right;font-weight:bold;font-family: Arial, Helvetica, sans-serif;font-size:22px'>".$priceTTc. " €"."</p>";
                 $htmlDataToPrint .= "</td>";
             }
             $htmlDataToPrint .= "</tr>";
@@ -190,7 +199,7 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
                 printWindow.document.write('</div></body></html>');
                 printWindow.document.close();
                 printWindow.print();
-                location.href="<?php echo $hosts.DOL_URL_ROOT.'/barcode/printsheet.php?codebare='.$codebarValue; ?>";
+                location.href="<?php echo $hosts.DOL_URL_ROOT.'/barcode/printsheet.php?codebare='.$codebarValue."&parentId=".$parentId; ?>";
             };
         </script>
         <?php
@@ -240,7 +249,19 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
             $j = 0;
             $htmlData .= "<table style='width:80%'>";
             for($i=0; $i<$numberofsticker; $i++) {
-                $carteMetisse = floor($producttmp->price_ttc*0.95*10)/10;
+                
+                if(!empty($parentId)){
+                    $productParent->fetch(intval($parentId));
+                    
+                    $carteMetisse = floor($productParent->price_ttc*0.95*10)/10;
+                   
+                    $priceTTc = price($productParent->price_ttc);
+                }else{
+                    $carteMetisse = floor($producttmp->price_ttc*0.95*10)/10;
+                    $priceTTc = price($producttmp->price_ttc);
+                }
+                 
+                //$carteMetisse = floor($producttmp->price_ttc*0.95*10)/10;
                 /*$htmlData .= "<tr>";
                 $htmlData .= "<td colspan=2>";
                 $htmlData .= "<p style='font-size:13px;text-transform:uppercase;font-family: Arial, Helvetica, sans-serif;font-weight:bold;'>".$producttmp->label."</p>";
@@ -260,8 +281,8 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
                     $htmlData .= "<br><br>";
                 }
                 if($isShowLabel == 1){
-                    $htmlData .= "<div style='margin-top:-22px;margin-left:213px;font-size:16px;font-weight:bold;'>&nbsp;".price($producttmp->price_ttc). " €"."</div>";
-                    $htmlData .= "<div style='margin-top:6px;color:white;background-color:black;padding:7px;text-transform:uppercase;font-weight:bold;font-family: Arial, Helvetica, sans-serif;width:260px;font-size:13px;'>Carte metisse: ".price($carteMetisse)." €</div><br>";
+                    $htmlData .= "<div style='margin-top:-22px;margin-left:213px;font-size:16px;font-weight:bold;'>&nbsp;".($priceTTc). " €"."</div>";
+                    $htmlData .= "<div style='margin-top:6px;color:white;background-color:black;padding:7px;text-transform:uppercase;font-weight:bold;font-family: Arial, Helvetica, sans-serif;width:260px;font-size:13px;'>Carte metisse: ".($carteMetisse)." €</div><br>";
                 }
                 $htmlData .= "</td>";
                 
@@ -538,6 +559,7 @@ dol_htmloutput_errors($mesg);
 //print '<br>';
 
 print '<form action="'.$_SERVER["PHP_SELF"].'" method="POST">';
+print '<input type="hidden" name="parentId" value="'.$parentId.'">';
 print '<input type="hidden" name="mode" value="label">';
 print '<input type="hidden" name="action" value="builddoc">';
 print '<input type="hidden" name="token" value="'.newtoken().'">';

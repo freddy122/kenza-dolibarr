@@ -44,7 +44,7 @@ $id     = GETPOST('id', 'int');
 $ref    = GETPOST('ref', 'alpha');
 $action = GETPOST('action', 'alpha');
 $confirm = GETPOST('confirm', 'alpha');
-
+$status_product = GETPOST('status_product');
 // Security check
 $fieldvalue = (!empty($id) ? $id : (!empty($ref) ? $ref : ''));
 $fieldtype = (!empty($ref) ? 'ref' : 'rowid');
@@ -115,7 +115,11 @@ if (empty($reshook))
 	}
 
 	// Action submit/delete file/link
-	include_once DOL_DOCUMENT_ROOT.'/core/actions_linkedfiles.inc.php';
+        /*modif fred*/
+        if($status_product && $status_product == "produitfab") {
+            $backtopage = $_SERVER["PHP_SELF"].'?id='.$object->id."&status_product=produitfab&action=edit";
+        }
+        include_once DOL_DOCUMENT_ROOT.'/core/actions_linkedfiles.inc.php';
 }
 
 if ($action == 'filemerge')
@@ -190,9 +194,27 @@ if ($object->id)
 	$head = product_prepare_head($object);
 	$titre = $langs->trans("CardProduct".$object->type);
 	$picto = ($object->type == Product::TYPE_SERVICE ? 'service' : 'product');
-
-	dol_fiche_head($head, 'documents', $titre, -1, $picto);
-
+        
+        if($status_product && $status_product == "produitfab") {
+            //dol_fiche_head($head, 'card', $titre, 0, $picto);
+            print load_fiche_titre("Modification produit fab", "<a href='".DOL_URL_ROOT."/product/listproduitfab.php?leftmenu=product&type=0&idmenu=37'>Retour</a>", $picto);
+            //echo "<pre>";
+            $headProductFab = [];
+            foreach($head as $kFab => $resFab){
+                if($resFab[2] == "card"){
+                    $resFab[0] = DOL_URL_ROOT."/product/card.php?id=".$object->id."&status_product=produitfab&action=edit";
+                    array_push($headProductFab,$resFab);
+                }
+                if($resFab[2] == "documents"){
+                    $resFab[0] = DOL_URL_ROOT."/product/document.php?id=".$object->id."&status_product=produitfab&action=edit";
+                    array_push($headProductFab,$resFab);
+                }
+            }
+            dol_fiche_head($headProductFab, 'documents', $titre, -1, $picto);
+        }else{
+            dol_fiche_head($head, 'documents', $titre, -1, $picto);
+        }
+        
 	$parameters = array();
 	$reshook = $hookmanager->executeHooks('formObjectOptions', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
     print $hookmanager->resPrint;
@@ -220,8 +242,16 @@ if ($object->id)
     $shownav = 1;
     if ($user->socid && !in_array('product', explode(',', $conf->global->MAIN_MODULES_FOR_EXTERNAL))) $shownav = 0;
 
-    dol_banner_tab($object, 'ref', $linkback, $shownav, 'ref');
-
+    if(!$status_product) {
+        dol_banner_tab($object, 'ref', $linkback, $shownav, 'ref');
+    }else{
+        $width = 80; 
+        $entity = (empty($object->entity) ? $conf->entity : $object->entity);
+        $showimage = $object->is_photo_available($conf->product->multidir_output[$entity]);
+        $maxvisiblephotos = (isset($conf->global->PRODUCT_MAX_VISIBLE_PHOTO) ? $conf->global->PRODUCT_MAX_VISIBLE_PHOTO : 5);
+        if ($conf->browser->layout == 'phone') $maxvisiblephotos = 1;
+        if ($showimage) print '<div class="floatleft inline-block valignmiddle divphotoref">'.$object->show_photos('product', $conf->product->multidir_output[$entity], 'small', $maxvisiblephotos, 0, 0, 0, $width, 0).'</div>';
+    }
     print '<div class="fichecenter">';
 
     print '<div class="underbanner clearboth"></div>';
@@ -237,8 +267,29 @@ if ($object->id)
     dol_fiche_end();
 
     $param = '&id='.$object->id;
-    include_once DOL_DOCUMENT_ROOT.'/core/tpl/document_actions_post_headers.tpl.php';
-
+    /* modif fred*/
+    $isAddFormLien = 1;
+    if($status_product && $status_product == "produitfab") {
+        $moreparam="&status_product=produitfab&action=edit";
+        $param = '&id='.$object->id.'&status_product=produitfab';
+        $isAddFormLien = 0;
+    }
+    
+    
+    $user->update($user);
+    $sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
+    $resuUser = $db->query($sql_user_group);
+    $reug = $db->fetch_object($resuUser);
+    $resu_fab = "";
+    if ($reug->fk_usergroup) {
+        $sql_group = "select code from ".MAIN_DB_PREFIX."usergroup where rowid = ".$reug->fk_usergroup;
+        $resuug = $db->query($sql_group);
+        $resug = $db->fetch_object($resuug);
+        $resu_fab = $resug->code;
+    }
+    if($resu_fab !== "fab"){
+        include_once DOL_DOCUMENT_ROOT.'/core/tpl/document_actions_post_headers.tpl.php';
+    }
 
     // Merge propal PDF document PDF files
     if (!empty($conf->global->PRODUIT_PDF_MERGE_PROPAL))
