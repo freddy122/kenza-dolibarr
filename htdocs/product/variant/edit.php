@@ -15,6 +15,12 @@ $composition        = GETPOST("composition");
 $price_yuan         = GETPOST("price_yuan");
 $price_euro         = GETPOST("price_euro");
 $taux_euro_yuan     = GETPOST("taux_euro_yuan");
+$valColor           = GETPOST("valColor");
+/* 
+SELECT * FROM `llx_product_attribute_combination2val` pacv 
+left join llx_product_attribute_combination pac on pac.rowid = pacv.fk_prod_combination
+WHERE fk_prod_attr = 1 and fk_prod_attr_val = 61 and pac.fk_product_parent = 7940 
+*/
 $parentId = GETPOST("parentId");
 $prodChild = new Product($db);
 $prodChild->fetch($idProduct);
@@ -209,70 +215,220 @@ if($_POST['posted_id']){
         text-transform: uppercase;
         color: #444;
     }
+    input[type=text], input[type=number] {
+        width: 100%;
+        padding: 12px 20px;
+        margin: 8px 0;
+        display: inline-block;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+    }
+    input[type=submit] {
+      width: 100%;
+      background-color: #DAEBE1;
+      color: black;
+      padding: 14px 20px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      
+    }
+    input[type=submit]:hover {
+      background-color: #DAEBE1;
+    } 
+    .custom_label {
+        font-weight: bold;
+    }
 </style>
 <form action="" method="POST">
-    <strong>Modification produit  : <?php echo $prodChild->label; ?></strong><br><br>
+    <strong>Modification produit  : <?php echo $prodChild->label; ?></strong><br>
+    <hr>
     <table class="titlefield fieldrequired">
         <input type="hidden" value="<?php echo $prodChild->id; ?>" name="posted_id">
         <?php 
             if($resu_fab !== 'fab') {
         ?>
-        <tr>
-            <td class="titlefield fieldrequired">Réf tissus</td>
-            <td colspan="3"><input name="ref_tissus_couleur" class="maxwidth200" maxlength="128" value="<?php echo ($ref_tissus_couleur?$ref_tissus_couleur:$prodChild->ref_tissus_couleur); ?>">
-            </td>
-        </tr>
-        <tr>
-            <td class="titlefield fieldrequired">Quantité Commandé</td>
-            <td colspan="3">
-                <input name="quantite_commander" class="maxwidth200" maxlength="128" value="<?php echo ($quantite_commander?$quantite_commander:$prodChild->quantite_commander); ?>">
-            </td>
-        </tr>
+            <tr>
+                <td colspan="3">
+                    <label for="ref_tissus_couleur" class="custom_label">Réf tissus</label>
+                    <input 
+                        type="text"
+                        name="ref_tissus_couleur" 
+                        class="maxwidth200" 
+                        maxlength="128" 
+                        value="<?php echo ($ref_tissus_couleur?$ref_tissus_couleur:$prodChild->ref_tissus_couleur); ?>" 
+                        id="ref_tissus_couleur" 
+                        oninput="changeValueInputRefTissus('ref_tissus_couleur','copie_val_reftissus')">
+                    <br>
+                    <div id="message_success"></div>
+                    <img src = "<?php echo DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif'; ?>" style="width: 18%;display:none;" id="load_update_color">
+                    <button 
+                        class="btn btn-info" 
+                        type="button" 
+                        id="copie_val_reftissus" 
+                        style="display:none;" 
+                        onclick="copyValuesOfRowRefTissus('<?php echo $parentId; ?>','<?php echo $idProduct ;?>')">
+                        Appliquer la modification pour les déclinaisons de la même couleur
+                    </button>
+                    
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3">
+                    <label for="qtycomm" class="custom_label">Quantité Commandé</label>
+                    <input 
+                        type="number" 
+                        id="qtycomm" 
+                        name="quantite_commander" 
+                        class="maxwidth200" 
+                        maxlength="128" 
+                        value="<?php echo ($quantite_commander?$quantite_commander:$prodChild->quantite_commander); ?>"
+                        oninput="changeValueInput('message_success_qtycomm','qtycomm','copie_val_qtycomm')"
+                    >
+                    <br>
+                    <div id="message_success_qtycomm"></div>
+                    <img src = "<?php echo DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif'; ?>" style="width: 18%;display:none;" id="load_update_qtycomm">
+                    <button 
+                        type="button" 
+                        id="copie_val_qtycomm" 
+                        style="display:none;" 
+                        onclick="copyValuesOfInput('load_update_qtycomm','<?php echo $parentId; ?>','message_success_qtycomm','copie_val_qtycomm','qtycomm')">
+                        Appliquer la modification pour toutes les déclinaisons
+                    </button>
+                </td>
+            </tr>
         <?php 
             }
         ?>
-        
         <tr>
-            <td class="titlefield fieldrequired">Quantité fabriqué</td>
-            <td colspan="3"><input name="quantite_fabriquer" class="maxwidth200" maxlength="128" value="<?php echo ($quantite_fabriquer?$quantite_fabriquer:$prodChild->quantite_fabriquer); ?>">
+            <td colspan="3">
+                <label for="qtyfab" class="custom_label">Quantité fabriqué</label>
+                <input 
+                    type="text" 
+                    id="qtyfab" 
+                    name="quantite_fabriquer" 
+                    class="maxwidth200" 
+                    maxlength="128" 
+                    value="<?php echo ($quantite_fabriquer?$quantite_fabriquer:$prodChild->quantite_fabriquer); ?>"
+                    oninput="changeValueInput('message_success_qtyfab','qtyfab','copie_val_qtyfab')"
+                >
+                <br>
+                <div id="message_success_qtyfab"></div>
+                <img src = "<?php echo DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif'; ?>" style="width: 18%;display:none;" id="load_update_qtyfab">
+                <button 
+                    type="button" 
+                    id="copie_val_qtyfab" 
+                    style="display:none;" 
+                    onclick="copyValuesOfInput('load_update_qtyfab','<?php echo $parentId; ?>','message_success_qtyfab','copie_val_qtyfab','qtyfab')">
+                    Appliquer la modification pour toutes les déclinaisons
+                </button>
             </td>
         </tr>
         <tr>
-            <td class="titlefield fieldrequired">Poids</td>
-            <td colspan="3"><input name="weight_variant" class="maxwidth200" maxlength="128" value="<?php echo ($weight_variant?$weight_variant:$prodChild->weight_variant); ?>">
+            <td colspan="3">
+                <label for="weight" class="custom_label">Poids</label>
+                <input type="text" id="weight" name="weight_variant" class="maxwidth200" maxlength="128" value="<?php echo ($weight_variant?$weight_variant:$prodChild->weight_variant); ?>">
             </td>
         </tr>
         <tr>
-            <td class="titlefield fieldrequired">Composition</td>
-            <td colspan="3"><input name="composition" class="maxwidth200"  value="<?php echo ($composition?$composition:$prodChild->composition); ?>">
+            <td colspan="3">
+                <label for="composition" class="custom_label">Composition</label>
+                <input 
+                    id="composition" 
+                    type="text" 
+                    name="composition" 
+                    class="maxwidth200"  
+                    value="<?php echo ($composition?$composition:$prodChild->composition); ?>"
+                    oninput="changeValueInput('message_success_composition','composition','copie_val_composition')"
+                >
+                <br>
+                <div id="message_success_composition"></div>
+                <img src = "<?php echo DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif'; ?>" style="width: 18%;display:none;" id="load_update_composition">
+                <button 
+                    type="button" 
+                    id="copie_val_composition" 
+                    style="display:none;" 
+                    onclick="copyValuesOfInput('load_update_composition','<?php echo $parentId; ?>','message_success_composition','copie_val_composition','composition')">
+                    Appliquer la modification pour toutes les déclinaisons
+                </button>
             </td>
         </tr>
         <tr>
-            <td class="titlefield fieldrequired">Prix yuan</td>
-            <td colspan="3"><input name="price_yuan" class="maxwidth200" id="price_yuan"  maxlength="128" value="<?php echo ($price_yuan?$price_yuan:$prodChild->price_yuan); ?>" oninput="changeEuro('price_yuan','price_euro','taux_change');">
+            <td colspan="3">
+                <label for="price_yuan" class="custom_label">Prix yuan</label>
+                <input 
+                    type="text" 
+                    name="price_yuan" 
+                    class="maxwidth200" 
+                    id="price_yuan"  
+                    value="<?php echo ($price_yuan?$price_yuan:$prodChild->price_yuan); ?>" 
+                    oninput="changeEuro('price_yuan','price_euro','taux_change');
+                    changeValueInput('message_success_price_yuan','price_yuan','copie_val_price_yuan')"
+                >
+                <br>
+                <div id="message_success_price_yuan"></div>
+                <img src = "<?php echo DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif'; ?>" style="width: 18%;display:none;" id="load_update_price_yuan">
+                <button 
+                    type="button" 
+                    id="copie_val_price_yuan" 
+                    style="display:none;" 
+                    onclick="copyValuesOfInput('load_update_price_yuan','<?php echo $parentId; ?>','message_success_price_yuan','copie_val_price_yuan','price_yuan')">
+                    Appliquer la modification pour toutes les déclinaisons
+                </button>
+                
             </td>
         </tr>
-        
         <tr>
-            <td class="titlefield fieldrequired" <?php  /*if($resu_fab == 'fab') { echo "style='display:none;'"; } */?>>Taux</td>
-            <td colspan="3" <?php  /*if($resu_fab == 'fab') { echo "style='display:none;'"; }*/ ?>><input name="taux_euro_yuan" <?php  /*if($resu_fab == 'fab') { echo "readonly='readonly'"; }*/ ?>  class="maxwidth200" id="taux_change" maxlength="128" oninput="changeEuro('price_yuan','price_euro','taux_change');" value="<?php echo $prodChild->taux_euro_yuan; ?>">
+            <td colspan="3" <?php  /*if($resu_fab == 'fab') { echo "style='display:none;'"; }*/ ?>>
+                <label for="taux_change" class="custom_label">Taux</label>
+                <input 
+                    type="text" 
+                    name="taux_euro_yuan" <?php  /*if($resu_fab == 'fab') { echo "readonly='readonly'"; }*/ ?>  
+                    class="maxwidth200" 
+                    id="taux_change" 
+                    value="<?php echo $prodChild->taux_euro_yuan; ?>"
+                    oninput="changeEuro('price_yuan','price_euro','taux_change');changeValueInput('message_success_taux_change','taux_change','copie_val_taux_change')" 
+                >
+                <br>
+                <div id="message_success_taux_change"></div>
+                <img src = "<?php echo DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif'; ?>" style="width: 18%;display:none;" id="load_update_taux_change">
+                <button 
+                    type="button" 
+                    id="copie_val_taux_change" 
+                    style="display:none;" 
+                    onclick="copyValuesOfInput('load_update_taux_change','<?php echo $parentId; ?>','message_success_taux_change','copie_val_taux_change','taux_change')">
+                    Appliquer la modification pour toutes les déclinaisons
+                </button>
             </td>
         </tr>
         <tr>
-            <td class="titlefield fieldrequired" <?php  /*if($resu_fab == 'fab') { echo "style='display:none;'"; }*/ ?>>Prix euros</td>
-            <td colspan="3" <?php  /*if($resu_fab == 'fab') { echo "style='display:none;'"; } */ ?>><input name="price_euro" <?php  /*if($resu_fab == 'fab') { echo "readonly='readonly'"; }*/ ?>  class="maxwidth200" id="price_euro" maxlength="128" value="<?php  echo ($price_euro?$price_euro:$prodChild->price_euro); ?>">
+            <td colspan="3" <?php  /*if($resu_fab == 'fab') { echo "style='display:none;'"; } */ ?>>
+                <label for="price_euro" class="custom_label">Prix euros</label>
+                <input 
+                    type="text" 
+                    name="price_euro" <?php  /*if($resu_fab == 'fab') { echo "readonly='readonly'"; }*/ ?>  
+                    class="maxwidth200" 
+                    id="price_euro" 
+                    value="<?php  echo ($price_euro?$price_euro:$prodChild->price_euro); ?>"
+                >
             </td>
         </tr>
-         
         <tr>
-            <td class="titlefield fieldrequired"></td>
-            <td colspan="3"><input type="submit" value="Modifier" class="button">
+            
+            <td colspan="3">
+                <input type="submit" value="Modifier">
             </td>
         </tr>
     </table>
 </form> 
 
-<script>
+<script type="text/javascript" src="<?php  echo DOL_URL_ROOT."/includes/jquery/js/jquery.min.js" ?>" ></script>
+<script type="text/javascript">
+    
+    $(document).ready(function(){
+        
+    });
+    
     function changeEuro(yuan, euro, tauxchange){
         var resy = document.getElementById(yuan).value;
         var tauxchange = document.getElementById(tauxchange).value;
@@ -281,6 +437,117 @@ if($_POST['posted_id']){
         }else{
             document.getElementById(euro).value = 0;
         }
+    }
+    
+    function changeValueInputRefTissus(inputComp,copyval){
+        var resy = $("#"+inputComp).val();
+        $("#message_success").hide();
+        $("#message_success").css({
+            "border":"0px solid",
+            "width": "20%",
+            "padding": "0%"
+        });
+        if(resy !== ""){
+            $("#"+copyval).show();
+        }else{
+            $("#"+copyval).hide();
+        }
+    }
+    
+    function copyValuesOfRowRefTissus(idparent,idchild){
+        $("#load_update_color").show();
+        var refs = $("#ref_tissus_couleur").val();
+        $.ajax("<?php echo DOL_URL_ROOT.'/product/ajax/updaterefcolor.php'; ?>", {
+            type: "POST",
+            data : {valCoul:"<?php echo $valColor; ?>", parentId:idparent, refValue:refs},
+            success: function (data){
+                $("#load_update_color").hide();
+                if(data.success){
+                    $("#copie_val_reftissus").hide();
+                    $("#message_success").show();
+                    $("#message_success").css({
+                        "border":"1px solid",
+                        "width": "95%",
+                        "padding": "1%"
+                    });
+                    $("#message_success").html(data.success_detail);
+                }else{
+                    alert("Une erreur est survenu");
+                }
+            }
+        });
+    }
+    
+    function changeValueInput(messageSuccess,inputComp,copyval){
+        var resy = $("#"+inputComp).val();
+        $("#"+messageSuccess).hide();
+        $("#"+messageSuccess).css({
+            "border":"0px solid",
+            "width": "20%",
+            "padding": "0%"
+        });
+        if(resy !== ""){
+            $("#"+copyval).show();
+        }else{
+            $("#"+copyval).hide();
+        }
+    }
+    
+    function copyValuesOfInput(loadUpdate,idparent,messageSuccess,buttonId,flag){
+        $("#"+loadUpdate).show();
+        var qtyComm = $("#qtycomm").val();
+        var qtyfab = $("#qtyfab").val();
+        var composition = $("#composition").val();
+        var prixYuan = $("#price_yuan").val();
+        var tauxChange = $("#taux_change").val();
+        var prixEuro = $("#price_euro").val();
+        var dataTosend = {};
+        if(flag === "qtycomm"){
+            dataTosend = {
+                qtyComm: qtyComm,
+                parentId:idparent
+            };
+        }
+        if(flag === "qtyfab"){
+            dataTosend = {
+                qtyfab:qtyfab,
+                parentId:idparent
+            };
+        }
+        if(flag === "composition"){
+            dataTosend = {
+                composition:composition,
+                parentId:idparent
+            };
+        }
+        if(flag === "price_yuan" || flag === "taux_change"){
+            dataTosend = {
+                prixYuan:prixYuan,
+                tauxChange:tauxChange,
+                prixEuro:prixEuro,
+                parentId:idparent
+            };
+        }
+        
+        $.ajax("<?php echo DOL_URL_ROOT.'/product/ajax/updateOtherInfo.php'; ?>", {
+            type: "POST",
+            data : dataTosend,
+            success: function (data){
+                $("#"+loadUpdate).hide();
+                if(data.success){
+                    $("#"+buttonId).hide();
+                    $("#"+messageSuccess).show();
+                    $("#"+messageSuccess).css({
+                        "border":"1px solid",
+                        "width": "95%",
+                        "padding": "1%"
+                    });
+                    $("#"+messageSuccess).html(data.success_detail);
+                }else{
+                    alert("Une erreur est survenu");
+                }
+            }
+        });
     }
 </script>
 <?php

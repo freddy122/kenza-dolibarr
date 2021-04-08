@@ -613,12 +613,12 @@ if ($resql)
 	}
 
 	//Show/hide child products. Hidden by default
-	if (!empty($conf->variants->enabled) && !empty($conf->global->PRODUIT_ATTRIBUTES_HIDECHILD)) {
+	/*if (!empty($conf->variants->enabled) && !empty($conf->global->PRODUIT_ATTRIBUTES_HIDECHILD)) {
 		$moreforfilter .= '<div class="divsearchfield">';
 		$moreforfilter .= '<input type="checkbox" id="search_show_childproducts" name="search_show_childproducts"'.($show_childproducts ? 'checked="checked"' : '').'>';
 		$moreforfilter .= ' <label for="search_show_childproducts">'.$langs->trans('ShowChildProducts').'</label>';
 		$moreforfilter .= '</div>';
-	}
+	}*/
 
 	$parameters = array();
 	$reshook = $hookmanager->executeHooks('printFieldPreListTitle', $parameters); // Note that $action and $object may have been modified by hook
@@ -627,8 +627,6 @@ if ($resql)
         
         $moreforfilter .= '<div class="divsearchfield">';
         $hosts = $_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_NAME'];
-        $moreforfilter .= '<a id="regenerateVariation" style="cursor:pointer">Régenerer les déclinaisons</a><br><img src = "'.$hosts.DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif" style="width: 20%;display:none;" id="load_product_variation">';
-        
         print '<script>
             $(function() {
                 $("#regenerateVariation").click(function(){

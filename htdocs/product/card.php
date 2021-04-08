@@ -1332,7 +1332,7 @@ else
     // -----------------------------------------
     // When used in standard mode
     // -----------------------------------------
-	if ($action == 'create' && $usercancreate)
+    if ($action == 'create' && $usercancreate)
     {
         //WYSIWYG Editor
         require_once DOL_DOCUMENT_ROOT.'/core/class/doleditor.class.php';
@@ -1712,30 +1712,32 @@ else
                         </div>
                 <div class="div-main-content-optionh">';
                 foreach($objectProductAttributes->fetchAll() as $res){
-                    if($res->id == 1 || $res->id == 2) {
-                        $class_option_content = ($res->id == 1) ? "option-content-couleur" : "option-content-taille";
-                        $class_option_heading = ($res->id == 1) ? "option-heading" : "option-heading-taille";
-                        $class_option_heading_content = ($res->id == 1) ? "option-heading-content" : "option-heading-content-taille";
-                        $url_creation_decl = ($res->id == 1) ? 
-                        "<a href='".DOL_URL_ROOT."/variants/create_val.php?id=1&data_popup=1' target='_blank' class='button create_combination_popup'>Créer couleur</a>" : 
-                        "<a href='".DOL_URL_ROOT."/variants/create_val.php?id=2&data_popup=1' target='_blank' class='button create_combination_popup'>Créer taille</a>";
-                        print '<div class="'.$class_option_heading_content.'"><div class="'.$class_option_heading.'">'.$res->label.'</div><div class="'.$class_option_content.'">';
-                        foreach ($objectvalProductAttributes->fetchAllByProductAttribute($res->id) as $attrval) {
-                            if($attrval->code_couleur):
-                                print '<label class="container-declinaison" for="'.$attrval->value.'">'.$attrval->value.''
-                                    . '<input type="checkbox" id="'.$attrval->value.'" value="'.$attrval->id.'" name="choix_couleur" >'
-                                    . '<span class="checkmark-declinaison" style="background-color:'.$attrval->code_couleur.'"></span></label>';
-                            else:
-                                print '<label class="container-declinaison type_declinaison_'.$attrval->type_taille.'" for="'.$attrval->value.'">'.$attrval->value.''
-                                    . '<input type="checkbox" id="'.$attrval->value.'" value="'.$attrval->id.'" name="choix_taille">'
-                                    . '<span class="checkmark-declinaison" style="background-color:#eee;"></span></label>';
-                            endif;
+                        if($res->id == 1 || $res->id == 2) {
+                            $class_option_content = ($res->id == 1) ? "option-content-couleur" : "option-content-taille";
+                            $class_option_heading = ($res->id == 1) ? "option-heading" : "option-heading-taille";
+                            $class_option_heading_content = ($res->id == 1) ? "option-heading-content" : "option-heading-content-taille";
+                            $type = ($res->id == 1) ? "color" : "taille";
+                            $url_creation_decl = ($res->id == 1) ? 
+                            "<a href='".DOL_URL_ROOT."/variants/create_val.php?id=1&data_popup=1' target='_blank' class='button create_combination_popup'>Créer couleur</a>" : 
+                            "<a href='".DOL_URL_ROOT."/variants/create_val.php?id=2&data_popup=1' target='_blank' class='button create_combination_popup'>Créer taille</a>";
+                            print '<div class="'.$class_option_heading_content.'"><div class="'.$class_option_heading.'">'.$res->label.'</div><div class="'.$class_option_content.'">';
+                            print '<label class="container-declinaison" for="select_all_'.$type.'" >Selectionner tout<input type="checkbox" id="select_all_'.$type.'" /><span class="checkmark-declinaison" style="background-color:#eee;"></span></label>';
+                            foreach ($objectvalProductAttributes->fetchAllByProductAttribute($res->id) as $attrval) {
+                                if($attrval->code_couleur):
+                                    print '<label class="container-declinaison" for="'.$attrval->value.'">'.$attrval->value.''
+                                        . '<input type="checkbox" id="'.$attrval->value.'" value="'.$attrval->id.'" name="choix_couleur" class="choix_couleur">'
+                                        . '<span class="checkmark-declinaison" style="background-color:'.$attrval->code_couleur.'"></span></label>';
+                                else:
+                                    print '<label class="container-declinaison type_declinaison_'.$attrval->type_taille.'" for="'.$attrval->value.'">'.$attrval->value.''
+                                        . '<input type="checkbox" id="'.$attrval->value.'" value="'.$attrval->id.'" name="choix_taille" class="choice_t choix_taille">'
+                                        . '<span class="checkmark-declinaison" style="background-color:#eee;"></span></label>';
+                                endif;
+                            }
+                            print '</div>';
+                            print $url_creation_decl;
+                            print '</div>';
                         }
-                        print '</div>' ; 
-                        print $url_creation_decl;
-                        print '</div>';
                     }
-                }
                 print'</div></td>';
                 print '</tr>';
                 print '</table>';
@@ -1806,27 +1808,48 @@ else
                                     });
                                     $dialog.dialog('open');
                             });
-                            /*filtre taille*/
-                            $("#type_taille").change(function(){
+                            
+                            /* select all */
+                                $('#select_all_color').click(function() {
+                                    var c = this.checked;
+                                    $('.choix_couleur').prop('checked', c);
+                                });
+                                $('#select_all_taille').click(function() {
+                                    var c = this.checked;
+                                    $('.choix_taille').prop('checked', c);
+                                });
+                                
+                                /* filtre taille */
+                                $("#type_taille").change(function(){
                                 var valTailles = $(this).val();
                                 if (parseInt(valTailles) == 1){
-                                    $(".type_declinaison_3").hide();
-                                    $(".type_declinaison_2").hide();
-                                    $(".type_declinaison_1").show();
-                                }else if(parseInt(valTailles) == 2){
-                                    $(".type_declinaison_3").hide();
-                                    $(".type_declinaison_1").hide();
-                                    $(".type_declinaison_2").show();
-                                }else if(parseInt(valTailles) == 3) {
-                                    $(".type_declinaison_1").hide();
-                                    $(".type_declinaison_2").hide();
-                                    $(".type_declinaison_3").show();
-                                }else{
-                                    $(".type_declinaison_1").show();
-                                    $(".type_declinaison_2").show();
-                                    $(".type_declinaison_3").show();
-                                }
-                            });
+                                        $(".type_declinaison_3 > .choice_t").removeClass('choix_taille');
+                                        $(".type_declinaison_2 > .choice_t").removeClass('choix_taille');
+                                        $(".type_declinaison_3").hide();
+                                        $(".type_declinaison_2").hide();
+                                        $(".type_declinaison_1").show();
+                                    }else if(parseInt(valTailles) == 2){
+                                        $(".type_declinaison_3 > .choice_t").removeClass('choix_taille');
+                                        $(".type_declinaison_1 > .choice_t").removeClass('choix_taille');
+                                        $(".type_declinaison_3").hide();
+                                        $(".type_declinaison_1").hide();
+                                        $(".type_declinaison_2").show();
+                                    }else if(parseInt(valTailles) == 3) {
+                                        $(".type_declinaison_2 > .choice_t").removeClass('choix_taille');
+                                        $(".type_declinaison_1 > .choice_t").removeClass('choix_taille');
+                                        $(".type_declinaison_1").hide();
+                                        $(".type_declinaison_2").hide();
+                                        $(".type_declinaison_3").show();
+                                    }else{
+                                        $(".type_declinaison_1").show();
+                                        $(".type_declinaison_2").show();
+                                        $(".type_declinaison_3").show();
+                                        $(".type_declinaison_3 > .choice_t").addClass('choix_taille');
+                                        $(".type_declinaison_2 > .choice_t").addClass('choix_taille');
+                                        $(".type_declinaison_1 > .choice_t").addClass('choix_taille');
+                                        
+                                    }
+                                });
                             /* Transform checkbox en radio box
                              * $('.option-content-couleur').on('click', ':checkbox', function(e) {
                                 $('.option-content-couleur :checkbox').each(function() {
@@ -2733,9 +2756,26 @@ else
 
     elseif ($object->id > 0)
     {
+        /* modif fred */
+        if($object->product_type_txt == "fab" && ($action !== "edit" || empty($action) || !$status_product)) {
+             exit;
+        }
+        
         // Fiche en mode edition
         if ($action == 'edit' && $usercancreate)
         {
+            /* modif fred */
+            $sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
+            $resuUser = $db->query($sql_user_group);
+            $reug = $db->fetch_object($resuUser);
+            if($reug->fk_usergroup){
+                $sql_group = "select code from ".MAIN_DB_PREFIX."usergroup where rowid = ".$reug->fk_usergroup;
+                $resuug = $db->query($sql_group);
+                $resug = $db->fetch_object($resuug);
+                if($resug->code == "fab" && !$status_product) {
+                    exit;
+                }
+            }
             //WYSIWYG Editor
             require_once DOL_DOCUMENT_ROOT.'/core/class/doleditor.class.php';
 
@@ -2925,7 +2965,6 @@ else
                 $statutarray = array('-1'=>'&nbsp;', '1' => $langs->trans("Finished"), '0' => $langs->trans("RowMaterial"));
                 print $form->selectarray('finished', $statutarray, $object->finished);
                 print '</td></tr>';
-
                 // Brut Weight
                 print '<tr><td>'.$langs->trans("Weight").'</td><td colspan="3">';
                 print '<input name="weight" size="5" value="'.$object->weight.'"> ';
@@ -2977,22 +3016,22 @@ else
                 // Units
                 if ($conf->global->PRODUCT_USE_UNITS)
                 {
-                        print '<tr><td>'.$langs->trans('DefaultUnitToShow').'</td>';
-                        print '<td colspan="3">';
-                        print $form->selectUnits($object->fk_unit, 'units');
-                        print '</td></tr>';
+                    print '<tr><td>'.$langs->trans('DefaultUnitToShow').'</td>';
+                    print '<td colspan="3">';
+                    print $form->selectUnits($object->fk_unit, 'units');
+                    print '</td></tr>';
                 }
 
-                    // Custom code
+                // Custom code
                 if (!$object->isService() && empty($conf->global->PRODUCT_DISABLE_CUSTOM_INFO))
-                    {
-                        print '<tr><td>'.$langs->trans("CustomCode").'</td><td><input name="customcode" class="maxwidth100onsmartphone" value="'.$object->customcode.'"></td>';
-                        // Origin country
-                        print '<td>'.$langs->trans("CountryOrigin").'</td><td>';
-                        print $form->select_country($object->country_id, 'country_id', '', 0, 'minwidth100 maxwidthonsmartphone');
-                        if ($user->admin) print info_admin($langs->trans("YouCanChangeValuesForThisListFromDictionarySetup"), 1);
-                        print '</td></tr>';
-                    }
+                {
+                    print '<tr><td>'.$langs->trans("CustomCode").'</td><td><input name="customcode" class="maxwidth100onsmartphone" value="'.$object->customcode.'"></td>';
+                    // Origin country
+                    print '<td>'.$langs->trans("CountryOrigin").'</td><td>';
+                    print $form->select_country($object->country_id, 'country_id', '', 0, 'minwidth100 maxwidthonsmartphone');
+                    if ($user->admin) print info_admin($langs->trans("YouCanChangeValuesForThisListFromDictionarySetup"), 1);
+                    print '</td></tr>';
+                }
 
                 // Other attributes
                 $parameters = array('colspan' => ' colspan="3"', 'cols' => 3);
@@ -3003,21 +3042,21 @@ else
                     print $object->showOptionals($extrafields, 'edit', $parameters);
                 }
             }
-			// Tags-Categories
+            // Tags-Categories
             if ($conf->categorie->enabled)
             {
-                    print '<tr><td>'.$langs->trans("Categories").'</td><td colspan="3">';
-                    $cate_arbo = $form->select_all_categories(Categorie::TYPE_PRODUCT, '', 'parent', 64, 0, 1);
-                    $c = new Categorie($db);
-                    $cats = $c->containing($object->id, Categorie::TYPE_PRODUCT);
-                    $arrayselected = array();
-                    if (is_array($cats)) {
-                            foreach ($cats as $cat) {
-                                    $arrayselected[] = $cat->id;
-                            }
-                    }
-                    print $form->multiselectarray('categories', $cate_arbo, $arrayselected, '', 0, '', 0, '100%');
-                    print "</td></tr>";
+                print '<tr><td>'.$langs->trans("Categories").'</td><td colspan="3">';
+                $cate_arbo = $form->select_all_categories(Categorie::TYPE_PRODUCT, '', 'parent', 64, 0, 1);
+                $c = new Categorie($db);
+                $cats = $c->containing($object->id, Categorie::TYPE_PRODUCT);
+                $arrayselected = array();
+                if (is_array($cats)) {
+                        foreach ($cats as $cat) {
+                                $arrayselected[] = $cat->id;
+                        }
+                }
+                print $form->multiselectarray('categories', $cate_arbo, $arrayselected, '', 0, '', 0, '100%');
+                print "</td></tr>";
             }
 
             // Note private
@@ -3030,11 +3069,8 @@ else
 
                 print "</td></tr>";
             }
-
             print '</table>';
-
             print '<br>';
-            
             if($status_product && $status_product == "produitfab") {
                 
             }else{
@@ -3205,18 +3241,20 @@ else
                             $class_option_content = ($res->id == 1) ? "option-content-couleur" : "option-content-taille";
                             $class_option_heading = ($res->id == 1) ? "option-heading" : "option-heading-taille";
                             $class_option_heading_content = ($res->id == 1) ? "option-heading-content" : "option-heading-content-taille";
+                            $type = ($res->id == 1) ? "color" : "taille";
                             $url_creation_decl = ($res->id == 1) ? 
                             "<a href='".DOL_URL_ROOT."/variants/create_val.php?id=1&data_popup=1' target='_blank' class='button create_combination_popup'>Créer couleur</a>" : 
                             "<a href='".DOL_URL_ROOT."/variants/create_val.php?id=2&data_popup=1' target='_blank' class='button create_combination_popup'>Créer taille</a>";
                             print '<div class="'.$class_option_heading_content.'"><div class="'.$class_option_heading.'">'.$res->label.'</div><div class="'.$class_option_content.'">';
+                            print '<label class="container-declinaison" for="select_all_'.$type.'" >Selectionner tout<input type="checkbox" id="select_all_'.$type.'" /><span class="checkmark-declinaison" style="background-color:#eee;"></span></label>';
                             foreach ($objectvalProductAttributes->fetchAllByProductAttribute($res->id) as $attrval) {
                                 if($attrval->code_couleur):
                                     print '<label class="container-declinaison" for="'.$attrval->value.'">'.$attrval->value.''
-                                        . '<input type="checkbox" id="'.$attrval->value.'" value="'.$attrval->id.'" name="choix_couleur" >'
+                                        . '<input type="checkbox" id="'.$attrval->value.'" value="'.$attrval->id.'" name="choix_couleur" class="choix_couleur">'
                                         . '<span class="checkmark-declinaison" style="background-color:'.$attrval->code_couleur.'"></span></label>';
                                 else:
                                     print '<label class="container-declinaison type_declinaison_'.$attrval->type_taille.'" for="'.$attrval->value.'">'.$attrval->value.''
-                                        . '<input type="checkbox" id="'.$attrval->value.'" value="'.$attrval->id.'" name="choix_taille">'
+                                        . '<input type="checkbox" id="'.$attrval->value.'" value="'.$attrval->id.'" name="choix_taille" class="choice_t choix_taille">'
                                         . '<span class="checkmark-declinaison" style="background-color:#eee;"></span></label>';
                                 endif;
                             }
@@ -3230,7 +3268,6 @@ else
                     print '</tr>';
                     print '</table>';
                     $cumulcodeProd = 0;
-                    
                     if (!empty($modCodeProduct->code_auto)) {
                         $cumulcodeProd = $modCodeProduct->getNextValue($object, $type);
                     }
@@ -3275,18 +3312,34 @@ else
                                 $(".option-heading-taille").on('click', function() {
                                     $(this).toggleClass('is-active').next(".option-content-taille").stop().slideToggle(500);
                                 });
+                                /* select all */
+                                $('#select_all_color').click(function() {
+                                    var c = this.checked;
+                                    $('.choix_couleur').prop('checked', c);
+                                });
+                                $('#select_all_taille').click(function() {
+                                    var c = this.checked;
+                                    $('.choix_taille').prop('checked', c);
+                                });
+                                
                                 /* filtre taille */
                                 $("#type_taille").change(function(){
                                 var valTailles = $(this).val();
                                 if (parseInt(valTailles) == 1){
+                                        $(".type_declinaison_3 > .choice_t").removeClass('choix_taille');
+                                        $(".type_declinaison_2 > .choice_t").removeClass('choix_taille');
                                         $(".type_declinaison_3").hide();
                                         $(".type_declinaison_2").hide();
                                         $(".type_declinaison_1").show();
                                     }else if(parseInt(valTailles) == 2){
+                                        $(".type_declinaison_3 > .choice_t").removeClass('choix_taille');
+                                        $(".type_declinaison_1 > .choice_t").removeClass('choix_taille');
                                         $(".type_declinaison_3").hide();
                                         $(".type_declinaison_1").hide();
                                         $(".type_declinaison_2").show();
                                     }else if(parseInt(valTailles) == 3) {
+                                        $(".type_declinaison_2 > .choice_t").removeClass('choix_taille');
+                                        $(".type_declinaison_1 > .choice_t").removeClass('choix_taille');
                                         $(".type_declinaison_1").hide();
                                         $(".type_declinaison_2").hide();
                                         $(".type_declinaison_3").show();
@@ -3294,6 +3347,10 @@ else
                                         $(".type_declinaison_1").show();
                                         $(".type_declinaison_2").show();
                                         $(".type_declinaison_3").show();
+                                        $(".type_declinaison_3 > .choice_t").addClass('choix_taille');
+                                        $(".type_declinaison_2 > .choice_t").addClass('choix_taille');
+                                        $(".type_declinaison_1 > .choice_t").addClass('choix_taille');
+                                        
                                     }
                                 });
                                 /*$('.option-content-couleur').on('click', ':checkbox', function(e) {
@@ -3427,7 +3484,7 @@ else
                                                         </td>
                                                         <td class="compfabriq text-align-left"> 
                                                             <input type="text" value=""  name="compfabriq[]" id="composition_${rowIdx}" oninput="changeValueInputComp('composition_${rowIdx}','copie_val_comp_${rowIdx}')" >
-                                                            <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                            <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_','composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
                                                         </td>
                                                         <td class="priceYuan text-align-left" > 
                                                             <input type="text" value=""  name="priceYuan[]" id="price_yuan_${rowIdx}"  oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_${rowIdx}')">
@@ -3445,26 +3502,12 @@ else
                                                 }
                                             }
                                         }
-                                        
                                         if(arrColors.length>0){
                                             for(var cl =0;cl<arrColors.length;cl++){
                                                 if(arrTailles.length>0) {
                                                     for(var tl =0;tl<arrTailles.length;tl++){
-                                                        
-                                                        /* traitement réferences */
-                                                        //var refCumules = '<?php //echo $cumulcodeProd; ?>';
-                                                        //var references = parseInt(refCumules) + parseInt(`${rowIdx}`) + 1;
-                                                        /* traitement codebarre */
-                                                        /*var refcodebare = '<?php //echo $lastEanProduct; ?>';
-                                                        if($('.dynamic_lines tr:last').attr('id')){
-                                                            var digs = parseInt($('.dynamic_lines tr:last').attr('id').substring(1));
-                                                            var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + digs;
-                                                        }else{
-                                                            var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + 1;
-                                                        }*/
                                                         var refcodebare = '<?php echo $cumulbarcode; ?>';
                                                         var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + 1;
-                                                        
                                                         var codebarres = refcodebare12+""+getLastEan13Digit(refcodebare12.toString());
                                                         var splitArrColors = arrColors[cl].split('_');
                                                         var splitArrTailles = arrTailles[tl].split('_');
@@ -3538,7 +3581,7 @@ else
                                                             </td>
                                                             <td class="compfabriq text-align-left"> 
                                                                 <input type="text" value=""  name="compfabriq[]" id="composition_${rowIdx}" oninput="changeValueInputComp('composition_${rowIdx}','copie_val_comp_${rowIdx}')" >
-                                                                <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                                <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_','composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
                                                             </td>
                                                             <td class="priceYuan text-align-left" > 
                                                                 <input type="text" value=""  name="priceYuan[]" id="price_yuan_${rowIdx}"  oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_${rowIdx}')">
@@ -3557,17 +3600,6 @@ else
                                                     }
                                                 }else{
                                                     rowIdx++;
-                                                    /* traitement réferences */
-                                                    //var refCumules = '<?php //echo $cumulcodeProd; ?>';
-                                                    //var references = parseInt(refCumules) + parseInt(`${rowIdx}`) + 1;
-                                                    /* traitement codebarre */
-                                                    /*var refcodebare = '<?php //echo $lastEanProduct; ?>';
-                                                    if($('.dynamic_lines tr:last').attr('id')){
-                                                        var digs = parseInt($('.dynamic_lines tr:last').attr('id').substring(1));
-                                                        var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + digs;
-                                                    }else{
-                                                        var refcodebare12 = parseInt(refcodebare.substring(0, refcodebare.length - 1)) + parseInt(`${rowIdx}`) + 1;
-                                                    }*/
                                                     if($('.dynamic_lines tr:last').attr('id')){
                                                         var digs = parseInt($('.dynamic_lines tr:last').attr('id').substring(1));
                                                         var refcodebare = '<?php echo $cumulbarcode; ?>';
@@ -3647,7 +3679,7 @@ else
                                                         </td>
                                                         <td class="compfabriq text-align-left"> 
                                                             <input type="text" value=""  name="compfabriq[]" id="composition_${rowIdx}" oninput="changeValueInputComp('composition_${rowIdx}','copie_val_comp_${rowIdx}')" >
-                                                            <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                            <button class="btn btn-info" type="button" id="copie_val_comp_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('composition_','composition_${rowIdx}','copie_val_comp_${rowIdx}')">Copier pour toutes les lignes</button> 
                                                         </td>
                                                         <td class="priceYuan text-align-left" > 
                                                             <input type="text" value=""  name="priceYuan[]" id="price_yuan_${rowIdx}"  oninput="changeEuro('price_yuan_${rowIdx}','price_euro_${rowIdx}','taux_change_${rowIdx}','copie_val_${rowIdx}')">
@@ -3725,12 +3757,15 @@ else
                                         .dialog({
                                             autoOpen: false,
                                             modal: true,
-                                            height: 400,
-                                            width: 400,
+                                            height: 850,
+                                            width: 560,
                                             resizable: true,
                                             title: pagetitle,
                                             open: function(event, ui) {
                                                 $("#ui-id-3").css('overflow', 'hidden');
+                                            },
+                                            close: function(event, ui){
+                                                window.parent.location.reload()
                                             }
                                         });
                                         $dialog.dialog('open');
@@ -3857,12 +3892,12 @@ else
                             }
                         </script> 
                     <?php
-                    print '<input type="submit" class="button" value="Modifier" style="float:right;"><br><br>';
+                    //print '<input type="submit" class="button" value="Modifier" style="float:right;"><br><br>';
                 }else{
                     ?>
                     <script>
                     jQuery(document).ready(function () {
-                    $('a.edit_row_declinaison').click(function (e) {
+                        $('a.edit_row_declinaison').click(function (e) {
                                 e.preventDefault();
                                 var page = $(this).attr("href")
                                 var pagetitle = $(this).attr("title")
@@ -3871,17 +3906,19 @@ else
                                 .dialog({
                                     autoOpen: false,
                                     modal: true,
-                                    height: 400,
-                                    width: 400,
+                                    height: 690,
+                                    width: 560,
                                     resizable: true,
                                     title: pagetitle,
                                     open: function(event, ui) {
                                         $("#ui-id-3").css('overflow', 'hidden');
+                                    },
+                                    close: function(event, ui){
+                                        window.parent.location.reload()
                                     }
                                 });
                                 $dialog.dialog('open');
                         });
-
                     });
                     </script>    
                     <?php
@@ -3942,7 +3979,7 @@ else
                         print "<td>".($prodChild->price_euro?$prodChild->price_euro:0)." €</td>";
                         print "<td>".($prodChild->quantite_commander*$prodChild->price_yuan)." ¥</td>";
                         print "<td>".($prodChild->quantite_commander*$prodChild->price_euro)." €</td>";
-                        print "<td><a class='custom_button edit_row_declinaison' href='".DOL_URL_ROOT."/product/variant/edit.php?productid=".$prodChild->id."&parentId=".$object->id."' target='_blank'>Modifier</a>"
+                        print "<td><a class='custom_button edit_row_declinaison' href='".DOL_URL_ROOT."/product/variant/edit.php?productid=".$prodChild->id."&parentId=".$object->id."&valColor=".$kaff."' target='_blank'>Modifier</a>"
                                 . "<a class='custom_button' href='".DOL_URL_ROOT."/barcode/printsheet.php?codebare=".$prodChild->barcode."&parentId=".$object->id."' target='_blank'>Imprimer code</a>";
                         if($resu_fab !== "fab"){
                             print "<a class='custom_button_delete delete_row_declinaison' href='".DOL_URL_ROOT."/product/variant/delete.php?productid=".$prodChild->id."' target='_blank'>Supprimer</a>";
@@ -3971,7 +4008,6 @@ else
                 }
                 print '<br>';
                 print '<table class="border centpercent" style="width:30%!important;float:right!important">';
-                
                 print '<tr>';
                 print '<td style="font-weight:bold;float:right;" >Total Quantité commandé : '.$grandTotalCommanderqtyCommander.' </td>';
                 print '</tr>';
@@ -3984,15 +4020,19 @@ else
                 print '<tr>';
                 print '<td style="font-weight:bold;float:right;" >Total Euro : '.$grandTotalCommanderEuro.' €</td>';
                 print '</tr>';
-                
                 print '</table>';
             }
             /* fin formulaire modification déclinaison */
             dol_fiche_end();
-
+            
             print '<div class="center">';
             if($status_product && $status_product == "produitfab") { 
-                
+                if($resu_fab !== "fab"){
+                    print '<hr style="margin-top:9%">';
+                    print '<input type="submit" class="button" value="Modifier" >';
+                    print '<a href="'.DOL_URL_ROOT.'/product/listproduitfab.php?leftmenu=product&type=0&idmenu=37"><input type="button" class="button" value="Annuler" ></a>';
+                    print '<hr>';
+                }
             }else{
                 print '<input type="submit" class="button" value="'.$langs->trans("Save").'">';
                 print '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
@@ -4004,7 +4044,20 @@ else
 	}
         // Fiche en mode visu
         else
-		{
+	{
+            
+            $sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
+            $resuUser = $db->query($sql_user_group);
+            $reug = $db->fetch_object($resuUser);
+            if($reug->fk_usergroup){
+                $sql_group = "select code from ".MAIN_DB_PREFIX."usergroup where rowid = ".$reug->fk_usergroup;
+                $resuug = $db->query($sql_group);
+                $resug = $db->fetch_object($resuug);
+                if(($resug->code == "fab" && !$status_product) || ($resug->code == "fab" && $action != 'edit') || ($resug->code == "fab" && $action != 'create')) {
+                    exit;
+                }
+            }
+            
             $showbarcode = empty($conf->barcode->enabled) ? 0 : 1;
             if (!empty($conf->global->MAIN_USE_ADVANCED_PERMS) && empty($user->rights->barcode->lire_advance)) $showbarcode = 0;
 
