@@ -104,6 +104,8 @@ $label_security_check = empty($conf->global->MAIN_SECURITY_ALLOW_UNSECURED_LABEL
 
 if (!empty($user->socid)) $socid = $user->socid;
 
+$isEmployeeFab = testUserEmployeeFabricant();
+
 $object = new Product($db);
 $object->type = $type; // so test later to fill $usercancxxx is correct
 $extrafields = new ExtraFields($db);
@@ -585,8 +587,12 @@ if (empty($reshook))
                                     . " barcode = '".GETPOST('barcode')."', "
                                     . " description = '".GETPOST('desc')."', "
                                     . " tobuy = 1 , "
+                                    . " weight = ".(!empty(GETPOST('weight'))?GETPOST('weight'):0)." , "
+                                    . " weight_units = ".(!empty(GETPOST('weight_units'))?GETPOST('weight_units'):0)." , "
+                                    . " tobuy = 1 , "
                                     . " ref_fab_frs = '".GETPOST('ref_fab_frs')."' where rowid =  ".$id;
                             $db->query($sqlUpdateProdType);
+                            
                         }else{
                             $object->product_type_txt = "simple";
                         }
@@ -629,6 +635,80 @@ if (empty($reshook))
                         
                         if($status_product && $status_product == "produitfab") {
                             
+                            $upload_dir = $conf->product->multidir_output[$conf->entity];
+                            $sdir = $conf->product->multidir_output[$conf->entity];
+                            if (! empty($conf->global->PRODUCT_USE_OLD_PATH_FOR_PHOTO)) {
+                                if (version_compare(DOL_VERSION, '3.8.0', '<')){
+                                    $dir = $sdir .'/'. get_exdir($id,2) . $id ."/photos";
+                                }else {
+                                    $dir = $sdir .'/'. get_exdir($id,2,0,0,$object,'product') . $id ."/photos";
+                                }
+                            } else {
+                                $principaleProd = "select ref from ".MAIN_DB_PREFIX."product where rowid= ".$id;
+                                $resRefss = $db->getRows($principaleProd);
+
+                                $dir = $sdir .'/'.dol_sanitizeFileName(GETPOST("ref"));
+                            }
+
+                            if (! file_exists($dir)) {
+                                dol_mkdir($dir);
+                            }
+                            
+                            //if(!empty($_FILES['icone_prod_1']['name']) || !empty($_FILES['icone_prod_2']['name'])){
+                            if(!empty($_FILES['icone_prod_1']['name'])){
+                                $iconePosted1 = $_FILES['icone_prod_1']['name'];
+                                $ext1 = strtolower(explode(".",$iconePosted1)[1]);
+                                $icone1 = cleanSpecialChar(cleanString(explode(".",$iconePosted1)[0])).'.'.$ext1;
+                                $target_file1 = $dir."/".$icone1;
+                                move_uploaded_file($_FILES["icone_prod_1"]["tmp_name"], $target_file1);
+
+                                $sqlUpdateIcon1 = "update ".MAIN_DB_PREFIX."product set "
+                                . " icone_prod_1 = '".$icone1."' where rowid =  ".$id;
+                                $db->query($sqlUpdateIcon1);
+                                if (image_format_supported($target_file1) == 1)
+                                {
+                                    $imgThumbSmall = vignette($target_file1, 200, 100, '_small', 80, "thumbs");
+                                    $imgThumbMini  = vignette($target_file1, 300, 150, '_mini', 80, "thumbs");
+                                }
+                            }else{
+                                copy(DOL_DOCUMENT_ROOT."/product/defaulticon/icon1.png", $dir."/icon1.png");
+                                $sqlUpdateIcon1 = "update ".MAIN_DB_PREFIX."product set "
+                                . " icone_prod_1 = 'icon1.png' where rowid =  ".$id;
+                                $db->query($sqlUpdateIcon1);
+                                if (image_format_supported($dir."/icon1.png") == 1)
+                                {
+                                    $imgThumbSmall = vignette($dir."/icon1.png", 200, 100, '_small', 80, "thumbs");
+                                    $imgThumbMini  = vignette($dir."/icon1.png", 300, 150, '_mini', 80, "thumbs");
+                                }
+                            }
+
+                            if(!empty($_FILES['icone_prod_2']['name'])){
+                                $iconePosted2 = $_FILES['icone_prod_2']['name'];
+                                $ext2 = strtolower(explode(".",$iconePosted2)[1]);
+                                $icone2 = cleanSpecialChar(cleanString(explode(".",$iconePosted2)[0])).'.'.$ext2;
+                                $target_file2 = $dir."/".$icone2;
+                                move_uploaded_file($_FILES["icone_prod_2"]["tmp_name"], $target_file2);
+                                $sqlUpdateIcon2 = "update ".MAIN_DB_PREFIX."product set "
+                                . " icone_prod_2 = '".$icone2."' where rowid =  ".$id;
+                                $db->query($sqlUpdateIcon2);
+                                if (image_format_supported($target_file2) == 1)
+                                {
+                                    $imgThumbSmall = vignette($target_file2, 200, 100, '_small', 80, "thumbs");
+                                    $imgThumbMini  = vignette($target_file2, 300, 150, '_mini', 80, "thumbs");
+                                }
+                            }else{
+                                copy(DOL_DOCUMENT_ROOT."/product/defaulticon/icon2.png", $dir."/icon2.png");
+                                $sqlUpdateIcon2 = "update ".MAIN_DB_PREFIX."product set "
+                                . " icone_prod_2 = 'icon2.png' where rowid =  ".$id;
+                                $db->query($sqlUpdateIcon2);
+                                if (image_format_supported($dir."/icon2.png") == 1)
+                                {
+                                    $imgThumbSmall = vignette($dir."/icon2.png", 200, 100, '_small', 80, "thumbs");
+                                    $imgThumbMini  = vignette($dir."/icon2.png", 300, 150, '_mini', 80, "thumbs");
+                                }
+                            }
+                                
+                            //}
                         }else{
                             $object->update($id, $user);
                         }
@@ -808,6 +888,57 @@ if (empty($reshook))
                         $curdt = date('Y-m-d H:i:s');
                         $sqlUpdateStock = "INSERT INTO ".MAIN_DB_PREFIX."product_stock (tms,fk_product,fk_entrepot,reel) values ('".$curdt."',".$id.",1,".$totalQtyfab.")";
                         $db->query($sqlUpdateStock);
+                    }
+                }
+                
+                if(!empty($_FILES['icone_prod_1']['name']) || !empty($_FILES['icone_prod_2']['name'])){
+                    $upload_dir = $conf->product->multidir_output[$conf->entity];
+                    $sdir = $conf->product->multidir_output[$conf->entity];
+                    if (! empty($conf->global->PRODUCT_USE_OLD_PATH_FOR_PHOTO)) {
+                        if (version_compare(DOL_VERSION, '3.8.0', '<')){
+                            $dir = $sdir .'/'. get_exdir($object->id,2) . $object->id ."/photos";
+                        }else {
+                            $dir = $sdir .'/'. get_exdir($object->id,2,0,0,$object,'product') . $object->id ."/photos";
+                        }
+                    } else {
+                        $principaleProd = "select ref from ".MAIN_DB_PREFIX."product where rowid= ".$object->id;
+                        $resRefss = $db->getRows($principaleProd);
+
+                        $dir = $sdir .'/'.dol_sanitizeFileName(GETPOST("ref"));
+                    }
+                    if (! file_exists($dir)) {
+                        dol_mkdir($dir);
+                    }
+                    if(!empty($_FILES['icone_prod_1']['name'])){
+                        $iconePosted1 = $_FILES['icone_prod_1']['name'];
+                        $ext1 = strtolower(explode(".",$iconePosted1)[1]);
+                        $icone1 = cleanSpecialChar(cleanString(explode(".",$iconePosted1)[0])).'.'.$ext1;
+                        $target_file1 = $dir."/".$icone1;
+                        move_uploaded_file($_FILES["icone_prod_1"]["tmp_name"], $target_file1);
+
+                        $sqlUpdateIcon1 = "update ".MAIN_DB_PREFIX."product set "
+                        . " icone_prod_1 = '".$icone1."' where rowid =  ".$object->id;
+                        $db->query($sqlUpdateIcon1);
+                        if (image_format_supported($target_file1) == 1)
+                        {
+                            $imgThumbSmall = vignette($target_file1, 200, 100, '_small', 80, "thumbs");
+                            $imgThumbMini  = vignette($target_file1, 300, 150, '_mini', 80, "thumbs");
+                        }
+                    }
+                    if(!empty($_FILES['icone_prod_2']['name'])){
+                        $iconePosted2 = $_FILES['icone_prod_2']['name'];
+                        $ext2 = strtolower(explode(".",$iconePosted2)[1]);
+                        $icone2 = cleanSpecialChar(cleanString(explode(".",$iconePosted2)[0])).'.'.$ext2;
+                        $target_file2 = $dir."/".$icone2;
+                        move_uploaded_file($_FILES["icone_prod_2"]["tmp_name"], $target_file2);
+                        $sqlUpdateIcon2 = "update ".MAIN_DB_PREFIX."product set "
+                        . " icone_prod_2 = '".$icone2."' where rowid =  ".$object->id;
+                        $db->query($sqlUpdateIcon2);
+                        if (image_format_supported($target_file2) == 1)
+                        {
+                            $imgThumbSmall = vignette($target_file2, 200, 100, '_small', 80, "thumbs");
+                            $imgThumbMini  = vignette($target_file2, 300, 150, '_mini', 80, "thumbs");
+                        }
                     }
                 }
                 
@@ -1360,54 +1491,54 @@ else
         }else{
             $url_post_action = $_SERVER["PHP_SELF"];
         }
-        print '<form action="'.$url_post_action.'" method="POST">';
+        print '<form action="'.$url_post_action.'" method="POST" enctype="multipart/form-data">';
         print '<input type="hidden" name="token" value="'.newToken().'">';
         print '<input type="hidden" name="action" value="add">';
         print '<input type="hidden" name="type" value="'.$type.'">'."\n";
-		if (!empty($modCodeProduct->code_auto))
-			print '<input type="hidden" name="code_auto" value="1">';
-		if (!empty($modBarCodeProduct->code_auto))
-			print '<input type="hidden" name="barcode_auto" value="1">';
-		print '<input type="hidden" name="backtopage" value="'.$backtopage.'">';
+        if (!empty($modCodeProduct->code_auto))
+                print '<input type="hidden" name="code_auto" value="1">';
+        if (!empty($modBarCodeProduct->code_auto))
+                print '<input type="hidden" name="barcode_auto" value="1">';
+        print '<input type="hidden" name="backtopage" value="'.$backtopage.'">';
 
-		if ($type == 1) {
-			$picto = 'service';
-			$title = $langs->trans("NewService");
-		}
-		else {
-			$picto = 'product';
-			$title = $langs->trans("NewProduct");
-                        $datapopup = GETPOST('dataPopupNewProduct');
-                        $commandeIdDraft = GETPOST('commandeIdDraft');
-                        $pageCommande = GETPOST('pageCommande');
-                        print '<input type="hidden" name="dataPopupNewProduct" value="'.$datapopup.'">';
-                        print '<input type="hidden" name="commandeIdDraft" value="'.$commandeIdDraft.'">';
-                        print '<input type="hidden" name="pageCommande" value="'.$pageCommande.'">';
-                        if($datapopup == 1) {
-                            print '<input type="hidden" name="datapopup" value="'.$datapopup.'">';
-                            print '<input type="hidden" name="commandeIdDraft" value="'.$commandeIdDraft.'">';
-                            print '<input type="hidden" name="pageCommande" value="'.$pageCommande.'">';
-                        ?>
-                        <style>
-                            #tmenu_tooltip {
-                                display:none!important;
-                            }
-                            .side-nav{
-                                display:none!important;
-                            }
-                            #topmenu-login-dropdown {
-                                display:none!important
-                            }
-                            .login_block_other {
-                                display:none!important
-                            }
-                            .table-fiche-title{
-                                display:none!important
-                            }
-                        </style>
-                        <?php
-                        }
-		}
+        if ($type == 1) {
+                $picto = 'service';
+                $title = $langs->trans("NewService");
+        }
+        else {
+            $picto = 'product';
+            $title = $langs->trans("NewProduct");
+            $datapopup = GETPOST('dataPopupNewProduct');
+            $commandeIdDraft = GETPOST('commandeIdDraft');
+            $pageCommande = GETPOST('pageCommande');
+            print '<input type="hidden" name="dataPopupNewProduct" value="'.$datapopup.'">';
+            print '<input type="hidden" name="commandeIdDraft" value="'.$commandeIdDraft.'">';
+            print '<input type="hidden" name="pageCommande" value="'.$pageCommande.'">';
+            if($datapopup == 1) {
+                print '<input type="hidden" name="datapopup" value="'.$datapopup.'">';
+                print '<input type="hidden" name="commandeIdDraft" value="'.$commandeIdDraft.'">';
+                print '<input type="hidden" name="pageCommande" value="'.$pageCommande.'">';
+            ?>
+            <style>
+                #tmenu_tooltip {
+                    display:none!important;
+                }
+                .side-nav{
+                    display:none!important;
+                }
+                #topmenu-login-dropdown {
+                    display:none!important
+                }
+                .login_block_other {
+                    display:none!important
+                }
+                .table-fiche-title{
+                    display:none!important
+                }
+            </style>
+            <?php
+            }
+        }
         $linkback = "";
         print load_fiche_titre($title, $linkback, $picto);
 
@@ -1659,14 +1790,13 @@ else
             print "</td></tr>";
         //}
 
-		if ($conf->categorie->enabled) {
-			// Categories
-			print '<tr><td>'.$langs->trans("Categories").'</td><td colspan="3">';
-			$cate_arbo = $form->select_all_categories(Categorie::TYPE_PRODUCT, '', 'parent', 64, 0, 1);
-			print $form->multiselectarray('categories', $cate_arbo, GETPOST('categories', 'array'), '', 0, '', 0, '100%');
-			print "</td></tr>";
-		}
-
+            if ($conf->categorie->enabled) {
+                    // Categories
+                    print '<tr><td>'.$langs->trans("Categories").'</td><td colspan="3">';
+                    $cate_arbo = $form->select_all_categories(Categorie::TYPE_PRODUCT, '', 'parent', 64, 0, 1);
+                    print $form->multiselectarray('categories', $cate_arbo, GETPOST('categories', 'array'), '', 0, '', 0, '100%');
+                    print "</td></tr>";
+            }
         print '</table>';
 
         print '<hr>';
@@ -1688,10 +1818,29 @@ else
 	{
             if($status_product && $status_product == "produitfab") { 
                 // Price
-                print '<tr><td class="titlefieldcreate fieldrequired">'.$langs->trans("SellingPrice").'(TTC)</td>';
+                print '<table>';
+                print '<tr><td>'.$langs->trans("SellingPrice").'(TTC)</td>';
                 print '<td><input name="price" class="maxwidth50" value="'.GETPOST("price", 'alpha').'" id="price_ttc">';
                 print $form->selectPriceBaseType('TTC', "price_base_type");
                 print '</td></tr>';
+                
+                print '<tr>'
+                . '<td style="width:8.5cm">ICONE 1</td>';
+                print '<td><input type="file" name="icone_prod_1" id="icone_prod_1" onchange="readURL(this,\'icss1\');" value="'.$hosts.DOL_URL_ROOT.'/product/defaulticon/icon1.png"><br>';
+                print '<img id="icss1" src="'.$hosts.DOL_URL_ROOT.'/product/defaulticon/icon1.png" style="width:30%"/>';
+                print '</td>'
+                . '</tr>';
+                
+                print '<tr>'
+                . '<td>ICONE 2</td>';
+                $hosts = $_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_NAME']."/";
+                print '<td><input type="file" name="icone_prod_2" id="icone_prod_2" onchange="readURL(this,\'icss2\');" value="'.$hosts.DOL_URL_ROOT.'/product/defaulticon/icon2.png"><br>';
+                print '<img id="icss2" src="'.$hosts.DOL_URL_ROOT.'/product/defaulticon/icon2.png" style="width:15%"/>';
+                print '</td>'
+                . '</tr>';
+                print '</table>';
+                print '<hr>';
+                
                 print '<div class="div-combination-pfab"><strong>'.$langs->trans("Newcombination").'</strong></div>';
                 print '<table class="border centpercent">';
                 print '<tr>';
@@ -1758,18 +1907,18 @@ else
                             <thead> 
                                 <tr> 
                                     <th class="text-align-left" style="display:none;">Numéro ligne</th> 
-                                    <th class="text-align-left">Supprimer ligne</th> 
-                                    <th class="text-align-left">Codebare</th> 
-                                    <th class="text-align-left">Couleur</th> 
-                                    <th class="text-align-left">Taille</th> 
-                                    <th class="text-align-left">Réf tissus</th> 
-                                    <th class="text-align-left">Quantité commandé</th> 
-                                    <th class="text-align-left">Quantité fabriqué</th> 
-                                    <th class="text-align-left">Poids</th> 
-                                    <th class="text-align-left">Composition</th>
-                                    <th class="text-align-left">Prix Yuan</th> 
-                                    <th class="text-align-left">Taux</th> 
-                                    <th class="text-align-left">Prix Euro</th> 
+                                    <th class="text-align-left" style="    border: 1px solid;">Supprimer ligne</th> 
+                                    <th class="text-align-left" style="    border: 1px solid;">Codebare</th> 
+                                    <th class="text-align-left" style="    border: 1px solid;">Couleur</th> 
+                                    <th class="text-align-left" style="    border: 1px solid;">Taille</th> 
+                                    <th class="text-align-left" style="    border: 1px solid;">Réf tissus</th> 
+                                    <th class="text-align-left" style="    border: 1px solid;">Quantité commandé</th> 
+                                    <th class="text-align-left" style="    border: 1px solid;">Quantité fabriqué</th> 
+                                    <th class="text-align-left" style="    border: 1px solid;">Poids</th> 
+                                    <th class="text-align-left" style="    border: 1px solid;">Composition (Séparer par virgule)</th>
+                                    <th class="text-align-left" style="    border: 1px solid;">Prix Yuan</th> 
+                                    <th class="text-align-left" style="    border: 1px solid;">Taux</th> 
+                                    <th class="text-align-left" style="    border: 1px solid;">Prix Euro</th> 
                                     
                                 </tr> 
                             </thead> 
@@ -2306,6 +2455,17 @@ else
                             const base10Superior = Math.ceil(total / 10) * 10; 
                             return base10Superior - total;
                         }
+                        function readURL(input,idImg) {
+                            if (input.files && input.files[0]) {
+                                var reader = new FileReader();
+                                reader.onload = function (e) {
+                                    $('#'+idImg).show();
+                                    $('#'+idImg)
+                                        .attr('src', e.target.result);
+                                };
+                                reader.readAsDataURL(input.files[0]);
+                            }
+                        }
                     </script>
                 <?php
             }else {
@@ -2765,16 +2925,9 @@ else
         if ($action == 'edit' && $usercancreate)
         {
             /* modif fred */
-            $sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
-            $resuUser = $db->query($sql_user_group);
-            $reug = $db->fetch_object($resuUser);
-            if($reug->fk_usergroup){
-                $sql_group = "select code from ".MAIN_DB_PREFIX."usergroup where rowid = ".$reug->fk_usergroup;
-                $resuug = $db->query($sql_group);
-                $resug = $db->fetch_object($resuug);
-                if($resug->code == "fab" && !$status_product) {
-                    exit;
-                }
+            $resu_fab = testUserFabricant();
+            if($resu_fab == "fab" && !$status_product) {
+                exit;
             }
             //WYSIWYG Editor
             require_once DOL_DOCUMENT_ROOT.'/core/class/doleditor.class.php';
@@ -2790,7 +2943,7 @@ else
             }else{
                 $action_edit = $_SERVER['PHP_SELF'].'?id='.$object->id;
             }
-            print '<form action="'.$action_edit.'" method="POST">'."\n";
+            print '<form action="'.$action_edit.'" method="POST" enctype="multipart/form-data">'."\n";
             print '<input type="hidden" name="token" value="'.newToken().'">';
             print '<input type="hidden" name="action" value="update">';
             print '<input type="hidden" name="id" value="'.$object->id.'">';
@@ -3199,23 +3352,55 @@ else
                     }
             }
             if($status_product && $status_product == "produitfab") { 
-                $user->update($user);
-                $sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
-                $resuUser = $db->query($sql_user_group);
-                $reug = $db->fetch_object($resuUser);
-                $resu_fab = "";
-                if ($reug->fk_usergroup) {
-                    $sql_group = "select code from ".MAIN_DB_PREFIX."usergroup where rowid = ".$reug->fk_usergroup;
-                    $resuug = $db->query($sql_group);
-                    $resug = $db->fetch_object($resuug);
-                    $resu_fab = $resug->code;
-                }
+                $resu_fab = testUserFabricant();
                 if($resu_fab !== "fab"){
-                    print '<tr><td class="titlefieldcreate fieldrequired">'.$langs->trans("SellingPrice").'(TTC)</td>';
+                    
+                    print '<table class="border allwidth">';
+                    
+                    print '<tr>';
+                    print '<td>'.$langs->trans("SellingPrice").'(TTC)ss</td>';
                     print '<td><input name="price" class="maxwidth50" value="'.price($object->price).'" id="price_ttc">';
                     print $form->selectPriceBaseType('TTC', "price_base_type");
-                    print '</td></tr>';
+                    print '</td>';
+                    print '</tr>';
                     
+                    print '<tr>';
+                    print '<td style="width:15.5%">ICONE 1</td>';
+                    $thumbs1Mini    = explode('.',$object->icone_prod_1)[0]."_mini.".explode('.',$object->icone_prod_1)[1];
+                    $thumbs1Small   = explode('.',$object->icone_prod_1)[0]."_small.".explode('.',$object->icone_prod_1)[1];
+                    // print_r ($conf->product->multidir_output[$conf->entity].'/'.$object->ref.'/'.$object->icone_prod_1);
+                    //print_r(resize_image($conf->product->multidir_output[$conf->entity].'/'.$object->ref.'/'.$object->icone_prod_1, 200, 200));
+                    
+                    
+                    print '<td style="width:15%"><input type="file" name="icone_prod_1" id="icone_prod_1" onchange="readURL(this,\'icss1\');">';
+                    print '</td>';
+                    print '<td>';
+                    print ' <a href="javascript:document_preview(\''.DOL_URL_ROOT.'/document.php?modulepart=product&attachment=0&file='.$object->ref.'/'.$object->icone_prod_1.'&entity=1\', \'image/jpeg\', \'Aperçu\')">'
+                            . '<img src="'.DOL_URL_ROOT.'/viewimage.php?modulepart=product&entity=1&file=/'.$object->ref.'/thumbs/'.$thumbs1Small.'"/ id="icss1">'
+                            . '</a>';
+                    print '</td>';
+                    print '</tr>';
+                    
+                    print '<tr>'
+                    . '<td>ICONE 2</td>';
+                    $thumbs2Mini    = explode('.',$object->icone_prod_2)[0]."_mini.".explode('.',$object->icone_prod_2)[1];
+                    $thumbs2Small   = explode('.',$object->icone_prod_2)[0]."_small.".explode('.',$object->icone_prod_2)[1];
+                    print '<td>';
+                    print '<input type="file" name="icone_prod_2" id="icone_prod_2" onchange="readURL(this,\'icss2\');">';
+                    
+                    print '</td>';
+                    print '<td>';
+                    print ' <a href="javascript:document_preview(\''.DOL_URL_ROOT.'/document.php?modulepart=product&attachment=0&file='.$object->ref.'/'.$object->icone_prod_2.'&entity=1\', \'image/jpeg\', \'Aperçu\')">'
+                            . '<img src="'.DOL_URL_ROOT.'/viewimage.php?modulepart=product&entity=1&file=/'.$object->ref.'/thumbs/'.$thumbs2Small.'" id="icss2"/>'
+                            . '</a>';
+                    print '</td>';
+                    print '</tr>';
+                    
+                    print '</table>';
+                    
+                    print '<hr>';
+                    print '<br>';
+                    print '<br>';
                     print '<div class="div-combination-pfab"><strong>'.$langs->trans("Newcombination").'</strong></div>';
                     print '<table class="border centpercent">';
                     print '<tr>';
@@ -3284,18 +3469,18 @@ else
                                 <thead>
                                     <tr>
                                         <th class="text-align-left" style="display:none;">Numéro ligne</th>
-                                        <th class="text-align-left">Supprimer ligne</th>
-                                        <th class="text-align-left">Codebare</th>
-                                        <th class="text-align-left">Couleur</th>
-                                        <th class="text-align-left">Taille</th>
-                                        <th class="text-align-left">Réf tissus</th>
-                                        <th class="text-align-left">Quantité commandé</th>
-                                        <th class="text-align-left">Quantité fabriqué</th>
-                                        <th class="text-align-left">Poids</th>
-                                        <th class="text-align-left">Composition</th>
-                                        <th class="text-align-left">Prix Yuan</th>
-                                        <th class="text-align-left">Taux</th>
-                                        <th class="text-align-left">Prix Euro</th>
+                                        <th class="text-align-left" style="    border: 1px solid;">Supprimer ligne</th>
+                                        <th class="text-align-left" style="    border: 1px solid;">Codebare</th>
+                                        <th class="text-align-left" style="    border: 1px solid;">Couleur</th>
+                                        <th class="text-align-left" style="    border: 1px solid;">Taille</th>
+                                        <th class="text-align-left" style="    border: 1px solid;">Réf tissus</th>
+                                        <th class="text-align-left" style="    border: 1px solid;">Quantité commandé</th>
+                                        <th class="text-align-left" style="    border: 1px solid;">Quantité fabriqué</th>
+                                        <th class="text-align-left" style="    border: 1px solid;">Poids</th>
+                                        <th class="text-align-left" style="    border: 1px solid;">Composition (Séparer par virgule)</th>
+                                        <th class="text-align-left" style="    border: 1px solid;">Prix Yuan</th>
+                                        <th class="text-align-left" style="    border: 1px solid;">Taux</th>
+                                        <th class="text-align-left" style="    border: 1px solid;">Prix Euro</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tbody"> 
@@ -3890,6 +4075,19 @@ else
                                 const base10Superior = Math.ceil(total / 10) * 10; 
                                 return base10Superior - total;
                             }
+                            function readURL(input,idImg) {
+                                if (input.files && input.files[0]) {
+                                    var reader = new FileReader();
+                                    reader.onload = function (e) {
+                                        $('#'+idImg).show();
+                                        $('#'+idImg)
+                                            .attr('src', e.target.result)
+                                            .width(200)
+                                            .height(100);
+                                    };
+                                    reader.readAsDataURL(input.files[0]);
+                                }
+                            }
                         </script> 
                     <?php
                     //print '<input type="submit" class="button" value="Modifier" style="float:right;"><br><br>';
@@ -3941,13 +4139,13 @@ else
                     }
                     print '<table class="border centpercent" border=1>';
                     print '<tr>';
-                    print '<td style="font-weight:bold;">Taille</td>';
-                    print '<td style="font-weight:bold;">Quantité Commandé</td>';
+                    print '<td style="font-weight:bold;" class="centered_text">Taille</td>';
+                    print '<td style="font-weight:bold;" class="centered_text">Quantité Commandé</td>';
                     print '<td style="font-weight:bold;">Réf tissus</td>';
-                    print '<td style="font-weight:bold;">Réf produit</td>';
-                    print '<td style="font-weight:bold;">Code barre</td>';
-                    print '<td style="font-weight:bold;background-color:#a9aaad;color:black">Quantité fabriqué</td>';
-                    print '<td style="font-weight:bold;background-color:#a9aaad;color:black">Poids</td>';
+                    print '<td style="font-weight:bold;" class="centered_text">Réf produit</td>';
+                    print '<td style="font-weight:bold;" class="centered_text">Code barre</td>';
+                    print '<td style="font-weight:bold;background-color:#a9aaad;color:black" class="centered_text">Quantité fabriqué</td>';
+                    print '<td style="font-weight:bold;background-color:#a9aaad;color:black" class="centered_text">Poids</td>';
                     print '<td style="font-weight:bold;background-color:#a9aaad;color:black">Composition</td>';
                     print '<td style="font-weight:bold;background-color:#a9aaad;color:black">Prix yuan</td>';
                     print '<td style="font-weight:bold;">Taux</td>';
@@ -3966,19 +4164,19 @@ else
                         $prodChild = new Product($db);
                         $prodChild->fetch($idChilds);
                         print "<tr>";
-                        print "<td>".$attributesVals['value']."</td>";
-                        print "<td>".($prodChild->quantite_commander?$prodChild->quantite_commander:0)."</td>";
+                        print "<td class='centered_text'>".$attributesVals['value']."</td>";
+                        print "<td class='centered_text'>".($prodChild->quantite_commander?$prodChild->quantite_commander:0)."</td>";
                         print "<td>".$prodChild->ref_tissus_couleur."</td>";
-                        print "<td>".$prodChild->ref."</td>";
-                        print "<td>".$prodChild->barcode."</td>";
-                        print "<td style='background-color:#a9aaad;color:black'>".($prodChild->quantite_fabriquer?$prodChild->quantite_fabriquer:0)."</td>";
-                        print "<td style='background-color:#a9aaad;color:black'>".$prodChild->weight_variant."</td>";
+                        print "<td class='centered_text'>".$prodChild->ref."</td>";
+                        print "<td class='centered_text'>".$prodChild->barcode."</td>";
+                        print "<td style='background-color:#a9aaad;color:black' class='centered_text'>".($prodChild->quantite_fabriquer?$prodChild->quantite_fabriquer:0)."</td>";
+                        print "<td style='background-color:#a9aaad;color:black' class='centered_text'>".$prodChild->weight_variant."</td>";
                         print "<td style='background-color:#a9aaad;color:black'>".$prodChild->composition."</td>";
-                        print "<td style='background-color:#a9aaad;color:black'>".($prodChild->price_yuan?$prodChild->price_yuan:0)." ¥</td>";
+                        print "<td style='background-color:#a9aaad;color:black'>".($prodChild->price_yuan?$prodChild->price_yuan:0)." </td>";
                         print "<td>".$prodChild->taux_euro_yuan."</td>";
-                        print "<td>".($prodChild->price_euro?$prodChild->price_euro:0)." €</td>";
-                        print "<td>".($prodChild->quantite_commander*$prodChild->price_yuan)." ¥</td>";
-                        print "<td>".($prodChild->quantite_commander*$prodChild->price_euro)." €</td>";
+                        print "<td>".($prodChild->price_euro?$prodChild->price_euro:0)." </td>";
+                        print "<td>".($prodChild->quantite_commander*$prodChild->price_yuan)." </td>";
+                        print "<td>".($prodChild->quantite_commander*$prodChild->price_euro)." </td>";
                         print "<td><a class='custom_button edit_row_declinaison' href='".DOL_URL_ROOT."/product/variant/edit.php?productid=".$prodChild->id."&parentId=".$object->id."&valColor=".$kaff."' target='_blank'>Modifier</a>"
                                 . "<a class='custom_button' href='".DOL_URL_ROOT."/barcode/printsheet.php?codebare=".$prodChild->barcode."&parentId=".$object->id."' target='_blank'>Imprimer code</a>";
                         if($resu_fab !== "fab"){
@@ -3997,8 +4195,8 @@ else
                     print '<td style="font-weight:bold;" colspan=3></td>';
                     print '<td style="font-weight:bold;">'.$grandTotalqtyFabriquer.'</td>';
                     print '<td style="font-weight:bold;" colspan=5></td>';
-                    print '<td style="font-weight:bold;">'.$grandTotalYuan.' ¥</td>';
-                    print '<td style="font-weight:bold;">'.$grandTotalEuro.' €</td>';
+                    print '<td style="font-weight:bold;">'.$grandTotalYuan.' </td>';
+                    print '<td style="font-weight:bold;">'.$grandTotalEuro.' </td>';
                     print '</tr>';
                    print '</table>';
                    $grandTotalCommanderYuan +=  $grandTotalYuan;
@@ -4015,10 +4213,10 @@ else
                 print '<td style="font-weight:bold;float:right;" >Total Quantité fabriqué : '.$grandTotalCommanderqtyFabriquer.'</td>';
                 print '</tr>';
                 print '<tr>';
-                print '<td style="font-weight:bold;float:right;" >Total yuan : '.$grandTotalCommanderYuan.' ¥</td>';
+                print '<td style="font-weight:bold;float:right;" >Total yuan : '.$grandTotalCommanderYuan.'</td>';
                 print '</tr>';
                 print '<tr>';
-                print '<td style="font-weight:bold;float:right;" >Total Euro : '.$grandTotalCommanderEuro.' €</td>';
+                print '<td style="font-weight:bold;float:right;" >Total Euro : '.$grandTotalCommanderEuro.'</td>';
                 print '</tr>';
                 print '</table>';
             }
@@ -4028,7 +4226,7 @@ else
             print '<div class="center">';
             if($status_product && $status_product == "produitfab") { 
                 if($resu_fab !== "fab"){
-                    print '<hr style="margin-top:9%">';
+                    print '<hr style="margin-top:15%">';
                     print '<input type="submit" class="button" value="Modifier" >';
                     print '<a href="'.DOL_URL_ROOT.'/product/listproduitfab.php?leftmenu=product&type=0&idmenu=37"><input type="button" class="button" value="Annuler" ></a>';
                     print '<hr>';
@@ -4046,16 +4244,9 @@ else
         else
 	{
             
-            $sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
-            $resuUser = $db->query($sql_user_group);
-            $reug = $db->fetch_object($resuUser);
-            if($reug->fk_usergroup){
-                $sql_group = "select code from ".MAIN_DB_PREFIX."usergroup where rowid = ".$reug->fk_usergroup;
-                $resuug = $db->query($sql_group);
-                $resug = $db->fetch_object($resuug);
-                if(($resug->code == "fab" && !$status_product) || ($resug->code == "fab" && $action != 'edit') || ($resug->code == "fab" && $action != 'create')) {
-                    exit;
-                }
+            $resu_fab = testUserFabricant();
+            if(($resu_fab == "fab" && !$status_product) || ($resu_fab == "fab" && $action != 'edit') || ($resu_fab == "fab" && $action != 'create')) {
+                exit;
             }
             
             $showbarcode = empty($conf->barcode->enabled) ? 0 : 1;

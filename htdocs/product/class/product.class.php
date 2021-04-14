@@ -355,6 +355,17 @@ class Product extends CommonObject
      * @var string
      */
     public $ref_tissus_couleur;
+    
+    /**
+     * icone prod 1 
+     * @var string
+     */
+    public $icone_prod_1;
+    /**
+     * icone prod 2
+     * @var string
+     */
+    public $icone_prod_2;
 
     //! Average price value for product entry into stock (PMP)
     public $pmp;
@@ -1217,6 +1228,8 @@ class Product extends CommonObject
             $sql .= ", product_type_txt = ".($this->product_type_txt != '' ? "'".$this->db->escape($this->product_type_txt)."'" : 'null');
             $sql .= ", ref_fab_frs = ".($this->ref_fab_frs != '' ? "'".$this->db->escape($this->ref_fab_frs)."'" : 'null');
             $sql .= ", ref_tissus_couleur = ".($this->ref_tissus_couleur != '' ? "'".$this->db->escape($this->ref_tissus_couleur)."'" : 'null');
+            $sql .= ", icone_prod_1 = ".($this->icone_prod_1 != '' ? "'".$this->db->escape($this->icone_prod_1)."'" : 'null');
+            $sql .= ", icone_prod_2 = ".($this->icone_prod_2 != '' ? "'".$this->db->escape($this->icone_prod_2)."'" : 'null');
             $sql .= ", price_yuan = ".($this->price_yuan != '' ? $this->db->escape($this->price_yuan) : 'null');
             $sql .= ", price_euro = ".($this->price_euro != '' ? $this->db->escape($this->price_euro) : 'null');
             $sql .= ", weight_variant = ".($this->weight_variant != '' ? $this->db->escape($this->weight_variant) : 'null');
@@ -2300,7 +2313,7 @@ class Product extends CommonObject
         $sql .= " accountancy_code_sell, accountancy_code_sell_intra, accountancy_code_sell_export, stock, pmp,";
         $sql .= " datec, tms, import_key, entity, desiredstock, tobatch, fk_unit,";
         $sql .= " fk_price_expression, price_autogen, transport_coefficient, transport_coast, coef_revient, cout_revient, ";
-        $sql .= " margin_product, suggest_price, coeff_vente_ttc, margin_rate_as_percentage, margin_ttc, brand_rate_in_percent, selling_price_excl_tax, vat_price, carte_metisse, quantite_commander, quantite_fabriquer, composition, price_yuan, product_type_txt, ref_fab_frs, ref_tissus_couleur, taux_euro_yuan, price_euro, weight_variant";
+        $sql .= " margin_product, suggest_price, coeff_vente_ttc, margin_rate_as_percentage, margin_ttc, brand_rate_in_percent, selling_price_excl_tax, vat_price, carte_metisse, quantite_commander, quantite_fabriquer, composition, price_yuan, product_type_txt, ref_fab_frs, ref_tissus_couleur,icone_prod_1,icone_prod_2, taux_euro_yuan, price_euro, weight_variant";
         
         $sql .= " FROM ".MAIN_DB_PREFIX."product";
         if ($id) {
@@ -2368,6 +2381,8 @@ class Product extends CommonObject
 		$this->weight_variant          = $obj->weight_variant;
 		$this->taux_euro_yuan          = $obj->taux_euro_yuan;
 		$this->ref_tissus_couleur          = $obj->ref_tissus_couleur;
+		$this->icone_prod_1          = $obj->icone_prod_1;
+		$this->icone_prod_2          = $obj->icone_prod_2;
                 $this->vat_price                     = $obj->vat_price;
                 $this->transport_coast               = $obj->transport_coast;
                 $this->default_vat_code = $obj->default_vat_code;

@@ -139,3 +139,7 @@
     border-collapse:collapse;
     border:none;
 }
+
+.centered_text{
+    text-align:center;
+}

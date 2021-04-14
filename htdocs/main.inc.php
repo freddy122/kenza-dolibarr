@@ -2513,7 +2513,11 @@ function printSearchForm($urlaction, $urlobject, $title, $htmlmorecss, $htmlinpu
 	return $ret;
 }
 
-// $digits devrait 12 chaine de caractère entier comme '252142547784'
+/**
+ * @author Fréderid id?web <freddyhat122@gmail.com>
+ * @param type $digits
+ * @return boolean
+ */
 function ean13valideFromDigit($digits)
 {
     $originalcheck = false;
@@ -2541,6 +2545,78 @@ function ean13valideFromDigit($digits)
     }
     // Return ean13 valide
     return $digits.$checksum;
+}
+
+/**
+ * @author Fréderic id?web <freddyhat122@gmail.com>
+ * @param type $digits
+ */
+function testUserFabricant()
+{
+    global $conf, $db, $user ;
+    $sql_user_group = "SELECT fk_user,fk_usergroup FROM ".MAIN_DB_PREFIX."usergroup_user WHERE fk_user = ".$user->id;
+    $resuUser = $db->query($sql_user_group);
+    $reug = $db->fetch_object($resuUser);
+    $resu_fab = false;
+    if ($reug->fk_usergroup) {
+        $sql_group = "select code from ".MAIN_DB_PREFIX."usergroup where rowid = ".$reug->fk_usergroup;
+        $resuug = $db->query($sql_group);
+        $resug = $db->fetch_object($resuug);
+        $resu_fab = $resug->code;
+    }
+    return $resu_fab;
+}
+
+/**
+ * @author Fréderic id?web <freddyhat122@gmail.com>
+ * @param type $digits
+ */
+function testUserEmployeeFabricant()
+{
+    global $conf, $db, $user ;
+    $sql_user_group = "SELECT fk_user,fk_usergroup FROM ".MAIN_DB_PREFIX."usergroup_user WHERE fk_user = ".$user->id;
+    $resuUser = $db->query($sql_user_group);
+    $reug = $db->fetch_object($resuUser);
+    $resu_fab = false;
+    if ($reug->fk_usergroup) {
+        $sql_group = "select code,rowid from ".MAIN_DB_PREFIX."usergroup where rowid = ".$reug->fk_usergroup;
+        $resuug = $db->query($sql_group);
+        $resug = $db->fetch_object($resuug);
+        if($resug->rowid == 5){
+            $resu_fab = true;
+        }
+    }
+    return $resu_fab;
+}
+
+function cleanString($text) {
+    $utf8 = array(
+        '/[áàâãªä]/u'   =>   'a',
+        '/[ÁÀÂÃÄ]/u'    =>   'A',
+        '/[ÍÌÎÏ]/u'     =>   'I',
+        '/[íìîï]/u'     =>   'i',
+        '/[éèêë]/u'     =>   'e',
+        '/[ÉÈÊË]/u'     =>   'E',
+        '/[óòôõºö]/u'   =>   'o',
+        '/[ÓÒÔÕÖ]/u'    =>   'O',
+        '/[úùûü]/u'     =>   'u',
+        '/[ÚÙÛÜ]/u'     =>   'U',
+        '/ç/'           =>   'c',
+        '/Ç/'           =>   'C',
+        '/ñ/'           =>   'n',
+        '/Ñ/'           =>   'N',
+        '/–/'           =>   '-', // UTF-8 hyphen to "normal" hyphen
+        '/[’‘‹›‚]/u'    =>   ' ', // Literally a single quote
+        '/[“”«»„]/u'    =>   ' ', // Double quote
+        '/ /'           =>   ' ', // nonbreaking space (equiv. to 0x160)
+    );
+    return preg_replace(array_keys($utf8), array_values($utf8), $text);
+}
+
+function cleanSpecialChar($string) {
+   $string = str_replace(' ', '-', $string); // Replaces all spaces with hyphens.
+
+   return preg_replace('/[^A-Za-z0-9\-]/', '', $string); // Removes special chars.
 }
 
 if (!function_exists("llxFooter"))
