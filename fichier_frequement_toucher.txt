@@ -1,0 +1,102 @@
+modified:   htdocs/barcode/printsheet_okok.php
+        modified:   htdocs/core/lib/functions.lib.php
+        modified:   htdocs/core/menus/standard/eldy.lib.php
+        modified:   htdocs/cyberoffice/server_product.inc_sauv04032021.php
+        modified:   htdocs/fourn/class/fournisseur.product.class.php
+        modified:   htdocs/index.php
+        modified:   htdocs/langs/fr_FR/products.lang
+        modified:   htdocs/main.inc.php
+        modified:   htdocs/product/card.php
+        modified:   htdocs/product/class/product.class.php
+        modified:   htdocs/product/index.php
+        modified:   htdocs/product/list.php
+        modified:   htdocs/product/listproduitfab.php
+        modified:   htdocs/variants/card.php
+        modified:   htdocs/variants/class/ProductAttribute.class.php
+        modified:   htdocs/variants/class/ProductAttributeValue.class.php
+        modified:   htdocs/variants/class/ProductCombination.class.php
+        modified:   htdocs/variants/combinations.php
+        modified:   htdocs/variants/create_val.php
+        modified:   nbproject/project.xml
+        modified:   sql_add_field_qty_commander_qty_fab_prix_yuan_composition.sql
+		
+		
+		
+-------------------------------------------------------------------------------------------------------
+------------------ 06-04-2021------------------------------------------------------------------
+Modification ajout onglet fichier jointe dans produit_fab
+--------------------------------------------------------------------------------------------------
+C:\wamp64\www\kenza\htdocs\product\card.php
+C:\wamp64\www\kenza\htdocs\product\document.php
+C:\wamp64\www\kenza\htdocs\product\class\product.class.php
+C:\wamp64\www\kenza\htdocs\core\tpl\document_actions_post_headers.tpl.php
+C:\wamp64\www\kenza\htdocs\core\class\html.formfile.class.php
+C:\wamp64\www\kenza\htdocs\barcode\printsheet.php
+C:\wamp64\www\kenza\htdocs\variants\class\ProductCombination.class.php
+
+
+
+C:\wamp64\www\kenza\htdocs\product\class\product.class.php
+C:\wamp64\www\kenza\htdocs\variants\class\ProductAttributeValue.class.php
+C:\wamp64\www\kenza\htdocs\variants\class\ProductCombination.class.php
+C:\wamp64\www\kenza\htdocs\product\card.php
+C:\wamp64\www\kenza\htdocs\variants\card.php
+C:\wamp64\www\kenza\htdocs\variants\create_val.php
+
+------------------------------------------------------------------------------
+----------------- 08-04-2021----------------------------------------------------------
+------------------------------------------------
+htdocs/product/ajax/updateOtherInfo.php 
+htdocs/product/ajax/updaterefcolor.php 
+htdocs/product/card.php 
+htdocs/product/listproduitfab.php 
+htdocs/product/variant/edit.php 
+htdocs/product/document.php
+
+
+
+- (ok)  Un champ pièce jointe à côté aussi qui permettra d'uploader une image
+- (ok)  Mettre un boutton modifier sur la fiche de modification
+- (ok)  Récuperation prix de vente dans l'étiquette à imprimé
+- (ok)  Faire apparaitre le prix de vente dans la fiche de modification
+- (ok)  convertir yuan en euro côté fabricant
+- (ok)  copie valeur quantité fabriqué, quantité commandé, taux dans la formulaire de création déclinaison
+- (ok)  Récuperer le produit fab créer dans la création commande fournisseur
+- Copier les valeurs modifié pendant la modification côté fabricant et admin
+
+
+- (ok)  Un champ pièce jointe à côté aussi qui permettra d'uploader une image / photo du tissus (idem normalement ca doit être la même pièce jointe copier pour toutes les déclinaisons de la même couleur)Affichage Poids et taux Yuan avec 3 chiffres après la virgule (0,250)
+- (ok)  Mettre un boutton modifier sur la fiche de modification
+- (ok)  Récuperation prix de vente dans l'étiquette à imprimé
+- (ok)  Faire apparaitre le prix de vente dans la fiche de modification
+- (ok)  convertir yuan en euro côté fabricant
+- (ok)  Récuperer le produit créer dans la création commande fournisseur
+- Copier les valeurs modifié côté fabricant et admin
+
+
+- (OK bug corrigé) un libelé et 2 version d'impression ( libele a été changer entre temps
+- (OK en local mais pas encore livré il reste la rédimensionnement de l'image sur le rendu ) En dessous, comme  tu le vois, il nous faudra 2 champs image, DONC il faudra créer 2 nouveau champs sur la fiche produit, onglet principale avec :
+  1 champs appelé ICONE 1 étiquette avec champs upload (une fois uploadé tu peux prévisualiser ou modifier l'image)
+  1 champs appelé ICONE 2 étiquette avec champs upload (une fois uploadé tu peux prévisualiser ou modifier l'image)
+- pouvoir joindre une pièce jointe à une couleur dans le formulaire de création / modif d'une couleur voir capture, il faut placer le champs d'upload dans la popup
+- champ de saisie composition
+
+
+- (ok) upload de 2 icone par défaut  automatique lors de la création produit fab
+- (ok) pouvoir joindre une pièce jointe à une couleur dans le formulaire de création / modif d'une couleur voir capture, il faut placer le champs d'upload dans la popup
+- pour le champ de saisie composition, il faut vraiment le séparer par virgule c'est la seul solution possible
+
+
+testemp /  testemp123!
+
+ci joint le video demo
+voici les tâches que j'ai fait aujourd'hui
+- configuration étiquette (livré mais sur chrome l'image logo kenza n'apparait pas dans l'apperçu avant impression, pourtant sur les autres navigateur ça apparait) 
+- ajout filtre reference fournisseur 
+
+
+/*taille etiquette*/
+3,70cm * 2,50cm
+
+/* taille etiquette prod fab*/
+3cm*8cm

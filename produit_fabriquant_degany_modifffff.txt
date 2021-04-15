@@ -1,0 +1,37 @@
+modified:   htdocs/core/menus/standard/eldy.lib.php
+modified:   htdocs/cyberoffice/server_product.inc_sauv04032021.php
+modified:   htdocs/fourn/class/fournisseur.product.class.php
+modified:   htdocs/langs/fr_FR/products.lang
+modified:   htdocs/main.inc.php
+modified:   htdocs/product/card.php
+modified:   htdocs/product/class/product.class.php
+modified:   htdocs/product/index.php
+modified:   htdocs/product/list.php
+modified:   htdocs/variants/card.php
+modified:   htdocs/variants/class/ProductAttributeValue.class.php
+modified:   htdocs/variants/class/ProductCombination.class.php
+modified:   htdocs/variants/combinations.php
+modified:   htdocs/variants/create_val.php
+ htdocs/product/variant/
+        htdocs/theme/eldy/css/
+
+
+1 euro -> 7.7
+x -> 100
+freddy/freddy122
+x = 100/7.7
+freddy /testfreddy / 
+
+1 -> 0.13
+2 -> x
+fredfab / fredfab2
+
+llx_product_price -> fk_product
+llx_actioncomm ->fk_element
+llx_product_extrafields  ->fk_objecgt
+
+llx_product_attribute_combination -> fk_product_child
+llx_product_attribute_combination2val -> à supprimer si on connait la valeur de l'identifiant combination
+llx_product -> rowid
+
+update  `llx_product_attribute_value` set type_taille = 3 WHERE type_taille = "bebe"
