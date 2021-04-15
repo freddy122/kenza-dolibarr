@@ -554,7 +554,7 @@ class ProductCombination
          * @author Fréderic id web <freddyhat122@gmail.com>
          */
         public function getAttributeValueById($idAttrVal) {
-            $sql = "select rowid,ref,value,code_couleur,fk_product_attribute from ".MAIN_DB_PREFIX."product_attribute_value where rowid = ".$idAttrVal;
+            $sql = "select rowid,ref,value,code_couleur,fk_product_attribute,image_couleur from ".MAIN_DB_PREFIX."product_attribute_value where rowid = ".$idAttrVal;
             $query = $this->db->query($sql);
             return (array)$this->db->fetch_object($query);
         }

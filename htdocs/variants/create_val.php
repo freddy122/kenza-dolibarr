@@ -20,10 +20,15 @@ require '../main.inc.php';
 require 'class/ProductAttribute.class.php';
 require 'class/ProductAttributeValue.class.php';
 
+/*modif fred*/
+require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/images.lib.php';
+
 $id = GETPOST('id', 'int');
 $ref = GETPOST('ref', 'alpha');
 $value = GETPOST('value', 'alpha');
 $code_couleur = GETPOST('code_couleur', 'alpha');
+$image_couleur = GETPOST('image_couleur', 'alpha');
 $type_taille = GETPOST('type_taille', 'alpha');
 $dataPopup = GETPOST('data_popup');
 
@@ -87,9 +92,29 @@ if ($action == 'add')
 		setEventMessages($langs->trans('ErrorFieldsRequired'), null, 'errors');
 	} else {
 		$objectval->fk_product_attribute = $object->id;
-		$objectval->ref = $ref;
+		$objectval->ref = cleanSpecialChar(cleanString($ref));
 		$objectval->value = $value;
 		$objectval->code_couleur = $code_couleur;
+                
+                if(!empty($_FILES['image_couleur']['name'])){
+                    $sdir = $conf->medias->multidir_output[$conf->entity];
+                    $dir = $sdir .'/'.dol_sanitizeFileName(strtoupper(cleanSpecialChar(cleanString($ref))));
+                    if(!file_exists($dir)){
+                        dol_mkdir($dir);
+                    }
+                    $img_coul_posted = $_FILES['image_couleur']['name'];
+                    $extimg          = strtolower(explode(".",$img_coul_posted)[1]);
+                    $imgscoul        = cleanSpecialChar(cleanString(explode(".",$img_coul_posted)[0])).'.'.$extimg;
+                    $target_file     = $dir."/".$imgscoul;
+                    move_uploaded_file($_FILES["image_couleur"]["tmp_name"], $target_file);
+
+                    $objectval->image_couleur = $imgscoul;
+                    if (image_format_supported($target_file) == 1)
+                    {
+                        $imgThumbSmall = vignette($target_file, 150, 150, '_small', 50, "thumbs");
+                        $imgThumbMini  = vignette($target_file, 200, 200, '_mini', 80, "thumbs");
+                    }
+                }
 		$objectval->type_taille = $type_taille;
 
 		if ($objectval->create($user) > 0) {
@@ -147,7 +172,7 @@ dol_fiche_end();
 print '<br>';
 
 
-print '<form action="'.$_SERVER["PHP_SELF"].'" method="POST">';
+print '<form action="'.$_SERVER["PHP_SELF"].'" method="POST" enctype="multipart/form-data">';
 print '<input type="hidden" name="token" value="'.newToken().'">';
 print '<input type="hidden" name="action" value="add">';
 print '<input type="hidden" name="id" value="'.$object->id.'">';
@@ -162,7 +187,7 @@ dol_fiche_head();
             <input type ="hidden" value="<?php echo $dataPopup ; ?>" name="data_popup">
             <tr>
                     <td class="titlefield fieldrequired"><label for="ref"><?php echo $langs->trans('Ref') ?></label></td>
-                    <td><input id="ref" type="text" name="ref" value="<?php echo $ref ?>" required></td>
+                    <td><input id="ref" type="text" name="ref" value="<?php echo cleanSpecialChar(cleanString($ref)); ?>" required></td>
             </tr>
             <tr>
                     <td class="fieldrequired"><label for="value"><?php echo $langs->trans('Label') ?></label></td>
@@ -182,18 +207,40 @@ dol_fiche_head();
             <?php endif; ?>
             <?php if($object->id == 1): ?>
                 <tr>
-                        <td class="fieldrequired"><label for="value">Couleur</label></td>
-                        <td>
-                            <input id="code_couleur" type="text" name="code_couleur" value="#fff152">
-                            <input id="code_couleur_pick" type="color"  value="#fff152" >
-                            <script>
-                                $(document).ready(function(){
-                                    $("#code_couleur_pick").change(function(){
-                                        $("#code_couleur").val($(this).val());
-                                    });
+                    <td class="fieldrequired"><label for="value">Couleur</label></td>
+                    <td>
+                        <input id="code_couleur" type="text" name="code_couleur" value="#fff152">
+                        <input id="code_couleur_pick" type="color"  value="#fff152" >
+                        <script>
+                            $(document).ready(function(){
+                                $("#code_couleur_pick").change(function(){
+                                    $("#code_couleur").val($(this).val());
                                 });
-                            </script>
-                        </td>
+                            });
+                        </script>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="fieldrequired"><label for="value">Image couleur</label></td>
+                    <td>
+                        <input id="image_couleur" type="file" name="image_couleur" onchange="readURL(this);" /> 
+                        <img id="blah" src="#" style="display: none;"/>
+                        <script>
+                            function readURL(input) {
+                                if (input.files && input.files[0]) {
+                                    var reader = new FileReader();
+                                    reader.onload = function (e) {
+                                        $('#blah').show();
+                                        $('#blah')
+                                            .attr('src', e.target.result)
+                                            .width(200)
+                                            .height(100);
+                                    };
+                                    reader.readAsDataURL(input.files[0]);
+                                }
+                            }
+                        </script>
+                    </td>
                 </tr>
             <?php endif; ?>
 	</table>

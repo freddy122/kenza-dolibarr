@@ -60,6 +60,12 @@ class ProductAttributeValue
 	public $code_couleur;
         
 	/**
+	 * Attribute value image_couleur
+	 * @var string
+	 */
+	public $image_couleur;
+        
+	/**
 	 * Attribute value type_taille
 	 * @var string
 	 */
@@ -88,7 +94,7 @@ class ProductAttributeValue
 	 */
 	public function fetch($valueid)
 	{
-		$sql = "SELECT rowid, fk_product_attribute, ref, value, code_couleur, type_taille FROM ".MAIN_DB_PREFIX."product_attribute_value WHERE rowid = ".(int) $valueid." AND entity IN (".getEntity('product').")";
+		$sql = "SELECT rowid, fk_product_attribute, ref, value, code_couleur, image_couleur, type_taille FROM ".MAIN_DB_PREFIX."product_attribute_value WHERE rowid = ".(int) $valueid." AND entity IN (".getEntity('product').")";
 
 		$query = $this->db->query($sql);
 
@@ -106,12 +112,72 @@ class ProductAttributeValue
 		$this->fk_product_attribute = $obj->fk_product_attribute;
 		$this->ref = $obj->ref;
 		$this->code_couleur = $obj->code_couleur;
+		$this->image_couleur = $obj->image_couleur;
 		$this->type_taille = $obj->type_taille;
 		$this->value = $obj->value;
 
 		return 1;
 	}
+        
+        
+        /**
+	 * Returns all product attribute values of a product attribute
+	 *
+	 * @param int $prodattr_id Product attribute id
+	 * @param bool $only_used Fetch only used attribute values
+	 * @return ProductAttributeValue[]
+	 */
+	public function fetchAllByProductAttributeBackendValue($prodattr_id, $only_used = false)
+	{
+		$return = array();
 
+		$sql = 'SELECT ';
+
+		if ($only_used) {
+			$sql .= 'DISTINCT ';
+		}
+
+		$sql .= 'v.fk_product_attribute, v.rowid, v.ref, v.value, v.code_couleur, v.image_couleur, v.type_taille FROM '.MAIN_DB_PREFIX.'product_attribute_value v ';
+
+		if ($only_used) {
+			$sql .= 'LEFT JOIN '.MAIN_DB_PREFIX.'product_attribute_combination2val c2v ON c2v.fk_prod_attr_val = v.rowid ';
+			$sql .= 'LEFT JOIN '.MAIN_DB_PREFIX.'product_attribute_combination c ON c.rowid = c2v.fk_prod_combination ';
+			$sql .= 'LEFT JOIN '.MAIN_DB_PREFIX.'product p ON p.rowid = c.fk_product_child ';
+		}
+
+		$sql .= 'WHERE v.fk_product_attribute = '.(int) $prodattr_id;
+
+		if ($only_used) {
+			$sql .= ' AND c2v.rowid IS NOT NULL AND p.tosell = 1';
+		}
+                
+               $sql .= ' ORDER BY v.rowid  desc';
+                
+		$query = $this->db->query($sql);
+
+		while ($result = $this->db->fetch_object($query)) {
+			$tmp = new ProductAttributeValue($this->db);
+			$tmp->fk_product_attribute = $result->fk_product_attribute;
+			$tmp->id = $result->rowid;
+			$tmp->ref = $result->ref;
+			$tmp->value = $result->value;
+                        if($result->code_couleur){
+                            $tmp->code_couleur = $result->code_couleur;
+                        }
+                        if($result->image_couleur){
+                            $tmp->image_couleur = $result->image_couleur;
+                        }
+                        if($result->type_taille){
+                            $tmp->type_taille = $result->type_taille;
+                        }
+			$return[] = $tmp;
+		}
+
+		return $return;
+	}
+        
+        
+        
 	/**
 	 * Returns all product attribute values of a product attribute
 	 *
@@ -129,7 +195,7 @@ class ProductAttributeValue
 			$sql .= 'DISTINCT ';
 		}
 
-		$sql .= 'v.fk_product_attribute, v.rowid, v.ref, v.value, v.code_couleur,v.type_taille FROM '.MAIN_DB_PREFIX.'product_attribute_value v ';
+		$sql .= 'v.fk_product_attribute, v.rowid, v.ref, v.value, v.code_couleur, v.image_couleur, v.type_taille FROM '.MAIN_DB_PREFIX.'product_attribute_value v ';
 
 		if ($only_used) {
 			$sql .= 'LEFT JOIN '.MAIN_DB_PREFIX.'product_attribute_combination2val c2v ON c2v.fk_prod_attr_val = v.rowid ';
@@ -162,6 +228,9 @@ class ProductAttributeValue
                         if($result->code_couleur){
                             $tmp->code_couleur = $result->code_couleur;
                         }
+                        if($result->image_couleur){
+                            $tmp->image_couleur = $result->image_couleur;
+                        }
                         if($result->type_taille){
                             $tmp->type_taille = $result->type_taille;
                         }
@@ -186,9 +255,9 @@ class ProductAttributeValue
 		// Ref must be uppercase
 		$this->ref = strtoupper($this->ref);
 
-		$sql = "INSERT INTO ".MAIN_DB_PREFIX."product_attribute_value (fk_product_attribute, ref, value, entity, code_couleur, type_taille)
+		$sql = "INSERT INTO ".MAIN_DB_PREFIX."product_attribute_value (fk_product_attribute, ref, value, entity, code_couleur, image_couleur, type_taille)
 		VALUES ('".(int) $this->fk_product_attribute."', '".$this->db->escape($this->ref)."',
-		'".$this->db->escape($this->value)."', ".(int) $this->entity.", '".$this->db->escape($this->code_couleur)."', '".$this->db->escape($this->type_taille)."')";
+		'".$this->db->escape($this->value)."', ".(int) $this->entity.", '".$this->db->escape($this->code_couleur)."', '".$this->db->escape($this->image_couleur)."', '".$this->db->escape($this->type_taille)."')";
 
 		$query = $this->db->query($sql);
 
@@ -214,7 +283,7 @@ class ProductAttributeValue
 
 		$sql = "UPDATE ".MAIN_DB_PREFIX."product_attribute_value
 		SET fk_product_attribute = '".(int) $this->fk_product_attribute."', ref = '".$this->db->escape($this->ref)."',
-		value = '".$this->db->escape($this->value)."', code_couleur = '".$this->db->escape($this->code_couleur)."', type_taille ='".$this->db->escape($this->type_taille)."' WHERE rowid = ".(int) $this->id;
+		value = '".$this->db->escape($this->value)."', code_couleur = '".$this->db->escape($this->code_couleur)."', image_couleur = '".$this->db->escape($this->image_couleur)."', type_taille ='".$this->db->escape($this->type_taille)."' WHERE rowid = ".(int) $this->id;
 
 		if ($this->db->query($sql)) {
 			return 1;

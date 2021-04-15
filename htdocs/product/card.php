@@ -3376,7 +3376,7 @@ else
                     print '</td>';
                     print '<td>';
                     print ' <a href="javascript:document_preview(\''.DOL_URL_ROOT.'/document.php?modulepart=product&attachment=0&file='.$object->ref.'/'.$object->icone_prod_1.'&entity=1\', \'image/jpeg\', \'Aperçu\')">'
-                            . '<img src="'.DOL_URL_ROOT.'/viewimage.php?modulepart=product&entity=1&file=/'.$object->ref.'/thumbs/'.$thumbs1Small.'"/ id="icss1">'
+                            . '<img src="'.DOL_URL_ROOT.'/viewimage.php?modulepart=product&entity=1&file=/'.$object->ref.'/thumbs/'.$thumbs1Small.'" id="icss1" />'
                             . '</a>';
                     print '</td>';
                     print '</tr>';
@@ -4130,10 +4130,22 @@ else
                     $valcoul = explode('_',$kaff);
                     $attributes = $prodcombi->getAttributeById($valcoul[0]);
                     $attributesValue = $prodcombi->getAttributeValueById($valcoul[1]);
-                    $cdCouleur = !empty($attributesValue["code_couleur"]) ? '<span style="background-color:'.$attributesValue["code_couleur"].'">&nbsp;&nbsp;&nbsp;&nbsp;</span>' : "";
+                    
+                    if(!empty($attributesValue['image_couleur'])){
+                        $thumbsMini    = explode('.',$attributesValue['image_couleur'])[0]."_mini.".explode('.',$attributesValue['image_couleur'])[1];
+                        $thumbsSmall   = explode('.',$attributesValue['image_couleur'])[0]."_small.".explode('.',$attributesValue['image_couleur'])[1];
+
+                        $imgAttributesValue = DOL_URL_ROOT.'/viewimage.php?modulepart=medias&entity=1&file=/'. strtoupper($attributesValue['ref']).'/thumbs/'.$thumbsSmall;
+                    }else{
+                        $imgAttributesValue = "";
+                    }
+                    $cdCouleur = !empty($attributesValue["code_couleur"]) ? '<div style="border-radius: 51%;background-position: center;background-image: url(\''.$imgAttributesValue.'\');background-color:'.$attributesValue["code_couleur"].';width:90px;height:90px;"></div>' : "";
                     print '<br>';
                     if(!empty($attributesValue["value"])){
-                        print '<div class="div-combination-pfab"><strong>'.$attributes["label"]."  ".$attributesValue["value"].'&nbsp;&nbsp;'.$cdCouleur.'</strong></div>';
+                        print '<div class="div-combination-pfab" style="display: flex;margin: auto 35% 1%;">';
+                        print '<div style="margin-top:9%;"><strong>'.$attributes["label"]."  ".$attributesValue["value"].'&nbsp;&nbsp;</strong></div>' ;
+                        print '<div>'.$cdCouleur.'</div>' ;
+                        print '</div>';
                     }else{
                         print '<div class="div-combination-pfab"><strong>Aucun couleur</strong></div>';
                     }

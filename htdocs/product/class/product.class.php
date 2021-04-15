@@ -1286,11 +1286,13 @@ class Product extends CommonObject
                             //include_once DOL_DOCUMENT_ROOT . '/core/lib/files.lib.php';
                             //$res = dol_move($olddir, $newdir);
                             // do not use dol_move with directory
-                            $res = @rename($olddir, $newdir);
-                            if (!$res) {
-                                $langs->load("errors");
-                                $this->error = $langs->trans('ErrorFailToRenameDir', $olddir, $newdir);
-                                $error++;
+                            if($this->product_type_txt !== "fab"){
+                                $res = @rename($olddir, $newdir);
+                                if (!$res) {
+                                    $langs->load("errors");
+                                    $this->error = $langs->trans('ErrorFailToRenameDir', $olddir, $newdir);
+                                    $error++;
+                                }
                             }
                         }
                     }

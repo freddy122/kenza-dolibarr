@@ -19,6 +19,10 @@
 require '../main.inc.php';
 require 'class/ProductAttribute.class.php';
 require 'class/ProductAttributeValue.class.php';
+/*modif fred*/
+/* for document */
+require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/images.lib.php';
 
 $id = GETPOST('id', 'int');
 $valueid = GETPOST('valueid', 'alpha');
@@ -57,9 +61,30 @@ if ($_POST) {
 		}
 	} elseif ($action == 'update') {
 		if ($objectval->fetch($valueid) > 0) {
-			$objectval->ref = $ref;
+			$objectval->ref = cleanSpecialChar(cleanString($ref));
 			$objectval->value = GETPOST('value', 'alpha');
 			$objectval->code_couleur = GETPOST('code_couleur', 'alpha');
+                        
+                        if(!empty($_FILES['image_couleur']['name'])){
+                            $sdir = $conf->medias->multidir_output[$conf->entity];
+                            $dir = $sdir .'/'.dol_sanitizeFileName(strtoupper(cleanSpecialChar(cleanString($ref))));
+                            if(!file_exists($dir)){
+                                dol_mkdir($dir);
+                            }
+                            $img_coul_posted = $_FILES['image_couleur']['name'];
+                            $extimg          = strtolower(explode(".",$img_coul_posted)[1]);
+                            $imgscoul        = cleanSpecialChar(cleanString(explode(".",$img_coul_posted)[0])).'.'.$extimg;
+                            $target_file     = $dir."/".$imgscoul;
+                            move_uploaded_file($_FILES["image_couleur"]["tmp_name"], $target_file);
+
+                            $objectval->image_couleur = $imgscoul;
+                            if (image_format_supported($target_file) == 1)
+                            {
+                                $imgThumbSmall = vignette($target_file, 150, 150, '_small', 50, "thumbs");
+                                $imgThumbMini  = vignette($target_file, 200, 200, '_mini', 80, "thumbs");
+                            }
+                        }
+                        
 			$objectval->type_taille = GETPOST('type_taille', 'alpha');
 
 			if (empty($objectval->ref))
@@ -107,16 +132,24 @@ if ($confirm == 'yes') {
 	}
 	elseif ($action == 'confirm_deletevalue')
 	{
-		if ($objectval->fetch($valueid) > 0) {
-			if ($objectval->delete() < 1) {
-				setEventMessages($langs->trans('CoreErrorMessage'), $objectval->errors, 'errors');
-			} else {
-				setEventMessages($langs->trans('RecordSaved'), null, 'mesgs');
-			}
+            if ($objectval->fetch($valueid) > 0) {
+                if ($objectval->delete() < 1) {
+                    setEventMessages($langs->trans('CoreErrorMessage'), $objectval->errors, 'errors');
+                } else {
+                    $sdir = $conf->medias->multidir_output[$conf->entity];
+                    $dir = $sdir .'/'.dol_sanitizeFileName(strtoupper(cleanSpecialChar(cleanString($objectval->ref))));
+                    if(file_exists($dir)){
+                        array_map('unlink', glob("$dir/*.*"));
+                        array_map('unlink', glob("$dir/thumbs/*.*"));
+                        rmdir($dir."/thumbs");
+                        rmdir($dir);
+                    }
+                    setEventMessages($langs->trans('RecordSaved'), null, 'mesgs');
+                }
 
-			header('Location: '.dol_buildpath('/variants/card.php?id='.$object->id, 2));
-			exit();
-		}
+                header('Location: '.dol_buildpath('/variants/card.php?id='.$object->id, 2));
+                exit();
+            }
 	}
 }
 
@@ -233,7 +266,7 @@ if ($action == 'edit') {
 	print load_fiche_titre($langs->trans("PossibleValues"));
 
 	if ($action == 'edit_value') {
-		print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'">';
+		print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'" enctype="multipart/form-data">';
 		print '<input type="hidden" name="token" value="'.newToken().'">';
 		print '<input type="hidden" name="action" value="update">';
 		print '<input type="hidden" name="id" value="'.$id.'">';
@@ -247,6 +280,7 @@ if ($action == 'edit') {
 	print '<th class="liste_titre">'.$langs->trans('Value').'</th>';
         if($object->id == 1) {
             print '<th class="liste_titre">Code couleur</th>';
+            print '<th class="liste_titre">Image couleur</th>';
         }
         if($object->id == 2) {
             print '<th class="liste_titre">Type taille</th>';
@@ -254,7 +288,7 @@ if ($action == 'edit') {
 	print '<th class="liste_titre"></th>';
 	print '</tr>';
 
-	foreach ($objectval->fetchAllByProductAttribute($object->id) as $attrval) {
+	foreach ($objectval->fetchAllByProductAttributeBackendValue($object->id) as $attrval) {
 		print '<tr class="oddeven">';
 		if ($action == 'edit_value' && ($valueid == $attrval->id)) {
 			?>
@@ -282,6 +316,29 @@ if ($action == 'edit') {
                                         </script>
                                     </td>
                                 <?php endif ?>
+                                <?php if($object->id == 1): ?>
+                                    <td>
+                                        <input id="image_couleur" type="file" name="image_couleur" onchange="readURL(this);" /> 
+                                        <?php 
+                                            $thumbsMini    = explode('.',$attrval->image_couleur)[0]."_mini.".explode('.',$attrval->image_couleur)[1];
+                                            $thumbsSmall   = explode('.',$attrval->image_couleur)[0]."_small.".explode('.',$attrval->image_couleur)[1];
+                                        ?>
+                                        <img id="blah<?php echo $attrval->id; ?>" src="<?php echo DOL_URL_ROOT.'/viewimage.php?modulepart=medias&entity=1&file=/'. strtoupper($attrval->ref).'/thumbs/'.$thumbsSmall; ?>" style="width:12%;"/>
+                                        <script>
+                                            function readURL(input) {
+                                                if (input.files && input.files[0]) {
+                                                    var reader = new FileReader();
+                                                    reader.onload = function (e) {
+                                                        $('#blah<?php echo $attrval->id; ?>').show();
+                                                        $('#blah<?php echo $attrval->id; ?>')
+                                                            .attr('src', e.target.result);
+                                                    };
+                                                    reader.readAsDataURL(input.files[0]);
+                                                }
+                                            }
+                                        </script>
+                                    </td>
+                                <?php endif ?>
 				<td class="right">
 					<input type="submit" value="<?php echo $langs->trans('Save') ?>" class="button">
 					&nbsp; &nbsp;
@@ -293,7 +350,12 @@ if ($action == 'edit') {
 				<td><?php echo dol_htmlentities($attrval->ref) ?></td>
 				<td><?php echo dol_htmlentities($attrval->value) ?></td>
                                 <?php if($object->id == 1): ?>
+                                        <?php 
+                                            $thumbsMini    = explode('.',$attrval->image_couleur)[0]."_mini.".explode('.',$attrval->image_couleur)[1];
+                                            $thumbsSmall   = explode('.',$attrval->image_couleur)[0]."_small.".explode('.',$attrval->image_couleur)[1];
+                                        ?>
                                     <td><?php echo dol_htmlentities($attrval->code_couleur) ?><p style="width:10px;height:10px; background-color:<?php echo dol_htmlentities($attrval->code_couleur) ?>; "></p></td>
+                                    <td><img id="blah" src="<?php echo DOL_URL_ROOT.'/viewimage.php?modulepart=medias&entity=1&file=/'. strtoupper($attrval->ref).'/thumbs/'.$thumbsSmall; ?>" style="width:12%;"/></td>
 				<?php endif;?>
                                 <?php if($object->id == 2): ?>
                                     <td><?php 
