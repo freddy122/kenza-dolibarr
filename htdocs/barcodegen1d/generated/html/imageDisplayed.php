@@ -9,7 +9,7 @@ use BarcodeBakery\Barcode\BCGean13;
 use BarcodeBakery\Barcode\BCGisbn;
 use BarcodeBakery\Barcode\BCGupca;
 
-$font = new BCGFontFile(__DIR__ . '/font/Arial.ttf', 12);
+$font = new BCGFontFile(__DIR__ . '/font/Arial.ttf', 14);
 $colorFront = new BCGColor(0, 0, 0);
 $colorBack = new BCGColor(255, 255, 255);
 

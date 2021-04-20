@@ -318,25 +318,71 @@ if ($action == 'edit') {
                                 <?php endif ?>
                                 <?php if($object->id == 1): ?>
                                     <td>
-                                        <input id="image_couleur" type="file" name="image_couleur" onchange="readURL(this);" /> 
+                                        <input id="image_couleur" type="file" name="image_couleur" id="image_couleur" onchange="readURL(this,'blah<?php echo $attrval->id; ?>','image_couleur');" /><i style="color:red;font-size: 12px;">(Taille max : 2M, Largeur max : 1200, Hauteur max : 1200, Type  : jpeg, jpg, png, gif </i> <br>
                                         <?php 
                                             $thumbsMini    = explode('.',$attrval->image_couleur)[0]."_mini.".explode('.',$attrval->image_couleur)[1];
                                             $thumbsSmall   = explode('.',$attrval->image_couleur)[0]."_small.".explode('.',$attrval->image_couleur)[1];
                                         ?>
                                         <img id="blah<?php echo $attrval->id; ?>" src="<?php echo DOL_URL_ROOT.'/viewimage.php?modulepart=medias&entity=1&file=/'. strtoupper($attrval->ref).'/thumbs/'.$thumbsSmall; ?>" style="width:12%;"/>
                                         <script>
-                                            function readURL(input) {
+                                            function readURL(input,idImg,idInput) {
                                                 if (input.files && input.files[0]) {
-                                                    var reader = new FileReader();
-                                                    reader.onload = function (e) {
-                                                        $('#blah<?php echo $attrval->id; ?>').show();
-                                                        $('#blah<?php echo $attrval->id; ?>')
-                                                            .attr('src', e.target.result);
-                                                    };
-                                                    reader.readAsDataURL(input.files[0]);
+                                                    var file = input.files && input.files[0];
+                                                    var img = new Image();
+                                                    img.src = window.URL.createObjectURL(file);
+                                                    if((file.type !== "image/gif" && file.type !== "image/jpeg" && file.type !== "image/png") || file.size > 2000000)  {
+                                                        //$("#updates_products").prop('disabled',true);
+                                                        $("#"+idInput).val('');
+                                                        $( "#dialogerror" ).dialog({
+                                                            modal: true,
+                                                            height: 200,
+                                                            width: 800,
+                                                            resizable: true,
+                                                            title: "Erreur",
+                                                            open: function(){
+                                                               $("#error_file_to_large").html('- Type de fichier non autorisé (<span style="color:red">'+file.type+' </span>) ou taille très grand (<span style="color:red">'+bytesToSize(file.size)+'</span>) <br>- Les types de fichier autoriser sont : <strong>jpeg, jpg, png, gif</strong><br>- La taille autorisé est inférieur à <strong>2M<strong>');
+                                                            }
+                                                        }).prev(".ui-dialog-titlebar").css({"color":"red","font-weight":"bold"});
+                                                    }else{
+                                                        //$("#updates_products").prop('disabled',false);
+                                                        img.onload = function(e){
+                                                            if(img.width > 1200 && (img.width > 1200 || img.height > 1200)){
+                                                                //$("#updates_products").prop('disabled',true);
+                                                                $("#"+idInput).val('');
+                                                                $( "#dialogerror" ).dialog({
+                                                                    modal: true,
+                                                                    height: 150,
+                                                                    width: 750,
+                                                                    resizable: true,
+                                                                    title: "Erreur",
+                                                                    open: function(){
+                                                                       $("#error_file_to_large").html('- La taille de l\'image que vous avez uploadé est de <span style="color:red;">'+img.width+' x '+img.height+'</span>,  ce qui n\'est pas autoriser');
+                                                                    }
+                                                                }).prev(".ui-dialog-titlebar").css({"color":"red","font-weight":"bold"});
+                                                            }else{
+                                                                $("#updates_products").prop('disabled',false);
+                                                                var reader = new FileReader();
+                                                                reader.onload = function (e) {
+                                                                    $('#'+idImg).show();
+                                                                    $('#'+idImg)
+                                                                        .attr('src', e.target.result);
+                                                                };
+                                                                reader.readAsDataURL(input.files[0]);
+                                                            }
+                                                        };
+                                                    }
                                                 }
                                             }
+                                            function bytesToSize(bytes) {
+                                                var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                                                if (bytes == 0) return '0 Byte';
+                                                var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+                                                return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+                                            }
                                         </script>
+                                        <div id="dialogerror" title="Basic dialog" style="display:none;">
+                                            <p id="error_file_to_large"></p>
+                                        </div> 
                                     </td>
                                 <?php endif ?>
 				<td class="right">

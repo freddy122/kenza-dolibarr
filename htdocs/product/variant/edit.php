@@ -304,7 +304,7 @@ if($_POST['posted_id']){
             <td colspan="3">
                 <label for="qtyfab" class="custom_label">Quantité fabriqué</label>
                 <input 
-                    type="text" 
+                    type="number" 
                     id="qtyfab" 
                     name="quantite_fabriquer" 
                     class="maxwidth200" 
@@ -327,7 +327,7 @@ if($_POST['posted_id']){
         <tr>
             <td colspan="3">
                 <label for="weight" class="custom_label">Poids</label>
-                <input type="text" id="weight" name="weight_variant" class="maxwidth200" maxlength="128" value="<?php echo ($weight_variant?$weight_variant:$prodChild->weight_variant); ?>">
+                <input type="text" id="weight" name="weight_variant" class="maxwidth200" maxlength="128" value="<?php echo ($weight_variant ? $weight_variant: ($prodChild->weight_variant == 0.000 ? "": str_replace(".",",",$prodChild->weight_variant))); ?>">
             </td>
         </tr>
         <tr>

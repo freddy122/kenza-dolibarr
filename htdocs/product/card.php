@@ -249,7 +249,7 @@ if (empty($reshook))
                 }
             }
         }
-       //print_r($generatedBareCode);die();
+        //print_r($generatedBareCode);die();
         /*if ($result >= 0)
         {*/
         if(!empty(GETPOST('barcode'))) {
@@ -1825,16 +1825,16 @@ else
                 print '</td></tr>';
                 
                 print '<tr>'
-                . '<td style="width:8.5cm">ICONE 1</td>';
-                print '<td><input type="file" name="icone_prod_1" id="icone_prod_1" onchange="readURL(this,\'icss1\');" value="'.$hosts.DOL_URL_ROOT.'/product/defaulticon/icon1.png"><br>';
+                . '<td style="width:8.5cm">ICONE 1 <br><i style="color:red">Taille max autorisé : 2M <br>Largeur max autorisé : 900<br>Hauteur max autorisé : 300 <br>Type de fichier autorisé : jpeg, jpg, png, gif</i></td>';
+                print '<td><input type="file" name="icone_prod_1" id="icone_prod_1" onchange="readURL(this,\'icss1\',\'icone_prod_1\');" value="'.$hosts.DOL_URL_ROOT.'/product/defaulticon/icon1.png"><br>';
                 print '<img id="icss1" src="'.$hosts.DOL_URL_ROOT.'/product/defaulticon/icon1.png" style="width:30%"/>';
                 print '</td>'
                 . '</tr>';
                 
                 print '<tr>'
-                . '<td>ICONE 2</td>';
+                . '<td>ICONE 2 <br><i style="color:red">Taille max autorisé : 2M <br>Largeur max autorisé : 900<br>Hauteur max autorisé : 300 <br>Type de fichier autorisé : jpeg, jpg, png, gif </i></td>';
                 $hosts = $_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_NAME']."/";
-                print '<td><input type="file" name="icone_prod_2" id="icone_prod_2" onchange="readURL(this,\'icss2\');" value="'.$hosts.DOL_URL_ROOT.'/product/defaulticon/icon2.png"><br>';
+                print '<td><input type="file" name="icone_prod_2" id="icone_prod_2" onchange="readURL(this,\'icss2\',\'icone_prod_2\');" value="'.$hosts.DOL_URL_ROOT.'/product/defaulticon/icon2.png"><br>';
                 print '<img id="icss2" src="'.$hosts.DOL_URL_ROOT.'/product/defaulticon/icon2.png" style="width:15%"/>';
                 print '</td>'
                 . '</tr>';
@@ -2455,18 +2455,64 @@ else
                             const base10Superior = Math.ceil(total / 10) * 10; 
                             return base10Superior - total;
                         }
-                        function readURL(input,idImg) {
+                        function readURL(input,idImg,idInput) {
                             if (input.files && input.files[0]) {
-                                var reader = new FileReader();
-                                reader.onload = function (e) {
-                                    $('#'+idImg).show();
-                                    $('#'+idImg)
-                                        .attr('src', e.target.result);
-                                };
-                                reader.readAsDataURL(input.files[0]);
+                                var file = input.files && input.files[0];
+                                var img = new Image();
+                                img.src = window.URL.createObjectURL(file);
+                                if((file.type !== "image/gif" && file.type !== "image/jpeg" && file.type !== "image/png") || file.size > 2000000)  {
+                                    //$("#create_products").prop('disabled',true);
+                                    $("#"+idInput).val('');
+                                    $( "#dialogerror" ).dialog({
+                                        modal: true,
+                                        height: 200,
+                                        width: 800,
+                                        resizable: true,
+                                        title: "Erreur",
+                                        open: function(){
+                                           $("#error_file_to_large").html('- Type de fichier non autorisé (<span style="color:red">'+file.type+' </span>) ou taille très grand (<span style="color:red">'+bytesToSize(file.size)+'</span>) <br>- Les types de fichier autoriser sont : <strong>jpeg, jpg, png, gif</strong><br>- La taille autorisé est inférieur à <strong>2M</strong>');
+                                        }
+                                    }).prev(".ui-dialog-titlebar").css({"color":"red","font-weight":"bold"});
+                                }else{
+                                    $("#create_products").prop('disabled',false);
+                                    img.onload = function(e){
+                                        if(img.width > 900 && (img.width > 900  || img.height > 300)){
+                                            //$("#create_products").prop('disabled',true);
+                                            $("#"+idInput).val('');
+                                            $( "#dialogerror" ).dialog({
+                                                modal: true,
+                                                height: 150,
+                                                width: 750,
+                                                resizable: true,
+                                                title: "Erreur",
+                                                open: function(){
+                                                   $("#error_file_to_large").html('- L\'image que vous avez uploadé est de <span style="color:red;">'+img.width+' x '+img.height+'</span>,  ce qui n\'est pas autoriser <br>');
+                                                }
+                                            }).prev(".ui-dialog-titlebar").css({"color":"red","font-weight":"bold"});
+                                        }else{
+                                            $("#create_products").prop('disabled',false);
+                                            var reader = new FileReader();
+                                            reader.onload = function (e) {
+                                                $('#'+idImg).show();
+                                                $('#'+idImg)
+                                                    .attr('src', e.target.result);
+                                            };
+                                            reader.readAsDataURL(input.files[0]);
+                                        }
+                                    };
+                                }
                             }
                         }
+                        function bytesToSize(bytes) {
+                            var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                            if (bytes == 0) return '0 Byte';
+                            var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+                            return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+                        }
                     </script>
+                    <div id="dialogerror" title="Basic dialog" style="display:none;">
+                        <p id="error_file_to_large"></p>
+                    </div>
                 <?php
             }else {
                 print '<table class="border centpercent">';
@@ -2896,7 +2942,7 @@ else
                     dol_fiche_end();
 
                     print '<div class="center">';
-                    print '<input type="submit" class="button" value="'.$langs->trans("Create").'">';
+                    print '<input type="submit" class="button" id="create_products" value="'.$langs->trans("Create").'">';
                     print ' &nbsp; &nbsp; ';
                     if($datapopup != 1) {
                         if($status_product && $status_product == "produitfab") {
@@ -3365,33 +3411,33 @@ else
                     print '</tr>';
                     
                     print '<tr>';
-                    print '<td style="width:15.5%">ICONE 1</td>';
+                    print '<td style="width:15.5%">ICONE 1 <br><i style="color:red">Taille max autorisé : 2M <br>Largeur max autorisé : 900<br>Hauteur max autorisé : 300 <br>Type de fichier autorisé : jpeg, jpg, png, gif </i></td>';
                     $thumbs1Mini    = explode('.',$object->icone_prod_1)[0]."_mini.".explode('.',$object->icone_prod_1)[1];
                     $thumbs1Small   = explode('.',$object->icone_prod_1)[0]."_small.".explode('.',$object->icone_prod_1)[1];
                     // print_r ($conf->product->multidir_output[$conf->entity].'/'.$object->ref.'/'.$object->icone_prod_1);
                     //print_r(resize_image($conf->product->multidir_output[$conf->entity].'/'.$object->ref.'/'.$object->icone_prod_1, 200, 200));
                     
                     
-                    print '<td style="width:15%"><input type="file" name="icone_prod_1" id="icone_prod_1" onchange="readURL(this,\'icss1\');">';
+                    print '<td style="width:15%"><input type="file" name="icone_prod_1" id="icone_prod_1" onchange="readURL(this,\'icss1\',\'icone_prod_1\');">';
                     print '</td>';
                     print '<td>';
                     print ' <a href="javascript:document_preview(\''.DOL_URL_ROOT.'/document.php?modulepart=product&attachment=0&file='.$object->ref.'/'.$object->icone_prod_1.'&entity=1\', \'image/jpeg\', \'Aperçu\')">'
-                            . '<img src="'.DOL_URL_ROOT.'/viewimage.php?modulepart=product&entity=1&file=/'.$object->ref.'/thumbs/'.$thumbs1Small.'" id="icss1" />'
+                            . '<img src="'.DOL_URL_ROOT.'/viewimage.php?modulepart=product&entity=1&file=/'.$object->ref.'/thumbs/'.$thumbs1Small.'" id="icss1" style="width:15%"/>'
                             . '</a>';
                     print '</td>';
                     print '</tr>';
                     
                     print '<tr>'
-                    . '<td>ICONE 2</td>';
+                    . '<td>ICONE 2 <br><i style="color:red">Taille max autorisé : 2M <br>Largeur max autorisé : 900<br>Hauteur max autorisé : 300 <br>Type de fichier autorisé : jpeg, jpg, png, gif</i></td>';
                     $thumbs2Mini    = explode('.',$object->icone_prod_2)[0]."_mini.".explode('.',$object->icone_prod_2)[1];
                     $thumbs2Small   = explode('.',$object->icone_prod_2)[0]."_small.".explode('.',$object->icone_prod_2)[1];
                     print '<td>';
-                    print '<input type="file" name="icone_prod_2" id="icone_prod_2" onchange="readURL(this,\'icss2\');">';
+                    print '<input type="file" name="icone_prod_2" id="icone_prod_2" onchange="readURL(this,\'icss2\',\'icone_prod_2\');">';
                     
                     print '</td>';
                     print '<td>';
                     print ' <a href="javascript:document_preview(\''.DOL_URL_ROOT.'/document.php?modulepart=product&attachment=0&file='.$object->ref.'/'.$object->icone_prod_2.'&entity=1\', \'image/jpeg\', \'Aperçu\')">'
-                            . '<img src="'.DOL_URL_ROOT.'/viewimage.php?modulepart=product&entity=1&file=/'.$object->ref.'/thumbs/'.$thumbs2Small.'" id="icss2"/>'
+                            . '<img src="'.DOL_URL_ROOT.'/viewimage.php?modulepart=product&entity=1&file=/'.$object->ref.'/thumbs/'.$thumbs2Small.'" id="icss2" style="width:15%"/>'
                             . '</a>';
                     print '</td>';
                     print '</tr>';
@@ -3983,8 +4029,8 @@ else
                                         .dialog({
                                             autoOpen: false,
                                             modal: true,
-                                            height: 500,
-                                            width: 500,
+                                            height: 600,
+                                            width: 850,
                                             resizable: true,
                                             title: pagetitle,
                                             open: function(event, ui) {
@@ -4075,20 +4121,64 @@ else
                                 const base10Superior = Math.ceil(total / 10) * 10; 
                                 return base10Superior - total;
                             }
-                            function readURL(input,idImg) {
+                            function readURL(input,idImg,idInput) {
                                 if (input.files && input.files[0]) {
-                                    var reader = new FileReader();
-                                    reader.onload = function (e) {
-                                        $('#'+idImg).show();
-                                        $('#'+idImg)
-                                            .attr('src', e.target.result)
-                                            .width(200)
-                                            .height(100);
-                                    };
-                                    reader.readAsDataURL(input.files[0]);
+                                    var file = input.files && input.files[0];
+                                    var img = new Image();
+                                    img.src = window.URL.createObjectURL(file);
+                                    if((file.type !== "image/gif" && file.type !== "image/jpeg" && file.type !== "image/png") || file.size > 2000000)  {
+                                        //$("#updates_products").prop('disabled',true);
+                                        $("#"+idInput).val('');
+                                        $( "#dialogerror" ).dialog({
+                                            modal: true,
+                                            height: 200,
+                                            width: 800,
+                                            resizable: true,
+                                            title: "Erreur",
+                                            open: function(){
+                                               $("#error_file_to_large").html('- Type de fichier non autorisé (<span style="color:red">'+file.type+' </span>) ou taille très grand (<span style="color:red">'+bytesToSize(file.size)+'</span>) <br>- Les types de fichier autoriser sont : <strong>jpeg, jpg, png, gif</strong><br>- La taille autorisé est inférieur à <strong>2M<strong>');
+                                            }
+                                        }).prev(".ui-dialog-titlebar").css({"color":"red","font-weight":"bold"});
+                                    }else{
+                                        //$("#updates_products").prop('disabled',false);
+                                        img.onload = function(e){
+                                            if(img.width > 900 && (img.width > 900 || img.height > 300)){
+                                                //$("#updates_products").prop('disabled',true);
+                                                $("#"+idInput).val('');
+                                                $( "#dialogerror" ).dialog({
+                                                    modal: true,
+                                                    height: 150,
+                                                    width: 750,
+                                                    resizable: true,
+                                                    title: "Erreur",
+                                                    open: function(){
+                                                       $("#error_file_to_large").html('- La taille de l\'image que vous avez uploadé est de <span style="color:red;">'+img.width+' x '+img.height+'</span>,  ce qui n\'est pas autoriser');
+                                                    }
+                                                }).prev(".ui-dialog-titlebar").css({"color":"red","font-weight":"bold"});
+                                            }else{
+                                                $("#updates_products").prop('disabled',false);
+                                                var reader = new FileReader();
+                                                reader.onload = function (e) {
+                                                    $('#'+idImg).show();
+                                                    $('#'+idImg)
+                                                        .attr('src', e.target.result);
+                                                };
+                                                reader.readAsDataURL(input.files[0]);
+                                            }
+                                        };
+                                    }
                                 }
                             }
-                        </script> 
+                            function bytesToSize(bytes) {
+                                var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                                if (bytes == 0) return '0 Byte';
+                                var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+                                return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+                            }
+                    </script>
+                    <div id="dialogerror" title="Basic dialog" style="display:none;">
+                        <p id="error_file_to_large"></p>
+                    </div> 
                     <?php
                     //print '<input type="submit" class="button" value="Modifier" style="float:right;"><br><br>';
                 }else{
@@ -4163,7 +4253,7 @@ else
                     print '<td style="font-weight:bold;">Taux</td>';
                     print '<td style="font-weight:bold;">Prix euro</td>';
                     print '<td style="font-weight:bold;">Total yuan</td>';
-                    print '<td style="font-weight:bold;">Total euros</td>';
+                    print '<td style="font-weight:bold;">Total euro</td>';
                     print '<td style="font-weight:bold;" colspan=2>Action</td>';
                     print '</tr>';
                     $grandTotalYuan = 0;
@@ -4182,13 +4272,13 @@ else
                         print "<td class='centered_text'>".$prodChild->ref."</td>";
                         print "<td class='centered_text'>".$prodChild->barcode."</td>";
                         print "<td style='background-color:#a9aaad;color:black' class='centered_text'>".($prodChild->quantite_fabriquer?$prodChild->quantite_fabriquer:0)."</td>";
-                        print "<td style='background-color:#a9aaad;color:black' class='centered_text'>".$prodChild->weight_variant."</td>";
+                        print "<td style='background-color:#a9aaad;color:black' class='centered_text'>".($prodChild->weight_variant == 0.000 ? "": str_replace(".",",",$prodChild->weight_variant))."</td>";
                         print "<td style='background-color:#a9aaad;color:black'>".$prodChild->composition."</td>";
                         print "<td style='background-color:#a9aaad;color:black'>".($prodChild->price_yuan?$prodChild->price_yuan:0)." </td>";
                         print "<td>".$prodChild->taux_euro_yuan."</td>";
                         print "<td>".($prodChild->price_euro?$prodChild->price_euro:0)." </td>";
-                        print "<td>".($prodChild->quantite_commander*$prodChild->price_yuan)." </td>";
-                        print "<td>".($prodChild->quantite_commander*$prodChild->price_euro)." </td>";
+                        print "<td>".price($prodChild->quantite_commander*$prodChild->price_yuan)." </td>";
+                        print "<td>".price($prodChild->quantite_commander*$prodChild->price_euro)." </td>";
                         print "<td><a class='custom_button edit_row_declinaison' href='".DOL_URL_ROOT."/product/variant/edit.php?productid=".$prodChild->id."&parentId=".$object->id."&valColor=".$kaff."' target='_blank'>Modifier</a>"
                                 . "<a class='custom_button' href='".DOL_URL_ROOT."/barcode/printsheet.php?codebare=".$prodChild->barcode."&parentId=".$object->id."' target='_blank'>Imprimer code</a>";
                         if($resu_fab !== "fab"){
@@ -4203,12 +4293,12 @@ else
                     }
                     print '<tr>';
                     print '<td style="font-weight:bold;">Total</td>';
-                    print '<td style="font-weight:bold;">'.$grandTotalqtyCommander.'</td>';
+                    print '<td style="font-weight:bold;" class="centered_text">'.$grandTotalqtyCommander.'</td>';
                     print '<td style="font-weight:bold;" colspan=3></td>';
-                    print '<td style="font-weight:bold;">'.$grandTotalqtyFabriquer.'</td>';
+                    print '<td style="font-weight:bold;"  class="centered_text">'.$grandTotalqtyFabriquer.'</td>';
                     print '<td style="font-weight:bold;" colspan=5></td>';
-                    print '<td style="font-weight:bold;">'.$grandTotalYuan.' </td>';
-                    print '<td style="font-weight:bold;">'.$grandTotalEuro.' </td>';
+                    print '<td style="font-weight:bold;">'.price($grandTotalYuan).' </td>';
+                    print '<td style="font-weight:bold;">'.price($grandTotalEuro).' </td>';
                     print '</tr>';
                    print '</table>';
                    $grandTotalCommanderYuan +=  $grandTotalYuan;
@@ -4222,13 +4312,13 @@ else
                 print '<td style="font-weight:bold;float:right;" >Total Quantité commandé : '.$grandTotalCommanderqtyCommander.' </td>';
                 print '</tr>';
                 print '<tr>';
+                print '<td style="font-weight:bold;float:right;" >Total en euro : '.price($grandTotalCommanderEuro).'</td>';
+                print '</tr>';
+                print '<tr>';
+                print '<td style="font-weight:bold;float:right;" >Total en yuan : '.price($grandTotalCommanderYuan).'</td>';
+                print '</tr>';
+                print '<tr>';
                 print '<td style="font-weight:bold;float:right;" >Total Quantité fabriqué : '.$grandTotalCommanderqtyFabriquer.'</td>';
-                print '</tr>';
-                print '<tr>';
-                print '<td style="font-weight:bold;float:right;" >Total yuan : '.$grandTotalCommanderYuan.'</td>';
-                print '</tr>';
-                print '<tr>';
-                print '<td style="font-weight:bold;float:right;" >Total Euro : '.$grandTotalCommanderEuro.'</td>';
                 print '</tr>';
                 print '</table>';
             }
@@ -4239,7 +4329,7 @@ else
             if($status_product && $status_product == "produitfab") { 
                 if($resu_fab !== "fab"){
                     print '<hr style="margin-top:15%">';
-                    print '<input type="submit" class="button" value="Modifier" >';
+                    print '<input type="submit" class="button" value="Modifier" id="updates_products" >';
                     print '<a href="'.DOL_URL_ROOT.'/product/listproduitfab.php?leftmenu=product&type=0&idmenu=37"><input type="button" class="button" value="Annuler" ></a>';
                     print '<hr>';
                 }
