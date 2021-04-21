@@ -3,12 +3,17 @@
 require '../../main.inc.php';
 
 require_once DOL_DOCUMENT_ROOT.'/product/class/product.class.php';
+require_once DOL_DOCUMENT_ROOT.'/variants/class/ProductCombination.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/functions2.lib.php';
 global $conf;
 
 $idProduct          = GETPOST("productid");
+$parentId           = GETPOST("parentId");
 $prodChild = new Product($db);
 $prodChild->fetch($idProduct);
+
+$prodCombinates = new ProductCombination($db);
+$resProdChild = $prodCombinates->fetchAllByFkProductParent($parentId);
 
 if($_POST['yes_delete']){
     $sqlDeleteProdPrice = "DELETE from ".MAIN_DB_PREFIX."product_price where fk_product = ".intval($idProduct);
@@ -34,11 +39,30 @@ if($_POST['yes_delete']){
     $sqlDeleteProduct = "DELETE from ".MAIN_DB_PREFIX."product where rowid = ".intval($idProduct);
     $db->query($sqlDeleteProduct);
     
+    
+    $totalQuantiteCom   = 0;
+    $totalYuan          = 0;
+    $totalEuro          = 0;
+    foreach($resProdChild as $reChil){
+        $prodChildUpdate = new Product($db);
+        $prodChildUpdate->fetch($reChil ->fk_product_child);
+        $totalQuantiteCom += $prodChildUpdate->quantite_commander;
+        $totalYuan        += $prodChildUpdate->quantite_commander*$prodChildUpdate->price_yuan;
+        $totalEuro        += $prodChildUpdate->quantite_commander*$prodChildUpdate->price_euro;
+    }
+    /*Total Qty comm, yuan , euro*/
+    $sqlUpdateMontantTotal = "update ".MAIN_DB_PREFIX."product "
+    . " set total_quantite_commander = ".$totalQuantiteCom.", "
+    . " total_montant_yuan = ".$totalYuan.", "
+    . " total_montant_euro = ".$totalEuro." "
+    . " where rowid =  ".intval($parentId);
+    $db->query($sqlUpdateMontantTotal);
+    
     print '<script type="text/javascript">
             window.parent.location.reload()
         </script>';
 }
-
+   
 if($_POST['no_delete']){
     print '<script type="text/javascript">
             window.parent.location.reload()

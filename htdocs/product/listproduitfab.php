@@ -57,6 +57,9 @@ $search_ref = GETPOST("search_ref", 'alpha');
 $search_barcode = GETPOST("search_barcode", 'alpha');
 $search_label = GETPOST("search_label", 'alpha');
 $search_ref_fab_frs = GETPOST("search_ref_fab_frs", 'alpha');
+$search_total_quantite_commander = GETPOST("search_total_quantite_commander");
+$search_total_montant_yuan = GETPOST("search_total_montant_yuan");
+$search_total_montant_euro = GETPOST("search_total_montant_euro");
 $search_type = GETPOST("search_type", 'int');
 $search_vatrate = GETPOST("search_vatrate", 'alpha');
 $searchCategoryProductOperator = (GETPOST('search_category_product_operator', 'int') ? GETPOST('search_category_product_operator', 'int') : 0);
@@ -72,6 +75,14 @@ $search_accountancy_code_sell_export = GETPOST("search_accountancy_code_sell_exp
 $search_accountancy_code_buy = GETPOST("search_accountancy_code_buy", 'alpha');
 $search_accountancy_code_buy_intra = GETPOST("search_accountancy_code_buy_intra", 'alpha');
 $search_accountancy_code_buy_export = GETPOST("search_accountancy_code_buy_export", 'alpha');
+
+$search_date_creationday = GETPOST("search_date_creationday", 'alpha');
+$search_date_creationmonth = GETPOST("search_date_creationmonth", 'alpha');
+$search_date_creationyear = GETPOST("search_date_creationyear", 'alpha');
+$search_date_creation = "";
+if(!empty($search_date_creationday) && !empty($search_date_creationmonth) && !empty($search_date_creationyear)){
+    $search_date_creation = $search_date_creationday."/".$search_date_creationmonth."/".$search_date_creationyear;
+}
 $optioncss = GETPOST('optioncss', 'alpha');
 $type = GETPOST("type", "int");
 
@@ -187,12 +198,15 @@ if (empty($conf->global->PRODUIT_MULTIPRICES))
 
 $isInEEC = isInEEC($mysoc);
 
-// Definition of fields for lists
+// Definition of fields for lists total_quantite_commander, total_montant_yuan, total_montant_euro
 $arrayfields = array(
 	'p.ref'=>array('label'=>$langs->trans("Ref"), 'checked'=>1),
         'p.ref_fab_frs'=>array('label'=>"Ref fab/frs", 'checked'=>1 ),
 	//'pfp.ref_fourn'=>array('label'=>$langs->trans("RefSupplier"), 'checked'=>1, 'enabled'=>(! empty($conf->barcode->enabled))),
 	'p.label'=>array('label'=>$langs->trans("Label"), 'checked'=>1, 'position'=>10),
+        'p.total_quantite_commander'=>array('label'=>"Total qty comm", 'checked'=>1, 'position'=>11 ),
+        'p.total_montant_yuan'=>array('label'=>"Total yuan", 'checked'=>1, 'position'=>12 ),
+        'p.total_montant_euro'=>array('label'=>"Total euro", 'checked'=>1, 'position'=>13 ),
 	'p.fk_product_type'=>array('label'=>$langs->trans("Type"), 'checked'=>0, 'enabled'=>(!empty($conf->product->enabled) && !empty($conf->service->enabled)), 'position'=>11),
 	'p.barcode'=>array('label'=>$langs->trans("Gencod"), 'checked'=>1, 'enabled'=>(!empty($conf->barcode->enabled)), 'position'=>12),
 	'p.duration'=>array('label'=>$langs->trans("Duration"), 'checked'=>($contextpage != 'productlist'), 'enabled'=>(!empty($conf->service->enabled) && (string) $type == '1'), 'position'=>13),
@@ -270,10 +284,14 @@ if (empty($reshook))
 		$sall = "";
 		$search_ref = "";
 		$search_ref_fab_frs = "";
-		$search_label = "";
+                $search_label = "";
+		$search_total_quantite_commander = "";
+		$search_total_montant_yuan = "";
+		$search_total_montant_euro = "";
+		
 		$search_barcode = "";
-        $searchCategoryProductOperator = 0;
-        $searchCategoryProductList = array();
+                $searchCategoryProductOperator = 0;
+                $searchCategoryProductList = array();
 		$search_tosell = "";
 		$search_tobuy = "";
 		$search_tobatch = '';
@@ -332,7 +350,7 @@ $sql .= ' p.tobatch, p.accountancy_code_sell, p.accountancy_code_sell_intra, p.a
 $sql .= ' p.accountancy_code_buy, p.accountancy_code_buy_intra, p.accountancy_code_buy_export,';
 $sql .= ' p.datec as date_creation, p.tms as date_update, p.pmp, p.stock,';
 $sql .= ' p.weight, p.weight_units, p.length, p.length_units, p.width, p.width_units, p.height, p.height_units, p.surface, p.surface_units, p.volume, p.product_type_txt, p.volume_units, '
-        . ' p.quantite_commander , p.quantite_fabriquer , p.composition , p.price_yuan , p.product_type_txt , p.price_euro , p.weight_variant , p.ref_fab_frs , p.taux_euro_yuan , p.ref_tissus_couleur ,';
+        . ' p.quantite_commander , p.quantite_fabriquer , p.composition , p.price_yuan , p.product_type_txt , p.price_euro , p.weight_variant , p.ref_fab_frs , p.taux_euro_yuan , p.ref_tissus_couleur ,p.total_quantite_commander, p.total_montant_yuan, p.total_montant_euro,p.price_yuan, p.price_euro,  ';
 if (!empty($conf->global->PRODUCT_USE_UNITS))   $sql .= ' p.fk_unit, cu.label as cu_label,';
 $sql .= ' MIN(pfp.unitprice) as minsellprice';
 if (!empty($conf->variants->enabled) && (!empty($conf->global->PRODUIT_ATTRIBUTES_HIDECHILD) && !$show_childproducts)) {
@@ -380,6 +398,24 @@ if (isset($search_tosell) && dol_strlen($search_tosell) > 0 && $search_tosell !=
 if (isset($search_tobuy) && dol_strlen($search_tobuy) > 0 && $search_tobuy != -1)   $sql .= " AND p.tobuy = ".((int) $search_tobuy);
 if (isset($search_tobatch) && dol_strlen($search_tobatch) > 0 && $search_tobatch != -1)   $sql .= " AND p.tobatch = ".((int) $search_tobatch);
 if ($search_vatrate) $sql .= natural_search('p.tva_tx', $search_vatrate);
+if (!empty($search_date_creation)) {
+    $d = DateTime::createFromFormat('d/m/Y', $search_date_creation);
+    $createDate = date("Y-m-d",$d->getTimestamp());
+    $sql .= " AND p.datec like '".$createDate."%' ";
+}
+
+if($search_total_quantite_commander){
+    $sql .= " AND p.total_quantite_commander like '%".$search_total_quantite_commander."%' ";
+}
+
+if($search_total_montant_yuan){
+    $sql .= " AND p.total_montant_yuan like '%".$search_total_montant_yuan."%' ";
+}
+
+if($search_total_montant_euro){
+    $sql .= " AND p.total_montant_euro like '%".$search_total_montant_euro."%' ";
+}
+
 if (dol_strlen($canvas) > 0)                    $sql .= " AND p.canvas = '".$db->escape($canvas)."'";
 if ($catid > 0)     $sql .= " AND cp.fk_categorie = ".$catid;
 if ($catid == -2)   $sql .= " AND cp.fk_categorie IS NULL";
@@ -527,6 +563,9 @@ if ($resql)
 	if ($search_ref_supplier) $param = "&search_ref_supplier=".urlencode($search_ref_supplier);
 	if ($search_barcode) $param .= ($search_barcode ? "&search_barcode=".urlencode($search_barcode) : "");
 	if ($search_label) $param .= "&search_label=".urlencode($search_label);
+	if ($search_total_quantite_commander) $param = "&search_total_quantite_commander=".urlencode($search_total_quantite_commander);
+	if ($search_total_montant_yuan) $param = "&search_total_montant_yuan=".urlencode($search_total_montant_yuan);
+	if ($search_total_montant_euro) $param = "&search_total_montant_euro=".urlencode($search_total_montant_euro);
 	if ($search_tosell != '') $param .= "&search_tosell=".urlencode($search_tosell);
 	if ($search_tobuy != '') $param .= "&search_tobuy=".urlencode($search_tobuy);
 	if ($search_tobatch) $param = "&search_tobatch=".urlencode($search_tobatch);
@@ -695,7 +734,7 @@ if ($resql)
 	if (!empty($arrayfields['p.ref_fab_frs']['checked']))
 	{
             print '<td class="liste_titre left">';
-            print '<input class="flat" type="text" name="search_ref_fab_frs" size="8" value="'.dol_escape_htmltag($search_ref_fab_frs).'">';
+            print '<input class="flat" type="text" name="search_ref_fab_frs" value="'.dol_escape_htmltag($search_ref_fab_frs).'">';
             print '</td>';
 	}
         
@@ -709,6 +748,27 @@ if ($resql)
 	{
             print '<td class="liste_titre left">';
             print '<input class="flat" type="text" name="search_label" size="12" value="'.dol_escape_htmltag($search_label).'">';
+            print '</td>';
+	}
+        
+        if (!empty($arrayfields['p.total_quantite_commander']['checked']))
+	{
+            print '<td class="liste_titre left">';
+            print '<input class="flat" type="text" name="search_total_quantite_commander" value="'.dol_escape_htmltag($search_total_quantite_commander).'">';
+            print '</td>';
+	}
+        
+	if (!empty($arrayfields['p.total_montant_yuan']['checked']))
+	{
+            print '<td class="liste_titre left">';
+            print '<input class="flat" type="text" name="search_total_montant_yuan" value="'.dol_escape_htmltag($search_total_montant_yuan).'">';
+            print '</td>';
+	}
+        
+	if (!empty($arrayfields['p.total_montant_euro']['checked']))
+	{
+            print '<td class="liste_titre left">';
+            print '<input class="flat" type="text" name="search_total_montant_euro" value="'.dol_escape_htmltag($search_total_montant_euro).'">';
             print '</td>';
 	}
 	// Type
@@ -806,11 +866,11 @@ if ($resql)
 	}
 
 	// Unit
-    if (!empty($arrayfields['cu.label']['checked']))
-    {
-        print '<td class="liste_titre">';
-        print '</td>';
-    }
+        if (!empty($arrayfields['cu.label']['checked']))
+        {
+            print '<td class="liste_titre">';
+            print '</td>';
+        }
 
 	// Sell price
 	if (!empty($arrayfields['p.sellprice']['checked'])  && !$isEmployeeFab)
@@ -842,48 +902,48 @@ if ($resql)
 		print '<input class="flat" type="text" name="search_prix_fourn" placeholder="Prix fournisseur" value="'.trim(GETPOST('search_prix_fourn')).'">';
 		print '</td>';
 	}
-    // Sell price
-    if (!empty($arrayfields['p.tva_tx']['checked']))
-    {
-        print '<td class="liste_titre right">';
-        print '<input class="right flat maxwidth50" placeholder="%" type="text" name="search_vatrate" size="1" value="'.dol_escape_htmltag($search_vatrate).'">';
-        print '</td>';
-    }
-    // WAP
-    if (!empty($arrayfields['p.pmp']['checked']))
-    {
-            print '<td class="liste_titre">';
-            print '&nbsp;';
+        // Sell price
+        if (!empty($arrayfields['p.tva_tx']['checked']))
+        {
+            print '<td class="liste_titre right">';
+            print '<input class="right flat maxwidth50" placeholder="%" type="text" name="search_vatrate" size="1" value="'.dol_escape_htmltag($search_vatrate).'">';
             print '</td>';
-    }
-    // Limit for alert
-    if (!empty($arrayfields['p.seuil_stock_alerte']['checked']))
-    {
-            print '<td class="liste_titre">';
-            print '&nbsp;';
-            print '</td>';
-    }
-    // Desired stock
-    if (!empty($arrayfields['p.desiredstock']['checked']))
-    {
-            print '<td class="liste_titre">';
-            print '&nbsp;';
-            print '</td>';
-    }
-    // Stock
-    if (!empty($arrayfields['p.stock']['checked'])) print '<td class="liste_titre">&nbsp;</td>';
-    // Stock
-    if (!empty($arrayfields['stock_virtual']['checked'])) print '<td class="liste_titre">&nbsp;</td>';
-    // To batch
-    if (!empty($arrayfields['p.tobatch']['checked'])) print '<td class="liste_titre center">'.$form->selectyesno('search_tobatch', $search_tobatch, 1, false, 1).'</td>';
-    // Accountancy code sell
-    if (!empty($arrayfields['p.accountancy_code_sell']['checked']))        print '<td class="liste_titre"><input class="flat maxwidth75" type="text" name="search_accountancy_code_sell" value="'.dol_escape_htmltag($search_accountancy_code_sell).'"></td>';
-    if (!empty($arrayfields['p.accountancy_code_sell_intra']['checked']))  print '<td class="liste_titre"><input class="flat maxwidth75" type="text" name="search_accountancy_code_sell_intra" value="'.dol_escape_htmltag($search_accountancy_code_sell_intra).'"></td>';
-    if (!empty($arrayfields['p.accountancy_code_sell_export']['checked'])) print '<td class="liste_titre"><input class="flat maxwidth75" type="text" name="search_accountancy_code_sell_export" value="'.dol_escape_htmltag($search_accountancy_code_sell_export).'"></td>';
-    // Accountancy code buy
-    if (!empty($arrayfields['p.accountancy_code_buy']['checked']))		   print '<td class="liste_titre"><input class="flat maxwidth75" type="text" name="search_accountancy_code_buy" value="'.dol_escape_htmltag($search_accountancy_code_buy).'"></td>';
-    if (!empty($arrayfields['p.accountancy_code_buy_intra']['checked']))   print '<td class="liste_titre"><input class="flat maxwidth75" type="text" name="search_accountancy_code_buy_intra" value="'.dol_escape_htmltag($search_accountancy_code_buy_intra).'"></td>';
-    if (!empty($arrayfields['p.accountancy_code_buy_export']['checked']))  print '<td class="liste_titre"><input class="flat maxwidth75" type="text" name="search_accountancy_code_buy_export" value="'.dol_escape_htmltag($search_accountancy_code_buy_export).'"></td>';
+        }
+        // WAP
+        if (!empty($arrayfields['p.pmp']['checked']))
+        {
+                print '<td class="liste_titre">';
+                print '&nbsp;';
+                print '</td>';
+        }
+        // Limit for alert
+        if (!empty($arrayfields['p.seuil_stock_alerte']['checked']))
+        {
+                print '<td class="liste_titre">';
+                print '&nbsp;';
+                print '</td>';
+        }
+        // Desired stock
+        if (!empty($arrayfields['p.desiredstock']['checked']))
+        {
+                print '<td class="liste_titre">';
+                print '&nbsp;';
+                print '</td>';
+        }
+        // Stock
+        if (!empty($arrayfields['p.stock']['checked'])) print '<td class="liste_titre">&nbsp;</td>';
+        // Stock
+        if (!empty($arrayfields['stock_virtual']['checked'])) print '<td class="liste_titre">&nbsp;</td>';
+        // To batch
+        if (!empty($arrayfields['p.tobatch']['checked'])) print '<td class="liste_titre center">'.$form->selectyesno('search_tobatch', $search_tobatch, 1, false, 1).'</td>';
+        // Accountancy code sell
+        if (!empty($arrayfields['p.accountancy_code_sell']['checked']))        print '<td class="liste_titre"><input class="flat maxwidth75" type="text" name="search_accountancy_code_sell" value="'.dol_escape_htmltag($search_accountancy_code_sell).'"></td>';
+        if (!empty($arrayfields['p.accountancy_code_sell_intra']['checked']))  print '<td class="liste_titre"><input class="flat maxwidth75" type="text" name="search_accountancy_code_sell_intra" value="'.dol_escape_htmltag($search_accountancy_code_sell_intra).'"></td>';
+        if (!empty($arrayfields['p.accountancy_code_sell_export']['checked'])) print '<td class="liste_titre"><input class="flat maxwidth75" type="text" name="search_accountancy_code_sell_export" value="'.dol_escape_htmltag($search_accountancy_code_sell_export).'"></td>';
+        // Accountancy code buy
+        if (!empty($arrayfields['p.accountancy_code_buy']['checked']))		   print '<td class="liste_titre"><input class="flat maxwidth75" type="text" name="search_accountancy_code_buy" value="'.dol_escape_htmltag($search_accountancy_code_buy).'"></td>';
+        if (!empty($arrayfields['p.accountancy_code_buy_intra']['checked']))   print '<td class="liste_titre"><input class="flat maxwidth75" type="text" name="search_accountancy_code_buy_intra" value="'.dol_escape_htmltag($search_accountancy_code_buy_intra).'"></td>';
+        if (!empty($arrayfields['p.accountancy_code_buy_export']['checked']))  print '<td class="liste_titre"><input class="flat maxwidth75" type="text" name="search_accountancy_code_buy_export" value="'.dol_escape_htmltag($search_accountancy_code_buy_export).'"></td>';
     // Extra fields
     include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_search_input.tpl.php';
     // Fields from hook
@@ -893,8 +953,11 @@ if ($resql)
     // Date creation
     if (!empty($arrayfields['p.datec']['checked']))
     {
-            print '<td class="liste_titre">';
-            print '</td>';
+        if(!empty($search_date_creation)){
+            $d = DateTime::createFromFormat('d/m/Y', $search_date_creation);
+        }
+        $datepicks = $form->selectDate((!empty($search_date_creation)?$d->getTimestamp():""),'search_date_creation',0, 0, 1);
+        print '<td class="liste_titre"><div style="margin: auto 24%;">'.$datepicks.'</div></td>';
     }
     // Date modification
     if (!empty($arrayfields['p.tms']['checked']))
@@ -937,6 +1000,22 @@ if ($resql)
     if (!empty($arrayfields['p.label']['checked'])) {
         print_liste_field_titre($arrayfields['p.label']['label'], $_SERVER["PHP_SELF"], "p.label", "", $param, "", $sortfield, $sortorder);
     }
+    
+    if (!empty($arrayfields['p.total_quantite_commander']['checked']))
+    {
+        print_liste_field_titre($arrayfields['p.total_quantite_commander']['label'], $_SERVER["PHP_SELF"], "p.total_quantite_commander", "", $param, "", $sortfield, $sortorder);
+    }
+    
+    if (!empty($arrayfields['p.total_montant_yuan']['checked']))
+    {
+        print_liste_field_titre($arrayfields['p.total_montant_yuan']['label'], $_SERVER["PHP_SELF"], "p.total_montant_yuan", "", $param, "", $sortfield, $sortorder);
+    }
+    
+    if (!empty($arrayfields['p.total_montant_euro']['checked']))
+    {
+        print_liste_field_titre($arrayfields['p.total_montant_euro']['label'], $_SERVER["PHP_SELF"], "p.total_montant_euro", "", $param, "", $sortfield, $sortorder);
+    }
+    
     if (!empty($arrayfields['p.fk_product_type']['checked'])) {
         print_liste_field_titre($arrayfields['p.fk_product_type']['label'], $_SERVER["PHP_SELF"], "p.fk_product_type", "", $param, "", $sortfield, $sortorder);
     }
@@ -1091,6 +1170,9 @@ if ($resql)
             $product_static->surface = $obj->surface;
             $product_static->surface_units = $obj->surface_units;
             $product_static->product_type_txt = $obj->product_type_txt;
+            $product_static->total_quantite_commander = $obj->total_quantite_commander;
+            $product_static->total_montant_yuan = $obj->total_montant_yuan;
+            $product_static->total_montant_euro = $obj->total_montant_euro;
         if (!empty($conf->global->PRODUCT_USE_UNITS)) {
             $product_static->fk_unit = $obj->fk_unit;
         }
@@ -1129,7 +1211,7 @@ if ($resql)
             print "</td>\n";
             if (!$i) $totalarray['nbfield']++;
         }
-
+        
         // Ref supplier
         if (!empty($arrayfields['pfp.ref_fourn']['checked']))
         {
@@ -1144,6 +1226,30 @@ if ($resql)
         {
                 print '<td class="tdoverflowmax200">'.dol_trunc($obj->label, 80).'</td>';
                 if (!$i) $totalarray['nbfield']++;
+        }
+        
+        if (!empty($arrayfields['p.total_quantite_commander']['checked']))
+        {
+            print '<td class="tdoverflowmax200">';
+            print $product_static->total_quantite_commander;
+            print "</td>\n";
+            if (!$i) $totalarray['nbfield']++;
+        }
+        
+        if (!empty($arrayfields['p.total_montant_yuan']['checked']))
+        {
+            print '<td class="tdoverflowmax200">';
+            print $product_static->total_montant_yuan;
+            print "</td>\n";
+            if (!$i) $totalarray['nbfield']++;
+        }
+        
+        if (!empty($arrayfields['p.total_montant_euro']['checked']))
+        {
+            print '<td class="tdoverflowmax200">';
+            print $product_static->total_montant_euro;
+            print "</td>\n";
+            if (!$i) $totalarray['nbfield']++;
         }
 
         // Type

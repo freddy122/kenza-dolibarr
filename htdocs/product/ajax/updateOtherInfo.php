@@ -17,6 +17,8 @@ $prixYuan = (GETPOST('prixYuan')  !== null)?GETPOST('prixYuan'):false;
 $prixEuro = (GETPOST('prixEuro')  !== null)?GETPOST('prixEuro'):false;
 $tauxChange = (GETPOST('tauxChange')  !== null)?GETPOST('tauxChange'):false;
 
+$isColor = GETPOST('isColor');
+
 $sqlGetAllProductSame = " SELECT "
         . " pac.fk_product_parent, "
         . " pac.fk_product_child "
@@ -28,6 +30,9 @@ $resProdSame = $db->getRows($sqlGetAllProductSame);
 $totalQtyfab = 0;
 foreach($resProdSame as $res){
     if($qtyComm){
+        /*if($isColor == 1){
+            die('iccc');
+        }*/
         $sqlUpdateSame = "UPDATE ".MAIN_DB_PREFIX."product set quantite_commander = ".$qtyComm." where rowid=".$res->fk_product_child;
         $db->query($sqlUpdateSame);
     }
@@ -69,6 +74,28 @@ if($qtyfab){
                         . " reel = ".$totalQtyfab." where fk_product = ".intval($parentId);
     $db->query($sqlUpdateQtyParent);
 }
+
+
+$prodCombinates = new ProductCombination($db);
+$resProdChild = $prodCombinates->fetchAllByFkProductParent($parentId);
+
+$totalQuantiteCom   = 0;
+$totalYuan          = 0;
+$totalEuro          = 0;
+foreach($resProdChild as $reChil){
+    $prodChildUpdate = new Product($db);
+    $prodChildUpdate->fetch($reChil ->fk_product_child);
+    $totalQuantiteCom += $prodChildUpdate->quantite_commander;
+    $totalYuan        += $prodChildUpdate->quantite_commander*$prodChildUpdate->price_yuan;
+    $totalEuro        += $prodChildUpdate->quantite_commander*$prodChildUpdate->price_euro;
+}
+/*Total Qty comm, yuan , euro*/
+$sqlUpdateMontantTotal = "update ".MAIN_DB_PREFIX."product "
+. " set total_quantite_commander = ".$totalQuantiteCom.", "
+. " total_montant_yuan = ".$totalYuan.", "
+. " total_montant_euro = ".$totalEuro." "
+. " where rowid =  ".intval($parentId);
+$db->query($sqlUpdateMontantTotal);
 
 header("Content-Type:application/json");
 echo json_encode(array(
