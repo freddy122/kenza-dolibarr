@@ -1896,7 +1896,7 @@ else
 
                 print '<tr>';
                 print '<td >Taux TVA (pour ce produit/fournisseur)</td>';
-                print '<td><input type="text" class="flat" size="5" name="tva_tx_fourn" value="8,5">';
+                print '<td><input type="text" class="flat" size="5" name="tva_tx_fourn" value="8,50">';
                 print '</td>';
                 print '</tr>';
                 
@@ -1945,13 +1945,13 @@ else
                 foreach($objectProductAttributes->fetchAll() as $res){
                         if($res->id == 1 || $res->id == 2) {
                             $class_option_content = ($res->id == 1) ? "option-content-couleur" : "option-content-taille";
-                            $class_option_heading = ($res->id == 1) ? "option-heading" : "option-heading-taille";
+                            $class_option_heading = ($res->id == 1) ? "option-heading is-active" : "option-heading-taille is-active";
                             $class_option_heading_content = ($res->id == 1) ? "option-heading-content" : "option-heading-content-taille";
                             $type = ($res->id == 1) ? "color" : "taille";
                             $url_creation_decl = ($res->id == 1) ? 
                             "<a href='".DOL_URL_ROOT."/variants/create_val.php?id=1&data_popup=1' target='_blank' class='button create_combination_popup'>Créer couleur</a>" : 
                             "<a href='".DOL_URL_ROOT."/variants/create_val.php?id=2&data_popup=1' target='_blank' class='button create_combination_popup'>Créer taille</a>";
-                            print '<div class="'.$class_option_heading_content.'"><div class="'.$class_option_heading.'">'.$res->label.'</div><div class="'.$class_option_content.'">';
+                            print '<div class="'.$class_option_heading_content.'"><div class="'.$class_option_heading.'">'.$res->label.'</div><div class="'.$class_option_content.'" style="display:none">';
                             print '<label class="container-declinaison" for="select_all_'.$type.'" >Selectionner tout<input type="checkbox" id="select_all_'.$type.'" /><span class="checkmark-declinaison" style="background-color:#eee;"></span></label>';
                             foreach ($objectvalProductAttributes->fetchAllByProductAttribute($res->id) as $attrval) {
                                 if($attrval->code_couleur):
@@ -2194,12 +2194,14 @@ else
                                                         <button class="btn btn-info" type="button" id="copie_val_reftissus_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('ref_tissus_couleur_${rowIdx}','copie_val_reftissus_${rowIdx}','class_color_input_${splitArrTailles[1]}')">Copier pour ce couleur</button>
                                                     </td>
                                                     <td class="qtycomm text-align-left"> 
-                                                        <input type="number" value=""  name="qtycomm[]" id="qtycomm_${rowIdx}" oninput="changeValueInputComp('qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')" >
-                                                        <button class="btn btn-info" type="button" id="copie_val_qtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtycomm_','qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                        <input type="number" value=""  name="qtycomm[]" id="qtycomm_${rowIdx}" oninput="changeValueInputComp('qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}','copie_val_colorqtycomm_${rowIdx}')" class="class_color_qtycomm_${splitArrTailles[1]}">
+                                                        <button class="btn btn-info" type="button" id="copie_val_qtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtycomm_','qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}','copie_val_colorqtycomm_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                        <button class="btn btn-info" type="button" id="copie_val_colorqtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('qtycomm_${rowIdx}','copie_val_colorqtycomm_${rowIdx}','class_color_qtycomm_${splitArrTailles[1]}','copie_val_qtycomm_${rowIdx}')">Copier pour ce couleur</button>
                                                     </td>
                                                     <td class="qtyfabriq text-align-left"> 
-                                                        <input type="number" value=""  name="qtyfabriq[]" id="qtyfabriq_${rowIdx}" oninput="changeValueInputComp('qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">
-                                                        <button class="btn btn-info" type="button" id="copie_val_qtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtyfabriq_','qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">Copier pour toutes les lignes</button>
+                                                        <input type="number" value=""  name="qtyfabriq[]" id="qtyfabriq_${rowIdx}" oninput="changeValueInputComp('qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}','copie_val_colorqtyfabriq_${rowIdx}')" class="class_color_qtyfabriq_${splitArrTailles[1]}">
+                                                        <button class="btn btn-info" type="button" id="copie_val_qtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtyfabriq_','qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}','copie_val_colorqtyfabriq_${rowIdx}')">Copier pour toutes les lignes</button>
+                                                        <button class="btn btn-info" type="button" id="copie_val_colorqtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('qtyfabriq_${rowIdx}','copie_val_colorqtyfabriq_${rowIdx}','class_color_qtyfabriq_${splitArrTailles[1]}','copie_val_qtyfabriq_${rowIdx}')">Copier pour ce couleur</button>
                                                     </td>
                                                     <td class="poidsfabriq text-align-left"> 
                                                         <input type="text" value=""  name="poidsfabriq[]">
@@ -2222,9 +2224,9 @@ else
                                                     </tr>
                                                 `);
                                                 if($('#price_fourn_ht').val()){
-                                                    $("#price_euro_"+rowIdx).val(parseFloat($('#price_fourn_ht').val()));
+                                                    $("#price_euro_"+rowIdx).val(parseFloat($('#price_fourn_ht').val().replace(",",".")));
                                                     var txchng = "<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>";
-                                                    var price_yuan = Math.round(parseFloat(txchng) * parseFloat($('#price_fourn_ht').val()))
+                                                    var price_yuan = Math.round(parseFloat(txchng) * parseFloat($('#price_fourn_ht').val().replace(",",".")));
                                                     if(!isNaN(parseFloat(price_yuan))){
                                                         $("#price_yuan_"+rowIdx).val(price_yuan);
                                                     }
@@ -2305,12 +2307,14 @@ else
                                                                 <button class="btn btn-info" type="button" id="copie_val_reftissus_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('ref_tissus_couleur_${rowIdx}','copie_val_reftissus_${rowIdx}','class_color_input_${splitArrColors[1]}')">Copier pour ce couleur</button>
                                                             </td>
                                                             <td class="qtycomm text-align-left"> 
-                                                                <input type="number" value=""  name="qtycomm[]" id="qtycomm_${rowIdx}" oninput="changeValueInputComp('qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')" >
-                                                            <button class="btn btn-info" type="button" id="copie_val_qtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtycomm_','qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                                <input type="number" value=""  name="qtycomm[]" id="qtycomm_${rowIdx}" oninput="changeValueInputComp('qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}','copie_val_colorqtycomm_${rowIdx}')" class="class_color_qtycomm_${splitArrColors[1]}">
+                                                                <button class="btn btn-info" type="button" id="copie_val_qtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtycomm_','qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}','copie_val_colorqtycomm_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                                <button class="btn btn-info" type="button" id="copie_val_colorqtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('qtycomm_${rowIdx}','copie_val_colorqtycomm_${rowIdx}','class_color_qtycomm_${splitArrColors[1]}','copie_val_qtycomm_${rowIdx}')">Copier pour ce couleur</button> 
                                                             </td>
                                                             <td class="qtyfabriq text-align-left"> 
-                                                                <input type="number" value=""  name="qtyfabriq[]" id="qtyfabriq_${rowIdx}" oninput="changeValueInputComp('qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">
-                                                                <button class="btn btn-info" type="button" id="copie_val_qtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtyfabriq_','qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">Copier pour toutes les lignes</button>
+                                                                <input type="number" value=""  name="qtyfabriq[]" id="qtyfabriq_${rowIdx}" oninput="changeValueInputComp('qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}','copie_val_colorqtyfabriq_${rowIdx}')" class="class_color_qtyfabriq_${splitArrColors[1]}">
+                                                                <button class="btn btn-info" type="button" id="copie_val_qtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtyfabriq_','qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}','copie_val_colorqtyfabriq_${rowIdx}')">Copier pour toutes les lignes</button>
+                                                                <button class="btn btn-info" type="button" id="copie_val_colorqtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('qtyfabriq_${rowIdx}','copie_val_colorqtyfabriq_${rowIdx}','class_color_qtyfabriq_${splitArrColors[1]}','copie_val_qtyfabriq_${rowIdx}')">Copier pour ce couleur</button>
                                                             </td>
                                                             <td class="poidsfabriq text-align-left"> 
                                                                 <input type="text" value=""  name="poidsfabriq[]">
@@ -2333,9 +2337,9 @@ else
                                                             </tr>
                                                         `);
                                                         if($('#price_fourn_ht').val()){
-                                                            $("#price_euro_"+rowIdx).val(parseFloat($('#price_fourn_ht').val()));
+                                                            $("#price_euro_"+rowIdx).val(parseFloat($('#price_fourn_ht').val().replace(",",".")));
                                                             var txchng = "<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>";
-                                                            var price_yuan = Math.round(parseFloat(txchng) * parseFloat($('#price_fourn_ht').val()))
+                                                            var price_yuan = Math.round(parseFloat(txchng) * parseFloat($('#price_fourn_ht').val().replace(",",".")))
                                                             if(!isNaN(parseFloat(price_yuan))){
                                                                 $("#price_yuan_"+rowIdx).val(price_yuan);
                                                             }
@@ -2410,12 +2414,14 @@ else
                                                             <button class="btn btn-info" type="button" id="copie_val_reftissus_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('ref_tissus_couleur_${rowIdx}','copie_val_reftissus_${rowIdx}','class_color_input_${splitArrColors[1]}')">Copier pour ce couleur</button>
                                                         </td>
                                                         <td class="qtycomm text-align-left"> 
-                                                            <input type="number" value=""  name="qtycomm[]" id="qtycomm_${rowIdx}" oninput="changeValueInputComp('qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')" >
-                                                            <button class="btn btn-info" type="button" id="copie_val_qtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtycomm_','qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                            <input type="number" value=""  name="qtycomm[]" id="qtycomm_${rowIdx}" oninput="changeValueInputComp('qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}','copie_val_colorqtycomm_${rowIdx}')" class="class_color_qtycomm_${splitArrColors[1]}">
+                                                            <button class="btn btn-info" type="button" id="copie_val_qtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtycomm_','qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}','copie_val_colorqtycomm_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                            <button class="btn btn-info" type="button" id="copie_val_colorqtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('qtycomm_${rowIdx}','copie_val_colorqtycomm_${rowIdx}','class_color_qtycomm_${splitArrColors[1]}','copie_val_qtycomm_${rowIdx}')">Copier pour ce couleur</button>
                                                         </td>
                                                         <td class="qtyfabriq text-align-left"> 
-                                                            <input type="number" value=""  name="qtyfabriq[]" id="qtyfabriq_${rowIdx}" oninput="changeValueInputComp('qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">
-                                                            <button class="btn btn-info" type="button" id="copie_val_qtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtyfabriq_','qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">Copier pour toutes les lignes</button>
+                                                            <input type="number" value=""  name="qtyfabriq[]" id="qtyfabriq_${rowIdx}" oninput="changeValueInputComp('qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}','copie_val_colorqtyfabriq_${rowIdx}')" class="class_color_qtyfabriq_${splitArrColors[1]}">
+                                                            <button class="btn btn-info" type="button" id="copie_val_qtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtyfabriq_','qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}','copie_val_colorqtyfabriq_${rowIdx}')">Copier pour toutes les lignes</button>
+                                                            <button class="btn btn-info" type="button" id="copie_val_colorqtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('qtyfabriq_${rowIdx}','copie_val_colorqtyfabriq_${rowIdx}','class_color_qtyfabriq_${splitArrColors[1]}','copie_val_qtyfabriq_${rowIdx}')">Copier pour ce couleur</button>
                                                         </td>
                                                         <td class="poidsfabriq text-align-left"> 
                                                             <input type="text" value=""  name="poidsfabriq[]">
@@ -2438,9 +2444,9 @@ else
                                                         </tr>
                                                     `);
                                                     if($('#price_fourn_ht').val()){
-                                                        $("#price_euro_"+rowIdx).val(parseFloat($('#price_fourn_ht').val()));
+                                                        $("#price_euro_"+rowIdx).val(parseFloat($('#price_fourn_ht').val().replace(",",".")));
                                                         var txchng = "<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>";
-                                                        var price_yuan = Math.round(parseFloat(txchng) * parseFloat($('#price_fourn_ht').val()))
+                                                        var price_yuan = Math.round(parseFloat(txchng) * parseFloat($('#price_fourn_ht').val().replace(",",".")))
                                                         if(!isNaN(parseFloat(price_yuan))){
                                                             $("#price_yuan_"+rowIdx).val(price_yuan);
                                                         }
@@ -2477,7 +2483,7 @@ else
                                         // Modifying row index. 
                                         idx.attr('value',`${dig - 1}`);
                                         var refCumules = '<?php echo $cumulcodeProd; ?>';
-                                        var references = parseInt(refCumules+"0000") + parseInt(`${dig - 1}`);
+                                        var references = parseInt(cdbares.val().substr(0,12));
                                         refs.attr('value',`${references}`);
                                         cdbares.attr('value',`${references}`+""+getLastEan13Digit(`${references}`));
                                         // Modifying row id.
@@ -2513,27 +2519,31 @@ else
                                 $("#"+copyval).hide();
                             }
                         }
-                        function copyValuesOfRowRefTissus(refTissusInput,buttonInput,colorInput){
+                        function copyValuesOfRowRefTissus(refTissusInput,buttonInput,colorInput,buttoncopivalligne = ""){
                             var valueCurrentTissus = $("#"+refTissusInput).val();
                             $("."+colorInput).val(valueCurrentTissus);
                             $("#"+buttonInput).hide();
+                            $("#"+buttoncopivalligne).hide();
                         }
-                        function changeValueInputComp(inputComp,copyval){
+                        function changeValueInputComp(inputComp,copyval,copyvalColor = ""){
                             var resy = $("#"+inputComp).val();
                             /* traitement ajout boutton copy */
                             if(resy !== ""){
                                 $("#"+copyval).show();
+                                $("#"+copyvalColor).show();
                             }else{
                                 $("#"+copyval).hide();
+                                $("#"+copyvalColor).hide();
                             }
                         }
-                        function copyValuesOfRowComposition(inputId,compositionInput,buttonInput){
+                        function copyValuesOfRowComposition(inputId,compositionInput,buttonInput,buttonColorInput = ""){
                             var hiddenRowIdx = $('#id_rowx').val().split('|');
                             var valueCurrentComposition = $("#"+compositionInput).val();
                             for(var i = 0; i < hiddenRowIdx.length; i++){
                                 $("#"+inputId+hiddenRowIdx[i]).val(valueCurrentComposition);
                             }
                             $("#"+buttonInput).hide();
+                            $("#"+buttonColorInput).hide();
                         }
                         function copyValuesOfRowPrixYuan(yuanInput,tauxInput,euroInput,buttonInput){
                             var hiddenRowIdx = $('#id_rowx').val().split('|');
@@ -2627,10 +2637,14 @@ else
                                 const uniqueArray = unique(arrvalDecl);
                                 var theRemovedElement = uniqueArray.shift();
                                 for(var cnts = 0; cnts < uniqueArray.length; cnts++){
-                                    $("#price_euro_"+uniqueArray[cnts]).val($("#"+price_fourn_ht).val());
+                                    if(!isNaN(parseFloat($("#"+price_fourn_ht).val()))){
+                                        $("#price_euro_"+uniqueArray[cnts]).val(parseFloat($("#"+price_fourn_ht).val().replace(",",".")));
+                                    }else{
+                                        $("#price_euro_"+uniqueArray[cnts]).val("");
+                                    }
                                     var txchng = $("#taux_change_"+uniqueArray[cnts]).val();
                                     if(!isNaN(parseFloat($("#"+price_fourn_ht).val()))){
-                                        var price_yuan = Math.round(parseFloat(txchng) * parseFloat($("#"+price_fourn_ht).val()));
+                                        var price_yuan = Math.round(parseFloat(txchng) * parseFloat($("#"+price_fourn_ht).val().replace(",",".")));
                                         $("#price_yuan_"+uniqueArray[cnts]).val(price_yuan);
                                     }else{
                                        $("#price_yuan_"+uniqueArray[cnts]).val(""); 
@@ -3536,14 +3550,14 @@ else
                     
                     print '<tr>';
                     print '<td style="width:15.5%;">'.$langs->trans("BuyingPrice").' (HT)</td>';
-                    print '<td><div id="prix_achats_frs"><input name="price_fourn_ht" class="maxwidth100" value="'.price2num($resuMinFournPrice[0]->min_price_frs,"MU").'" id="price_fourn_ht" oninput="changePriceEuroDeclinaison(\'price_fourn_ht\')">&nbsp;';
+                    print '<td><div id="prix_achats_frs"><input name="price_fourn_ht" class="maxwidth100" value="'.price(price2num($resuMinFournPrice[0]->min_price_frs,"MU")).'" id="price_fourn_ht" oninput="changePriceEuroDeclinaison(\'price_fourn_ht\')">&nbsp;';
                     print $form->selectPriceBaseType('HT', "price_base_type_achat")."</div>";
                     print '</td>';
                     print '</tr>';
                     
                     print '<tr>';
                     print '<td style="width:15.5%;">Taux TVA (pour ce produit/fournisseur)</td>';
-                    print '<td><input type="text" class="flat" size="5" name="tva_tx_fourn" value="8,5">';
+                    print '<td><input type="text" class="flat" size="5" name="tva_tx_fourn" value="8,50">';
                     print '</td>';
                     print '</tr>';
                     
@@ -3580,13 +3594,13 @@ else
                     foreach($objectProductAttributes->fetchAll() as $res){
                         if($res->id == 1 || $res->id == 2) {
                             $class_option_content = ($res->id == 1) ? "option-content-couleur" : "option-content-taille";
-                            $class_option_heading = ($res->id == 1) ? "option-heading" : "option-heading-taille";
+                            $class_option_heading = ($res->id == 1) ? "option-heading is-active" : "option-heading-taille is-active";
                             $class_option_heading_content = ($res->id == 1) ? "option-heading-content" : "option-heading-content-taille";
                             $type = ($res->id == 1) ? "color" : "taille";
                             $url_creation_decl = ($res->id == 1) ? 
                             "<a href='".DOL_URL_ROOT."/variants/create_val.php?id=1&data_popup=1' target='_blank' class='button create_combination_popup'>Créer couleur</a>" : 
                             "<a href='".DOL_URL_ROOT."/variants/create_val.php?id=2&data_popup=1' target='_blank' class='button create_combination_popup'>Créer taille</a>";
-                            print '<div class="'.$class_option_heading_content.'"><div class="'.$class_option_heading.'">'.$res->label.'</div><div class="'.$class_option_content.'">';
+                            print '<div class="'.$class_option_heading_content.'"><div class="'.$class_option_heading.'">'.$res->label.'</div><div class="'.$class_option_content.'" style="display:none;">';
                             print '<label class="container-declinaison" for="select_all_'.$type.'" >Selectionner tout<input type="checkbox" id="select_all_'.$type.'" /><span class="checkmark-declinaison" style="background-color:#eee;"></span></label>';
                             foreach ($objectvalProductAttributes->fetchAllByProductAttribute($res->id) as $attrval) {
                                 if($attrval->code_couleur):
@@ -3848,9 +3862,9 @@ else
                                                 `);
                                             }
                                             if($('#price_fourn_ht').val()){
-                                                $("#price_euro_"+rowIdx).val(parseFloat($('#price_fourn_ht').val()));
+                                                $("#price_euro_"+rowIdx).val(parseFloat($('#price_fourn_ht').val().replace(",",".")));
                                                 var txchng = "<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>";
-                                                var price_yuan = Math.round(parseFloat(txchng) * parseFloat($('#price_fourn_ht').val()))
+                                                var price_yuan = Math.round(parseFloat(txchng) * parseFloat($('#price_fourn_ht').val().replace(",",".")))
                                                 $("#price_yuan_"+rowIdx).val(price_yuan);
                                             }
                                         }
@@ -3950,9 +3964,9 @@ else
                                                         </tr>
                                                     `);
                                                     if($('#price_fourn_ht').val()){
-                                                        $("#price_euro_"+rowIdx).val(parseFloat($('#price_fourn_ht').val()));
+                                                        $("#price_euro_"+rowIdx).val(parseFloat($('#price_fourn_ht').val().replace(",",".")));
                                                         var txchng = "<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>";
-                                                        var price_yuan = Math.round(parseFloat(txchng) * parseFloat($('#price_fourn_ht').val()))
+                                                        var price_yuan = Math.round(parseFloat(txchng) * parseFloat($('#price_fourn_ht').val().replace(",",".")))
                                                         $("#price_yuan_"+rowIdx).val(price_yuan);
                                                     }
                                                     rowIdx++;
@@ -4054,9 +4068,9 @@ else
                                                     </tr>
                                                 `);
                                                 if($('#price_fourn_ht').val()){
-                                                    $("#price_euro_"+rowIdx).val(parseFloat($('#price_fourn_ht').val()));
+                                                    $("#price_euro_"+rowIdx).val(parseFloat($('#price_fourn_ht').val().replace(",",".")));
                                                     var txchng = "<?php echo $conf->global->TAUX_CHANGE_YUAN_EURO; ?>";
-                                                    var price_yuan = Math.round(parseFloat(txchng) * parseFloat($('#price_fourn_ht').val()))
+                                                    var price_yuan = Math.round(parseFloat(txchng) * parseFloat($('#price_fourn_ht').val().replace(",",".")))
                                                     $("#price_yuan_"+rowIdx).val(price_yuan);
                                                 }
                                             }
@@ -4281,9 +4295,13 @@ else
                                     var theRemovedElement = uniqueArray.shift();
                                     //console.log(uniqueArray);
                                     for(var cnts = 0; cnts < uniqueArray.length; cnts++){
-                                        $("#price_euro_"+uniqueArray[cnts]).val($("#"+price_fourn_ht).val());
+                                        if(!isNaN(parseFloat($("#"+price_fourn_ht).val()))){
+                                            $("#price_euro_"+uniqueArray[cnts]).val(parseFloat($("#"+price_fourn_ht).val().replace(",",".")));
+                                        }else{
+                                            $("#price_euro_"+uniqueArray[cnts]).val("");
+                                        }
                                         var txchng = $("#taux_change_"+uniqueArray[cnts]).val();
-                                        var price_yuan = Math.round(parseFloat(txchng) * parseFloat($("#"+price_fourn_ht).val()));
+                                        var price_yuan = Math.round(parseFloat(txchng) * parseFloat($("#"+price_fourn_ht).val().replace(",",".")));
                                         if(!isNaN(parseFloat(price_yuan))){
                                             $("#price_yuan_"+uniqueArray[cnts]).val(price_yuan);
                                         }
@@ -4400,9 +4418,9 @@ else
                         print "<td  class='centered_text'>".($prodChild->quantite_fabriquer?$prodChild->quantite_fabriquer:0)."</td>";
                         print "<td  class='centered_text'>".($prodChild->weight_variant == 0.000 ? "": str_replace(".",",",$prodChild->weight_variant))."</td>";
                         print "<td >".$prodChild->composition."</td>";
-                        print "<td >".($prodChild->price_yuan?$prodChild->price_yuan:0)." </td>";
-                        print "<td style='".$bgColors."'>".$prodChild->taux_euro_yuan."</td>";
-                        print "<td style='".$bgColors."'>".($prodChild->price_euro?$prodChild->price_euro:0)." </td>";
+                        print "<td >".($prodChild->price_yuan?price($prodChild->price_yuan):price(0))." </td>";
+                        print "<td style='".$bgColors."'>".(str_replace(".",",",$prodChild->taux_euro_yuan))."</td>";
+                        print "<td style='".$bgColors."'>".($prodChild->price_euro?price($prodChild->price_euro):price(0))." </td>";
                         print "<td style='".$bgColors."'>".price($prodChild->quantite_fabriquer*$prodChild->price_yuan)." </td>";
                         print "<td style='".$bgColors."'>".price($prodChild->quantite_fabriquer*$prodChild->price_euro)." </td>";
                         print "<td><a class='custom_button edit_row_declinaison' href='".DOL_URL_ROOT."/product/variant/edit.php?productid=".$prodChild->id."&parentId=".$object->id."&valColor=".$kaff."' target='_blank'>Modifier</a>"
