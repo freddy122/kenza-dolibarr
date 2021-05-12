@@ -353,7 +353,8 @@ $sql .= ' p.weight, p.weight_units, p.length, p.length_units, p.width, p.width_u
         . ' p.quantite_commander , p.quantite_fabriquer , p.composition , p.price_yuan , p.product_type_txt , p.price_euro , p.weight_variant , p.ref_fab_frs , p.taux_euro_yuan , p.ref_tissus_couleur ,p.total_quantite_commander, p.total_montant_yuan, p.total_montant_euro,p.price_yuan, p.price_euro,  ';
 if (!empty($conf->global->PRODUCT_USE_UNITS))   $sql .= ' p.fk_unit, cu.label as cu_label,';
 $sql .= ' MIN(pfp.unitprice) as minsellprice';
-if (!empty($conf->variants->enabled) && (!empty($conf->global->PRODUIT_ATTRIBUTES_HIDECHILD) && !$show_childproducts)) {
+//if (!empty($conf->variants->enabled) && (!empty($conf->global->PRODUIT_ATTRIBUTES_HIDECHILD) && !$show_childproducts)) {
+if (intval($conf->global->SHOW_OR_NOT_DECLINAISON) == 0){
 	$sql .= ', pac.rowid prod_comb_id';
 }
 // Add fields from extrafields
@@ -371,7 +372,8 @@ $sql .= " LEFT JOIN ".MAIN_DB_PREFIX."product_fournisseur_price as pfp ON p.rowi
 // multilang
 if (!empty($conf->global->MAIN_MULTILANGS)) $sql .= " LEFT JOIN ".MAIN_DB_PREFIX."product_lang as pl ON pl.fk_product = p.rowid AND pl.lang = '".$langs->getDefaultLang()."'";
 
-if (!empty($conf->variants->enabled) && (!empty($conf->global->PRODUIT_ATTRIBUTES_HIDECHILD) && !$show_childproducts)) {
+//if (!empty($conf->variants->enabled) && (!empty($conf->global->PRODUIT_ATTRIBUTES_HIDECHILD) && !$show_childproducts)) {
+if (intval($conf->global->SHOW_OR_NOT_DECLINAISON) == 0){
 	$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."product_attribute_combination pac ON pac.fk_product_child = p.rowid";
 }
 if (!empty($conf->global->PRODUCT_USE_UNITS))   $sql .= " LEFT JOIN ".MAIN_DB_PREFIX."c_units cu ON cu.rowid = p.fk_unit";
@@ -386,7 +388,8 @@ if (dol_strlen($search_type) && $search_type != '-1')
 	else $sql .= " AND p.fk_product_type <> 1";
 }
 
-if (!empty($conf->variants->enabled) && (!empty($conf->global->PRODUIT_ATTRIBUTES_HIDECHILD) && !$show_childproducts)) {
+//if (!empty($conf->variants->enabled) && (!empty($conf->global->PRODUIT_ATTRIBUTES_HIDECHILD) && !$show_childproducts)) {
+if (intval($conf->global->SHOW_OR_NOT_DECLINAISON) == 0){
 	$sql .= " AND pac.rowid IS NULL";
 }
 
@@ -482,7 +485,8 @@ $sql .= ' p.accountancy_code_buy, p.accountancy_code_buy_intra, p.accountancy_co
 $sql .= ' p.weight, p.weight_units, p.length, p.length_units, p.width, p.width_units, p.height, p.height_units, p.surface, p.surface_units, p.volume, p.volume_units';
 if (!empty($conf->global->PRODUCT_USE_UNITS))   $sql .= ', p.fk_unit, cu.label';
 
-if (!empty($conf->variants->enabled) && (!empty($conf->global->PRODUIT_ATTRIBUTES_HIDECHILD) && !$show_childproducts)) {
+//if (!empty($conf->variants->enabled) && (!empty($conf->global->PRODUIT_ATTRIBUTES_HIDECHILD) && !$show_childproducts)) {
+if (intval($conf->global->SHOW_OR_NOT_DECLINAISON) == 0) {
 	$sql .= ', pac.rowid';
 }
 // Add fields from extrafields
@@ -495,9 +499,12 @@ $reshook = $hookmanager->executeHooks('printFieldSelect', $parameters); // Note 
 $sql .= $hookmanager->resPrint;
 //if (GETPOST("toolowstock")) $sql.= " HAVING SUM(s.reel) < p.seuil_stock_alerte";    // Not used yet
 if($sortfield !== null && $sortorder !== null) {
-    $sql .= $db->order($sortfield, $sortorder);
+    //$sql .= $db->order($sortfield, $sortorder);
+    //$sql .= $db->order('SUBSTRING(p.ref,1,13)', 'DESC');
+    $sql .= " ORDER BY SUBSTRING(p.ref,1,14) DESC ";
 }else{
-    $sql .= $db->order('p.rowid', 'DESC');
+    //$sql .= $db->order('SUBSTRING(p.ref,1,13)', 'DESC');
+    $sql .= "  ORDER BY SUBSTRING(p.ref,1,14) DESC  ";
 }
 
 $nbtotalofrecords = '';
@@ -616,7 +623,7 @@ if ($resql)
 
         $type = $oldtype;
     }
-
+        
 	print '<form action="'.$_SERVER["PHP_SELF"].'" method="post" name="formulaire">';
 	if ($optioncss != '') print '<input type="hidden" name="optioncss" value="'.$optioncss.'">';
 	print '<input type="hidden" name="token" value="'.newToken().'">';
@@ -665,10 +672,36 @@ if ($resql)
 		$moreforfilter .= '<div class="divsearchfield">';
 		$moreforfilter .= $langs->trans('Categories').': ';
 		$categoriesProductArr = $form->select_all_categories(Categorie::TYPE_PRODUCT, '', '', 64, 0, 1);
-        $categoriesProductArr[-2] = '- '.$langs->trans('NotCategorized').' -';
-        $moreforfilter .= Form::multiselectarray('search_category_product_list', $categoriesProductArr, $searchCategoryProductList, 0, 0, 'minwidth300');
-        $moreforfilter .= ' <input type="checkbox" class="valignmiddle" name="search_category_product_operator" value="1"'.($searchCategoryProductOperator == 1 ? ' checked="checked"' : '').'/> '.$langs->trans('UseOrOperatorForCategories');
-        $moreforfilter .= '</div>';
+                $categoriesProductArr[-2] = '- '.$langs->trans('NotCategorized').' -';
+                $moreforfilter .= Form::multiselectarray('search_category_product_list', $categoriesProductArr, $searchCategoryProductList, 0, 0, 'minwidth300');
+                $moreforfilter .= ' <input type="checkbox" class="valignmiddle" name="search_category_product_operator" value="1"'.($searchCategoryProductOperator == 1 ? ' checked="checked"' : '').'/> '.$langs->trans('UseOrOperatorForCategories');
+                $moreforfilter .= '</div>';
+                
+                $moreforfilter .= '<div class="divsearchfield">';
+                ?>
+                    <script>
+                        $(document).ready(function(){
+                            $("#show_or_not_declinaison").change(function(){
+                                var selectedVal = 0;
+                                if($('#show_or_not_declinaison').is(":checked")){
+                                    selectedVal = 1;
+                                }else{
+                                    selectedVal = 0;
+                                }
+                                $.ajax("<?php echo DOL_URL_ROOT.'/product/ajax/updatestatusvariant.php'; ?>", {
+                                    type: "POST",
+                                    data : {selectedVal: selectedVal},
+                                    success: function (){
+                                        location.reload();
+                                    }
+                                });
+                            });
+                        });
+                    </script>
+                <?php
+                $checked = intval($conf->global->SHOW_OR_NOT_DECLINAISON) == 1 ? "checked" : "";
+                $moreforfilter .= '<input type="checkbox" id="show_or_not_declinaison" '.$checked.' value="'.intval($conf->global->SHOW_OR_NOT_DECLINAISON).'" ><label for="show_or_not_declinaison">Afficher les variantes de produits</label>';
+                $moreforfilter .= '</div>';
 	}
 
 	//Show/hide child products. Hidden by default
@@ -685,27 +718,6 @@ if ($resql)
 	else $moreforfilter = $hookmanager->resPrint;
         
         $moreforfilter .= '<div class="divsearchfield">';
-        $hosts = $_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_NAME'];
-        print '<script>
-            $(function() {
-                $("#regenerateVariation").click(function(){
-                    $("#load_product_variation").show();
-                    $.ajax("'.$hosts.DOL_URL_ROOT.'/cyberoffice/server_product.regenerate.php", {
-                        type: "GET",
-                        success: function (data){
-                            $("#load_product_variation").hide();
-                            if(data.success){
-                                alert(data.success_detail);
-                                location.reload();
-                            }else{
-                                alert("Une erreur est survenu");
-                                location.reload();
-                            }
-                        }
-                    })
-                });
-            });
-        </script>';
         $moreforfilter .= '</div>';
 
 	if ($moreforfilter)
@@ -1169,6 +1181,8 @@ if ($resql)
             $product_static->volume_units = $obj->volume_units;
             $product_static->surface = $obj->surface;
             $product_static->surface_units = $obj->surface_units;
+            $product_static->price_yuan = $obj->price_yuan;
+            $product_static->price_euro = $obj->price_euro;
             $product_static->product_type_txt = $obj->product_type_txt;
             $product_static->total_quantite_commander = $obj->total_quantite_commander;
             $product_static->total_montant_yuan = $obj->total_montant_yuan;
@@ -1196,7 +1210,11 @@ if ($resql)
             /*$isProductfab*/
             print '<td class="tdoverflowmax200">';
             if($product_static->product_type_txt == "fab"){
-                print $product_static->getNomUrl(1,"",0,-1,0,true);
+                if(strpos($product_static->ref,'_')){
+                    print $product_static->ref;
+                }else{
+                    print $product_static->getNomUrl(1,"",0,-1,0,true);
+                }
             }else{
                 print $product_static->getNomUrl(1);
             }
@@ -1239,15 +1257,17 @@ if ($resql)
         if (!empty($arrayfields['p.total_montant_yuan']['checked']))
         {
             print '<td class="tdoverflowmax200">';
-            print $product_static->total_montant_yuan;
+            $priceUnitChildProd = (strpos($product_static->ref,'_') ? " (P.U: ".$product_static->price_yuan." )":"");
+            print $product_static->total_montant_yuan.$priceUnitChildProd;
             print "</td>\n";
             if (!$i) $totalarray['nbfield']++;
         }
         
         if (!empty($arrayfields['p.total_montant_euro']['checked']))
         {
+            $priceUnitChildProd = (strpos($product_static->ref,'_') ? " (P.U : ".$product_static->price_euro." )":"");
             print '<td class="tdoverflowmax200">';
-            print $product_static->total_montant_euro;
+            print $product_static->total_montant_euro.$priceUnitChildProd;
             print "</td>\n";
             if (!$i) $totalarray['nbfield']++;
         }
@@ -1625,8 +1645,10 @@ if ($resql)
 		{
 			$selected = 0;
 			if (in_array($obj->rowid, $arrayofselected)) $selected = 1;
-			print '<input id="cb'.$obj->rowid.'" class="flat checkforselect" type="checkbox" name="toselect[]" value="'.$obj->rowid.'"'.($selected ? ' checked="checked"' : '').'>';
-		}
+                        //if(!strpos($obj->ref, "_")){
+                            print '<input id="cb'.$obj->rowid.'" class="flat checkforselect" type="checkbox" name="toselect[]" value="'.$obj->rowid.'"'.($selected ? ' checked="checked"' : '').'>';
+                        //}
+                }
 		print '</td>';
 		if (!$i) $totalarray['nbfield']++;
 

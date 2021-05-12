@@ -541,6 +541,46 @@ class ProductCombination
             return $arrAssociate;
         }
         
+        public function getProductTailleWithDetail($productId,array $pchild) {
+            $sql = "SELECT c2v.fk_prod_attr,a.label, a.rang, c2v.fk_prod_attr_val,c.fk_product_child,pav.ref, pav.value as taille
+                    FROM ".MAIN_DB_PREFIX."product_attribute_combination2val c2v 
+                    LEFT JOIN ".MAIN_DB_PREFIX."product_attribute_combination c ON c2v.fk_prod_combination = c.rowid 
+                    LEFT JOIN ".MAIN_DB_PREFIX."product p ON p.rowid = c.fk_product_child 
+                    LEFT JOIN ".MAIN_DB_PREFIX."product_attribute a ON a.rowid = fk_prod_attr 
+                    LEFT JOIN ".MAIN_DB_PREFIX."product_attribute_value pav on c2v.fk_prod_attr_val = pav.rowid
+                    WHERE c.fk_product_parent = ".$productId." and c.fk_product_child in (".implode(',',$pchild).") and c2v.fk_prod_attr = 2
+                   order by pav.type_taille, SUBSTRING(pav.value,1,1) asc";
+            $query = $this->db->query($sql);
+            $arrAssociate = [];
+            $i = 0;
+            while ($result = $this->db->fetch_object($query)) {
+                $arrRes = (array) $result;
+                $arrAssociate[$arrRes['taille']][$i] = $arrRes['fk_product_child'];
+                $i++;
+            }
+            return $arrAssociate;
+        }
+        
+        public function getProductColor($productId,$pchild) {
+            $sql = "SELECT c2v.fk_prod_attr,a.label, a.rang, c2v.fk_prod_attr_val,c.fk_product_child
+                    FROM ".MAIN_DB_PREFIX."product_attribute_combination2val c2v 
+                    LEFT JOIN ".MAIN_DB_PREFIX."product_attribute_combination c ON c2v.fk_prod_combination = c.rowid 
+                    LEFT JOIN ".MAIN_DB_PREFIX."product p ON p.rowid = c.fk_product_child 
+                    LEFT JOIN ".MAIN_DB_PREFIX."product_attribute a ON a.rowid = fk_prod_attr 
+                    WHERE c.fk_product_parent = ".$productId." and c.fk_product_child = ".$pchild." and c2v.fk_prod_attr = 1
+                    ORDER BY c.fk_product_child ASC";
+            $query = $this->db->query($sql);
+            $arrAssociate = [];
+            
+            $i = 0;
+            while ($result = $this->db->fetch_object($query)) {
+                $arrRes = (array) $result;
+                $arrAssociate[$arrRes['fk_product_child']][$i] = $arrRes['fk_prod_attr_val'];
+                $i++;
+            }
+            return $arrAssociate;
+        }
+        
         /**
          * @author Fréderic id web <freddyhat122@gmail.com>
          */
@@ -803,11 +843,18 @@ class ProductCombination
                     }*/
                     $newproduct->product_type_txt = strval(($arrayOtherInformation['product_type_txt']));
                     $tauxEurYuan = !empty($arrayOtherInformation['tauxChange']) ? $arrayOtherInformation['tauxChange'] : 0;
+                    $qtyCommCalc = 0;
+                    if(!empty($arrayOtherInformation['quantite_fabriquer'])){
+                        $qtyCommCalc = intval($arrayOtherInformation['quantite_fabriquer']);
+                    }
                     $sqlupdateother = "UPDATE ".MAIN_DB_PREFIX."product set "
-                            . " price = ".floatval($arrayOtherInformation['price_euro'])." , "
-                            . " price_ttc = ".floatval($arrayOtherInformation['price_euro']).", "
-                            . " barcode = ".$arrayOtherInformation['codebares'].", "
+                            //. " price = ".floatval($arrayOtherInformation['price_euro'])." , "
+                            //. " price_ttc = ".floatval($arrayOtherInformation['price_euro']).", "
+                            . " barcode = '".$arrayOtherInformation['codebares']."', "
                             . " weight=".floatval($arrayOtherInformation['poidsfabriq']).", "
+                            . " total_montant_yuan = ".floatval(str_replace(",",".",$arrayOtherInformation['price_yuan'])*$qtyCommCalc).", "
+                            . " total_montant_euro = ".floatval(str_replace(",",".",$arrayOtherInformation['price_euro'])*$qtyCommCalc).", "
+                            . " total_quantite_commander = ".$qtyCommCalc.", "
                             . " tobuy = 1 , "
                             . " weight_variant=".floatval($arrayOtherInformation['poidsfabriq']).", ";
                     
@@ -826,6 +873,14 @@ class ProductCombination
                     $qtyfab = !empty($arrayOtherInformation['quantite_fabriquer']) ? $arrayOtherInformation['quantite_fabriquer'] : 0;
                     $sqlInsertStock = "INSERT into ".MAIN_DB_PREFIX."product_stock (tms,fk_product,fk_entrepot,reel) values ('".date('Y-m-d h:i:s')."',".$newproduct->id.",1,".$qtyfab.")";
                     $db->query($sqlInsertStock);
+                    
+                    /* mise à jour prix fournisseur*/
+                    $productFournisseur = new ProductFournisseur($db);
+                    $productFournisseur->fetch($newproduct->id);
+                    $supplierDefaultFong = new Fournisseur($db);
+                    $result = $supplierDefaultFong->fetch(19);
+                    $qtyfabfournisseur = (intval($arrayOtherInformation['quantite_fabriquer']) !== 0 ? intval($arrayOtherInformation['quantite_fabriquer']) : 1);
+                    $productFournisseur->update_buyprice($qtyfabfournisseur, floatval(floatval(str_replace(",",".",$arrayOtherInformation['price_euro'])*$qtyCommCalc)), $user, "HT", $supplierDefaultFong, 0, "ref_".$newproduct->id, $arrayOtherInformation['tva_tx_fourn'], 0, 0, 0, 0, 0, "", array(), '', 0, 'HT', 1, '', "", $arrayOtherInformation['codebares'], "");
                 }
                 
 		return $newproduct->id;

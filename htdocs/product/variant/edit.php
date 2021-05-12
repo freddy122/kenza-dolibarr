@@ -43,18 +43,21 @@ if ($reug->fk_usergroup) {
 if($_POST['posted_id']){
     $w_variant = !empty($weight_variant) ? $weight_variant : 0;
     $sqlUpdate = "UPDATE ".MAIN_DB_PREFIX."product set " ;
-    if($resu_fab !== 'fab' && !empty($quantite_commander)) {
-        $sqlUpdate       .= " quantite_commander = ".$quantite_commander.", " ;
+    if($resu_fab !== 'fab' && intval($quantite_commander) >=0 ) {
+        $sqlUpdate       .= " quantite_commander = ".intval($quantite_commander).", " ;
+        $sqlUpdate       .= " total_quantite_commander = ".intval($quantite_commander).", " ;
     }else{
         if(!empty($prodChild->quantite_commander)){
             $sqlUpdate       .= " quantite_commander = ".$prodChild->quantite_commander.", " ;
+            $sqlUpdate       .= " total_quantite_commander = ".$prodChild->quantite_commander.", " ;
         }else{
             $sqlUpdate       .= " quantite_commander = 0, " ;
+            $sqlUpdate       .= " total_quantite_commander = 0, " ;
         }
     }
     
-    if(!empty($quantite_fabriquer)){
-        $sqlUpdate       .= " quantite_fabriquer = ".$quantite_fabriquer.", " ; 
+    if(intval($quantite_fabriquer) >= 0){
+        $sqlUpdate       .= " quantite_fabriquer = ".intval($quantite_fabriquer).", " ; 
         
         /* Mise à jour qty une seul fils */
         $sqlUpdatesStock = "UPDATE ".MAIN_DB_PREFIX."product_stock "
@@ -147,48 +150,108 @@ if($_POST['posted_id']){
     }
     
     if(!empty($price_yuan)){
+        $totalYuan = (!empty($quantite_fabriquer) ? (intval($quantite_fabriquer)*floatval($price_yuan)) : (floatval($price_yuan)*intval($prodChild->quantite_fabriquer)) );
         $sqlUpdate       .= " price_yuan = ".floatval(str_replace(',','.',$price_yuan)).", " ; 
+        $sqlUpdate       .= " total_montant_yuan = ".$totalYuan.", " ; 
     }else{
         if(!empty($prodChild->price_yuan)){
             $sqlUpdate       .= " price_yuan = ".$prodChild->price_yuan.", " ;
+            $sqlUpdate       .= " total_montant_yuan = ".($prodChild->price_yuan*$prodChild->quantite_fabriquer).", " ;
         }else{
             $sqlUpdate       .= " price_yuan = 0, " ;
+            $sqlUpdate       .= " total_montant_yuan = 0, " ;
         }
     }
     
     if(!empty($price_euro)) {
+        $totalEuro = (!empty($quantite_fabriquer) ? (intval($quantite_fabriquer)*floatval($price_euro)) : (floatval($price_euro)*intval($prodChild->quantite_fabriquer)) );
         $sqlUpdate       .= " price_euro = ".floatval(str_replace(',','.',$price_euro)).", " ;
-        $sqlUpdate       .= " price = ".floatval(str_replace(',','.',$price_euro)).", " ;
-        $sqlUpdate       .= " price_ttc = ".floatval(str_replace(',','.',$price_euro)).", " ;
+        $sqlUpdate       .= " total_montant_euro = ".$totalEuro.", " ;
+        //$sqlUpdate       .= " price = ".floatval(str_replace(',','.',$price_euro)).", " ;
+        //$sqlUpdate       .= " price_ttc = ".floatval(str_replace(',','.',$price_euro)).", " ;
+        
+        /* prix fournisseur */
+        $qty_fab_calc = (!empty($quantite_fabriquer) ? $quantite_fabriquer : 1);
+        $sqlUpdatePriceFournChild = "UPDATE ".MAIN_DB_PREFIX."product_fournisseur_price "
+            . " set price = ".floatval(floatval(str_replace(',','.',$price_euro))*$qty_fab_calc).", "
+            . " quantity = ".floatval($qty_fab_calc).", "
+            . " unitprice=".floatval(str_replace(',','.',$price_euro))." "
+            . " where fk_product = ".intval($_POST['posted_id']);
+        $db->query($sqlUpdatePriceFournChild);
     }else{
         if(!empty($prodChild->price_euro)){
             $sqlUpdate       .= " price_euro = ".$prodChild->price_euro.", " ;
-            $sqlUpdate       .= " price = ".$prodChild->price_euro.", " ;
-            $sqlUpdate       .= " price_ttc = ".$prodChild->price_euro.", " ;
+            $sqlUpdate       .= " total_montant_euro = ".($prodChild->price_euro*$prodChild->quantite_fabriquer).", " ;
+            //$sqlUpdate     .= " price = ".$prodChild->price_euro.", " ;
+            //$sqlUpdate     .= " price_ttc = ".$prodChild->price_euro.", " ;
+            
+            /* prix fournisseur */
+            $qty_fab_calc = (!empty($prodChild->quantite_fabriquer) ? $prodChild->quantite_fabriquer : 1);
+            $sqlUpdatePriceFournChild = "UPDATE ".MAIN_DB_PREFIX."product_fournisseur_price "
+            . " set price = ".(floatval(str_replace(',','.',$prodChild->price_euro))*$qty_fab_calc).", "
+            . " quantity = ".$qty_fab_calc.", "
+            . " unitprice=".floatval(str_replace(',','.',$prodChild->price_euro))." "
+            . " where fk_product = ".intval($_POST['posted_id']);
+            $db->query($sqlUpdatePriceFournChild);
         }else{
             $sqlUpdate       .= " price_euro = 0, " ;
-            $sqlUpdate       .= " price = 0, " ;
-            $sqlUpdate       .= " price_ttc = 0, " ;
+            $sqlUpdate       .= " total_montant_euro = 0, " ;
+            //$sqlUpdate     .= " price = 0, " ;
+            //$sqlUpdate     .= " price_ttc = 0, " ;
         }
     }
     
     if(!empty($w_variant)){
-        $sqlUpdate       .= " weight_variant = ".floatval(str_replace(',','.',$w_variant))." " ; 
+        $sqlUpdate       .= " weight_variant = ".floatval(str_replace(',','.',$w_variant)).", weight = ".floatval(str_replace(',','.',$w_variant))."  " ; 
     }else{
         if(!empty($prodChild->weight_variant)){
-            $sqlUpdate       .= " weight_variant = ".$prodChild->weight_variant." " ;
+            $sqlUpdate       .= " weight_variant = ".$prodChild->weight_variant.", weight = ".$prodChild->weight_variant."  " ;
         }else{
-            $sqlUpdate       .= " weight_variant = 0 " ;
+            $sqlUpdate       .= " weight_variant = 0, weight = 0 " ;
         }
     }
     
     $sqlUpdate       .= " where rowid = ".$_POST['posted_id'];
-    
+    // print_r($sqlUpdate);die();
     $db->query($sqlUpdate);
+    
+    $prodCombinates = new ProductCombination($db);
+    $resProdChild = $prodCombinates->fetchAllByFkProductParent($parentId);
+    $totalQuantiteCom   = 0;
+    $totalYuan          = 0;
+    $totalEuro          = 0;
+    $totalEuroFourn          = 0;
+    foreach($resProdChild as $reChil){
+        $prodChildUpdate   = new Product($db);
+        $prodChildUpdate->fetch($reChil ->fk_product_child);
+        $qtyfourn = (!empty($prodChildUpdate->quantite_fabriquer) ? $prodChildUpdate->quantite_fabriquer : 0);
+        $totalQuantiteCom += $prodChildUpdate->quantite_fabriquer;
+        $totalYuan        += $prodChildUpdate->quantite_fabriquer*$prodChildUpdate->price_yuan;
+        $totalEuro        += $prodChildUpdate->quantite_fabriquer*$prodChildUpdate->price_euro;
+        $totalEuroFourn        += $qtyfourn*$prodChildUpdate->price_euro;
+    }
+    //print_r($totalEuroFourn);
+    /*Total Qty comm, yuan , euro*/
+    $sqlUpdateMontantTotal = "update ".MAIN_DB_PREFIX."product "
+    . " set total_quantite_commander = ".$totalQuantiteCom.", "
+    . " total_montant_yuan = ".$totalYuan.", "
+    . " total_montant_euro = ".$totalEuro." "
+    . " where rowid =  ".intval($parentId);
+    $db->query($sqlUpdateMontantTotal);
+    
+    $priceUnits = floatval($totalEuroFourn/(!empty($totalQuantiteCom)?$totalQuantiteCom:1));
+    $sqlUpdatePriceFournParent = "UPDATE ".MAIN_DB_PREFIX."product_fournisseur_price "
+            . " set price = ".$totalEuroFourn.", "
+            . " quantity = ".(!empty($totalQuantiteCom)?$totalQuantiteCom:1).", "
+            . " unitprice=".$priceUnits." "
+            . " where fk_product = ".intval($parentId);
+    //print_r($sqlUpdatePriceFournParent);
+    $db->query($sqlUpdatePriceFournParent);
+   
     ?>
-        <script type="text/javascript">
-            window.parent.location.reload()
-        </script>
+    <script type="text/javascript">
+        window.parent.location.reload()
+    </script>
     <?php
     exit;
 }
@@ -283,16 +346,23 @@ if($_POST['posted_id']){
                         class="maxwidth200" 
                         maxlength="128" 
                         value="<?php echo ($quantite_commander?$quantite_commander:$prodChild->quantite_commander); ?>"
-                        oninput="changeValueInput('message_success_qtycomm','qtycomm','copie_val_qtycomm')"
+                        oninput="changeValueInput('message_success_qtycomm','qtycomm','copie_val_qtycomm','copie_val_qtycomm_color')"
                     >
                     <br>
                     <div id="message_success_qtycomm"></div>
                     <img src = "<?php echo DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif'; ?>" style="width: 18%;display:none;" id="load_update_qtycomm">
                     <button 
                         type="button" 
+                        id="copie_val_qtycomm_color" 
+                        style="display:none;" 
+                        onclick="copyValuesOfInput('load_update_qtycomm','<?php echo $parentId; ?>','message_success_qtycomm','copie_val_qtycomm','qtycomm',true,'copie_val_qtycomm_color')">
+                        Appliquer la modification pour déclinaison de la même couleur
+                    </button>
+                    <button 
+                        type="button" 
                         id="copie_val_qtycomm" 
                         style="display:none;" 
-                        onclick="copyValuesOfInput('load_update_qtycomm','<?php echo $parentId; ?>','message_success_qtycomm','copie_val_qtycomm','qtycomm')">
+                        onclick="copyValuesOfInput('load_update_qtycomm','<?php echo $parentId; ?>','message_success_qtycomm','copie_val_qtycomm','qtycomm',false,'copie_val_qtycomm_color')">
                         Appliquer la modification pour toutes les déclinaisons
                     </button>
                 </td>
@@ -310,16 +380,23 @@ if($_POST['posted_id']){
                     class="maxwidth200" 
                     maxlength="128" 
                     value="<?php echo ($quantite_fabriquer?$quantite_fabriquer:$prodChild->quantite_fabriquer); ?>"
-                    oninput="changeValueInput('message_success_qtyfab','qtyfab','copie_val_qtyfab')"
+                    oninput="changeValueInput('message_success_qtyfab','qtyfab','copie_val_qtyfab','copie_val_qtyfab_color')"
                 >
                 <br>
                 <div id="message_success_qtyfab"></div>
                 <img src = "<?php echo DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif'; ?>" style="width: 18%;display:none;" id="load_update_qtyfab">
                 <button 
                     type="button" 
+                    id="copie_val_qtyfab_color" 
+                    style="display:none;" 
+                    onclick="copyValuesOfInput('load_update_qtyfab','<?php echo $parentId; ?>','message_success_qtyfab','copie_val_qtyfab','qtyfab',true,'copie_val_qtyfab_color')">
+                    Appliquer la modification pour déclinaison de la même couleur
+                </button>
+                <button 
+                    type="button" 
                     id="copie_val_qtyfab" 
                     style="display:none;" 
-                    onclick="copyValuesOfInput('load_update_qtyfab','<?php echo $parentId; ?>','message_success_qtyfab','copie_val_qtyfab','qtyfab')">
+                    onclick="copyValuesOfInput('load_update_qtyfab','<?php echo $parentId; ?>','message_success_qtyfab','copie_val_qtyfab','qtyfab',false,'copie_val_qtyfab_color')">
                     Appliquer la modification pour toutes les déclinaisons
                 </button>
             </td>
@@ -339,16 +416,23 @@ if($_POST['posted_id']){
                     name="composition" 
                     class="maxwidth200"  
                     value="<?php echo ($composition?$composition:$prodChild->composition); ?>"
-                    oninput="changeValueInput('message_success_composition','composition','copie_val_composition')"
+                    oninput="changeValueInput('message_success_composition','composition','copie_val_composition','copie_val_composition_color')"
                 >
                 <br>
                 <div id="message_success_composition"></div>
                 <img src = "<?php echo DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif'; ?>" style="width: 18%;display:none;" id="load_update_composition">
                 <button 
                     type="button" 
+                    id="copie_val_composition_color" 
+                    style="display:none;" 
+                    onclick="copyValuesOfInput('load_update_qtyfab','<?php echo $parentId; ?>','message_success_composition','copie_val_composition','composition',true,'copie_val_composition_color')">
+                    Appliquer la modification pour déclinaison de la même couleur
+                </button>
+                <button 
+                    type="button" 
                     id="copie_val_composition" 
                     style="display:none;" 
-                    onclick="copyValuesOfInput('load_update_composition','<?php echo $parentId; ?>','message_success_composition','copie_val_composition','composition')">
+                    onclick="copyValuesOfInput('load_update_composition','<?php echo $parentId; ?>','message_success_composition','copie_val_composition','composition',false,'copie_val_composition_color')">
                     Appliquer la modification pour toutes les déclinaisons
                 </button>
             </td>
@@ -363,19 +447,25 @@ if($_POST['posted_id']){
                     id="price_yuan"  
                     value="<?php echo ($price_yuan?$price_yuan:$prodChild->price_yuan); ?>" 
                     oninput="changeEuro('price_yuan','price_euro','taux_change');
-                    changeValueInput('message_success_price_yuan','price_yuan','copie_val_price_yuan')"
+                    changeValueInput('message_success_price_yuan','price_yuan','copie_val_price_yuan','copie_val_price_yuan_color')"
                 >
                 <br>
                 <div id="message_success_price_yuan"></div>
                 <img src = "<?php echo DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif'; ?>" style="width: 18%;display:none;" id="load_update_price_yuan">
                 <button 
                     type="button" 
+                    id="copie_val_price_yuan_color" 
+                    style="display:none;" 
+                    onclick="copyValuesOfInput('load_update_price_yuan','<?php echo $parentId; ?>','message_success_price_yuan','copie_val_price_yuan','price_yuan',true,'copie_val_price_yuan_color')">
+                    Appliquer la modification pour déclinaison de la même couleur
+                </button>
+                <button 
+                    type="button" 
                     id="copie_val_price_yuan" 
                     style="display:none;" 
-                    onclick="copyValuesOfInput('load_update_price_yuan','<?php echo $parentId; ?>','message_success_price_yuan','copie_val_price_yuan','price_yuan')">
+                    onclick="copyValuesOfInput('load_update_price_yuan','<?php echo $parentId; ?>','message_success_price_yuan','copie_val_price_yuan','price_yuan',false,'copie_val_price_yuan_color')">
                     Appliquer la modification pour toutes les déclinaisons
                 </button>
-                
             </td>
         </tr>
         <tr>
@@ -387,16 +477,23 @@ if($_POST['posted_id']){
                     class="maxwidth200" 
                     id="taux_change" 
                     value="<?php echo $prodChild->taux_euro_yuan; ?>"
-                    oninput="changeEuro('price_yuan','price_euro','taux_change');changeValueInput('message_success_taux_change','taux_change','copie_val_taux_change')" 
+                    oninput="changeEuro('price_yuan','price_euro','taux_change');changeValueInput('message_success_taux_change','taux_change','copie_val_taux_change','copie_val_taux_change_color')" 
                 >
                 <br>
                 <div id="message_success_taux_change"></div>
                 <img src = "<?php echo DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif'; ?>" style="width: 18%;display:none;" id="load_update_taux_change">
-                <button 
-                    type="button" 
-                    id="copie_val_taux_change" 
-                    style="display:none;" 
-                    onclick="copyValuesOfInput('load_update_taux_change','<?php echo $parentId; ?>','message_success_taux_change','copie_val_taux_change','taux_change')">
+                <button
+                    type="button"
+                    id="copie_val_taux_change_color"
+                    style="display:none;"
+                    onclick="copyValuesOfInput('load_update_taux_change','<?php echo $parentId; ?>','message_success_taux_change','copie_val_taux_change','taux_change',true,'copie_val_taux_change_color')">
+                    Appliquer la modification pour déclinaison de la même couleur
+                </button>
+                <button
+                    type="button"
+                    id="copie_val_taux_change"
+                    style="display:none;"
+                    onclick="copyValuesOfInput('load_update_taux_change','<?php echo $parentId; ?>','message_success_taux_change','copie_val_taux_change','taux_change',false,'copie_val_taux_change_color')">
                     Appliquer la modification pour toutes les déclinaisons
                 </button>
             </td>
@@ -478,7 +575,7 @@ if($_POST['posted_id']){
         });
     }
     
-    function changeValueInput(messageSuccess,inputComp,copyval){
+    function changeValueInput(messageSuccess,inputComp,copyval,copyvalcolor = ""){
         var resy = $("#"+inputComp).val();
         $("#"+messageSuccess).hide();
         $("#"+messageSuccess).css({
@@ -488,12 +585,18 @@ if($_POST['posted_id']){
         });
         if(resy !== ""){
             $("#"+copyval).show();
+            if(copyvalcolor !== ""){
+                $("#"+copyvalcolor).show();
+            }
         }else{
             $("#"+copyval).hide();
+            if(copyvalcolor !== ""){
+                $("#"+copyvalcolor).hide();
+            }
         }
     }
     
-    function copyValuesOfInput(loadUpdate,idparent,messageSuccess,buttonId,flag){
+    function copyValuesOfInput(loadUpdate,idparent,messageSuccess,buttonId,flag, isColorOnly = false, buttonColor = ""){
         $("#"+loadUpdate).show();
         var qtyComm = $("#qtycomm").val();
         var qtyfab = $("#qtyfab").val();
@@ -507,18 +610,36 @@ if($_POST['posted_id']){
                 qtyComm: qtyComm,
                 parentId:idparent
             };
+            if(isColorOnly === true){
+                dataTosend.isColor = 1;
+                dataTosend.valCoul = "<?php echo $valColor; ?>";
+            }else{
+                dataTosend.isColor = 0;
+            }
         }
         if(flag === "qtyfab"){
             dataTosend = {
                 qtyfab:qtyfab,
                 parentId:idparent
             };
+            if(isColorOnly  === true){
+                dataTosend.isColor = 1;
+                dataTosend.valCoul = "<?php echo $valColor; ?>";
+            }else{
+                dataTosend.isColor = 0;
+            }
         }
         if(flag === "composition"){
             dataTosend = {
                 composition:composition,
                 parentId:idparent
             };
+            if(isColorOnly === true){
+                dataTosend.isColor = 1;
+                dataTosend.valCoul = "<?php echo $valColor; ?>";
+            }else{
+                dataTosend.isColor = 0;
+            }
         }
         if(flag === "price_yuan" || flag === "taux_change"){
             dataTosend = {
@@ -527,6 +648,12 @@ if($_POST['posted_id']){
                 prixEuro:prixEuro,
                 parentId:idparent
             };
+            if(isColorOnly === true){
+                dataTosend.isColor = 1;
+                dataTosend.valCoul = "<?php echo $valColor; ?>";
+            }else{
+                dataTosend.isColor = 0;
+            }
         }
         
         $.ajax("<?php echo DOL_URL_ROOT.'/product/ajax/updateOtherInfo.php'; ?>", {
@@ -536,6 +663,9 @@ if($_POST['posted_id']){
                 $("#"+loadUpdate).hide();
                 if(data.success){
                     $("#"+buttonId).hide();
+                    if(buttonColor){
+                        $("#"+buttonColor).hide();
+                    }
                     $("#"+messageSuccess).show();
                     $("#"+messageSuccess).css({
                         "border":"1px solid",

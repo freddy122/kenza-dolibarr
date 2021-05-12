@@ -36,6 +36,9 @@ if($_POST['yes_delete']){
     $sqlDeleteCombinations = "DELETE from ".MAIN_DB_PREFIX."product_attribute_combination where fk_product_child = ".intval($idProduct);
     $db->query($sqlDeleteCombinations);
     
+    $sqlDeleteCombinationsfourn = "DELETE from ".MAIN_DB_PREFIX."product_fournisseur_price where fk_product = ".intval($idProduct);
+    $db->query($sqlDeleteCombinationsfourn);
+    
     $sqlDeleteProduct = "DELETE from ".MAIN_DB_PREFIX."product where rowid = ".intval($idProduct);
     $db->query($sqlDeleteProduct);
     
@@ -46,9 +49,9 @@ if($_POST['yes_delete']){
     foreach($resProdChild as $reChil){
         $prodChildUpdate = new Product($db);
         $prodChildUpdate->fetch($reChil ->fk_product_child);
-        $totalQuantiteCom += $prodChildUpdate->quantite_commander;
-        $totalYuan        += $prodChildUpdate->quantite_commander*$prodChildUpdate->price_yuan;
-        $totalEuro        += $prodChildUpdate->quantite_commander*$prodChildUpdate->price_euro;
+        $totalQuantiteCom += $prodChildUpdate->quantite_fabriquer;
+        $totalYuan        += $prodChildUpdate->quantite_fabriquer*$prodChildUpdate->price_yuan;
+        $totalEuro        += $prodChildUpdate->quantite_fabriquer*$prodChildUpdate->price_euro;
     }
     /*Total Qty comm, yuan , euro*/
     $sqlUpdateMontantTotal = "update ".MAIN_DB_PREFIX."product "
@@ -57,6 +60,17 @@ if($_POST['yes_delete']){
     . " total_montant_euro = ".$totalEuro." "
     . " where rowid =  ".intval($parentId);
     $db->query($sqlUpdateMontantTotal);
+    $totalqtyfabcalc = !empty($totalQuantiteCom)?$totalQuantiteCom:1;
+    $priceUnits = floatval($totalEuro/$totalqtyfabcalc);
+    if(!empty($totalEuro)){
+    $sqlUpdatePriceFourn = "UPDATE ".MAIN_DB_PREFIX."product_fournisseur_price "
+            . " set price = ".$totalEuro.", "
+            . " quantity = ".$totalqtyfabcalc.", "
+            . " unitprice=".$priceUnits." "
+            . " where fk_product = ".intval($parentId);
+    
+    $db->query($sqlUpdatePriceFourn);
+    }
     
     print '<script type="text/javascript">
             window.parent.location.reload()

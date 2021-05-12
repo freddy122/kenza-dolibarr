@@ -221,25 +221,69 @@ dol_fiche_head();
                     </td>
                 </tr>
                 <tr>
-                    <td class="fieldrequired"><label for="value">Image couleur</label></td>
+                    <td class="fieldrequired"><label for="value">Image couleur</label><br><i style="color:red;font-size: 12px;">Taille max autorisé : 2M <br>Largeur max autorisé : 1200<br>Hauteur max autorisé : 1200 <br>Type de fichier autorisé : jpeg, jpg, png, gif </i></td>
                     <td>
-                        <input id="image_couleur" type="file" name="image_couleur" onchange="readURL(this);" /> 
-                        <img id="blah" src="#" style="display: none;"/>
+                        <input id="image_couleur" type="file" name="image_couleur" id="image_couleur" onchange="readURL(this,'blah','image_couleur');"/> 
+                        <img id="blah" src="#" style="display: none;" style="width:20%;">
                         <script>
-                            function readURL(input) {
+                            function readURL(input,idImg,idInput) {
                                 if (input.files && input.files[0]) {
-                                    var reader = new FileReader();
-                                    reader.onload = function (e) {
-                                        $('#blah').show();
-                                        $('#blah')
-                                            .attr('src', e.target.result)
-                                            .width(200)
-                                            .height(100);
-                                    };
-                                    reader.readAsDataURL(input.files[0]);
+                                    var file = input.files && input.files[0];
+                                    var img = new Image();
+                                    img.src = window.URL.createObjectURL(file);
+                                    if((file.type !== "image/gif" && file.type !== "image/jpeg" && file.type !== "image/png") || file.size > 2000000)  {
+                                        //$("#updates_products").prop('disabled',true);
+                                        $("#"+idInput).val('');
+                                        $( "#dialogerror" ).dialog({
+                                            modal: true,
+                                            height: 200,
+                                            width: 800,
+                                            resizable: true,
+                                            title: "Erreur",
+                                            open: function(){
+                                               $("#error_file_to_large").html('- Type de fichier non autorisé (<span style="color:red">'+file.type+' </span>) ou taille très grand (<span style="color:red">'+bytesToSize(file.size)+'</span>) <br>- Les types de fichier autoriser sont : <strong>jpeg, jpg, png, gif</strong><br>- La taille autorisé est inférieur à <strong>2M<strong>');
+                                            }
+                                        }).prev(".ui-dialog-titlebar").css({"color":"red","font-weight":"bold"});
+                                    }else{
+                                        //$("#updates_products").prop('disabled',false);
+                                        img.onload = function(e){
+                                            if(img.width > 1200 && (img.width > 1200 || img.height > 1200)){
+                                                //$("#updates_products").prop('disabled',true);
+                                                $("#"+idInput).val('');
+                                                $( "#dialogerror" ).dialog({
+                                                    modal: true,
+                                                    height: 150,
+                                                    width: 750,
+                                                    resizable: true,
+                                                    title: "Erreur",
+                                                    open: function(){
+                                                       $("#error_file_to_large").html('- La taille de l\'image que vous avez uploadé est de <span style="color:red;">'+img.width+' x '+img.height+'</span>,  ce qui n\'est pas autoriser');
+                                                    }
+                                                }).prev(".ui-dialog-titlebar").css({"color":"red","font-weight":"bold"});
+                                            }else{
+                                                $("#updates_products").prop('disabled',false);
+                                                var reader = new FileReader();
+                                                reader.onload = function (e) {
+                                                    $('#'+idImg).show();
+                                                    $('#'+idImg).width(90)
+                                                        .attr('src', e.target.result);
+                                                };
+                                                reader.readAsDataURL(input.files[0]);
+                                            }
+                                        };
+                                    }
                                 }
                             }
+                            function bytesToSize(bytes) {
+                                var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                                if (bytes == 0) return '0 Byte';
+                                var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+                                return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+                            }
                         </script>
+                        <div id="dialogerror" title="Basic dialog" style="display:none;">
+                            <p id="error_file_to_large"></p>
+                        </div> 
                     </td>
                 </tr>
             <?php endif; ?>
