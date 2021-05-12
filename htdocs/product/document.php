@@ -75,8 +75,8 @@ if (empty($page) || $page == -1) { $page = 0; }     // If $page is not defined, 
 $offset = $limit * $page;
 $pageprev = $page - 1;
 $pagenext = $page + 1;
-if (!$sortorder) $sortorder = "ASC";
-if (!$sortfield) $sortfield = "position_name";
+if (!$sortorder) $sortorder = "DESC";
+if (!$sortfield) $sortfield = "date";
 
 
 $object = new Product($db);
@@ -202,7 +202,7 @@ if ($object->id)
     $head = product_prepare_head($object);
     $titre = $langs->trans("CardProduct".$object->type);
     $picto = ($object->type == Product::TYPE_SERVICE ? 'service' : 'product');
-
+    
     if($status_product && $status_product == "produitfab") {
         //dol_fiche_head($head, 'card', $titre, 0, $picto);
         print load_fiche_titre("Modification produit fab", "<a href='".DOL_URL_ROOT."/product/listproduitfab.php?leftmenu=product&type=0&idmenu=37'>Retour</a>", $picto);
@@ -282,6 +282,158 @@ if ($object->id)
         $resu_fab = $resug->code;
     }
     if($resu_fab !== "fab"){
+        
+        if(!empty($_FILES['icone_prod_1']['name']) || !empty($_FILES['icone_prod_2']['name'])){
+            
+            $upload_dir = $conf->product->multidir_output[$conf->entity];
+            $sdir = $conf->product->multidir_output[$conf->entity];
+            if (! empty($conf->global->PRODUCT_USE_OLD_PATH_FOR_PHOTO)) {
+                if (version_compare(DOL_VERSION, '3.8.0', '<')){
+                    $dir = $sdir .'/'. get_exdir($object->id,2) . $object->id ."/photos";
+                }else {
+                    $dir = $sdir .'/'. get_exdir($object->id,2,0,0,$object,'product') . $object->id ."/photos";
+                }
+            } else {
+                $principaleProd = "select ref from ".MAIN_DB_PREFIX."product where rowid= ".$object->id;
+                $resRefss = $db->getRows($principaleProd);
+
+                $dir = $sdir .'/'.dol_sanitizeFileName($object->ref);
+            }
+            
+            if (! file_exists($dir)) {
+                dol_mkdir($dir);
+            }
+            
+            if(!empty($_FILES['icone_prod_1']['name'])){
+                $iconePosted1 = $_FILES['icone_prod_1']['name'];
+                $ext1 = strtolower(explode(".",$iconePosted1)[1]);
+                $icone1 = cleanSpecialChar(cleanString(explode(".",$iconePosted1)[0])).'.'.$ext1;
+                $target_file1 = $dir."/".$icone1;
+                if(!file_exists($target_file1)){
+                    move_uploaded_file($_FILES["icone_prod_1"]["tmp_name"], $target_file1);
+                    if (image_format_supported($target_file1) == 1)
+                    {
+                        $imgThumbSmall = vignette($target_file1, 200, 100, '_small', 80, "thumbs");
+                        $imgThumbMini  = vignette($target_file1, 300, 150, '_mini', 80, "thumbs");
+                    }
+                }
+                $sqlUpdateIcon1 = "update ".MAIN_DB_PREFIX."product set "
+                . " icone_prod_1 = '".$icone1."' where rowid =  ".$object->id;
+                $db->query($sqlUpdateIcon1);
+            }
+            if(!empty($_FILES['icone_prod_2']['name'])){
+                $iconePosted2 = $_FILES['icone_prod_2']['name'];
+                $ext2 = strtolower(explode(".",$iconePosted2)[1]);
+                $icone2 = cleanSpecialChar(cleanString(explode(".",$iconePosted2)[0])).'.'.$ext2;
+                $target_file2 = $dir."/".$icone2;
+                if(!file_exists($target_file2)){
+                    move_uploaded_file($_FILES["icone_prod_2"]["tmp_name"], $target_file2);
+                    if (image_format_supported($target_file2) == 1)
+                    {
+                        $imgThumbSmall = vignette($target_file2, 200, 100, '_small', 80, "thumbs");
+                        $imgThumbMini  = vignette($target_file2, 300, 150, '_mini', 80, "thumbs");
+                    }
+                }
+                $sqlUpdateIcon2 = "update ".MAIN_DB_PREFIX."product set "
+                    . " icone_prod_2 = '".$icone2."' where rowid =  ".$object->id;
+                $db->query($sqlUpdateIcon2);
+            }
+            echo "<meta http-equiv='refresh' content='0'>";
+        }
+        
+        print '<form action="'.DOL_URL_ROOT.'/product/document.php?id='.$object->id.'&status_product=produitfab&action=edit" method="POST" enctype="multipart/form-data">';
+        print '<table class="border allwidth">';
+        
+        print '<tr>';
+        print '<td style="width:15.5%">ICONE 1 <br><i style="color:red">Taille max autorisé : 2M <br>Largeur max autorisé : 900<br>Hauteur max autorisé : 300 <br>Type de fichier autorisé : jpeg, jpg, png, gif </i></td>';
+        $thumbs1Mini    = explode('.',$object->icone_prod_1)[0]."_mini.".explode('.',$object->icone_prod_1)[1];
+        $thumbs1Small   = explode('.',$object->icone_prod_1)[0]."_small.".explode('.',$object->icone_prod_1)[1];
+        print '<td style="width:15%"><input type="file" name="icone_prod_1" id="icone_prod_1" onchange="readURL(this,\'icss1\',\'icone_prod_1\');">';
+        print '</td>';
+        print '<td>';
+        print ' <a href="javascript:document_preview(\''.DOL_URL_ROOT.'/document.php?modulepart=product&attachment=0&file='.$object->ref.'/'.$object->icone_prod_1.'&entity=1\', \'image/jpeg\', \'Aperçu\')">'
+                . '<img src="'.DOL_URL_ROOT.'/viewimage.php?modulepart=product&entity=1&file=/'.$object->ref.'/thumbs/'.$thumbs1Small.'" id="icss1" style="width:15%"/>'
+                . '</a>';
+        print '</td>';
+        print '</tr>';
+        print '<tr>'
+        . '<td>ICONE 2 <br><i style="color:red">Taille max autorisé : 2M <br>Largeur max autorisé : 900<br>Hauteur max autorisé : 300 <br>Type de fichier autorisé : jpeg, jpg, png, gif</i></td>';
+        $thumbs2Mini    = explode('.',$object->icone_prod_2)[0]."_mini.".explode('.',$object->icone_prod_2)[1];
+        $thumbs2Small   = explode('.',$object->icone_prod_2)[0]."_small.".explode('.',$object->icone_prod_2)[1];
+        print '<td>';
+        print '<input type="file" name="icone_prod_2" id="icone_prod_2" onchange="readURL(this,\'icss2\',\'icone_prod_2\');">';
+        print '</td>';
+        print '<td>';
+        print ' <a href="javascript:document_preview(\''.DOL_URL_ROOT.'/document.php?modulepart=product&attachment=0&file='.$object->ref.'/'.$object->icone_prod_2.'&entity=1\', \'image/jpeg\', \'Aperçu\')">'
+                . '<img src="'.DOL_URL_ROOT.'/viewimage.php?modulepart=product&entity=1&file=/'.$object->ref.'/thumbs/'.$thumbs2Small.'" id="icss2" style="width:15%"/>'
+                . '</a>';
+        print '</td>';
+        print '</tr>';
+        print '</table>';
+        print '<input type="submit" class="button" value="Envoyer fichier">';
+        print '<img src="'.DOL_URL_ROOT.'/theme/eldy/img/info.png" alt="" title="Changer l\' étiquette dans l\'impression" class="hideonsmartphone">';
+        print '</form>';
+        print '<hr>';
+        ?>
+            <script>
+                function readURL(input,idImg,idInput) {
+                    if (input.files && input.files[0]) {
+                        var file = input.files && input.files[0];
+                        var img = new Image();
+                        img.src = window.URL.createObjectURL(file);
+                        if((file.type !== "image/gif" && file.type !== "image/jpeg" && file.type !== "image/png") || file.size > 2000000)  {
+                            //$("#updates_products").prop('disabled',true);
+                            $("#"+idInput).val('');
+                            $( "#dialogerror" ).dialog({
+                                modal: true,
+                                height: 200,
+                                width: 800,
+                                resizable: true,
+                                title: "Erreur",
+                                open: function(){
+                                   $("#error_file_to_large").html('- Le type de fichier que vous avez uploadé est : <span style="color:red">'+file.type+' </span> <br>-Taille de l\'image que vous avez uploadé est <span style="color:red">'+bytesToSize(file.size)+'</span> <br>- Les types de fichier autoriser sont : <strong>jpeg, jpg, png, gif</strong><br>- La taille autorisé est inférieur à <strong>2M</strong>');
+                                }
+                            }).prev(".ui-dialog-titlebar").css({"color":"red","font-weight":"bold"});
+                        }else{
+                            //$("#updates_products").prop('disabled',false);
+                            img.onload = function(e){
+                                if(img.width > 900 && (img.width > 900 || img.height > 300)){
+                                    //$("#updates_products").prop('disabled',true);
+                                    $("#"+idInput).val('');
+                                    $( "#dialogerror" ).dialog({
+                                        modal: true,
+                                        height: 150,
+                                        width: 750,
+                                        resizable: true,
+                                        title: "Erreur",
+                                        open: function(){
+                                           $("#error_file_to_large").html('- La taille de l\'image que vous avez uploadé est de <span style="color:red;">'+img.width+' x '+img.height+'</span>,  ce qui n\'est pas autoriser <br> - (Longueur x Largeur) maximale autoriser : <strong>900 x 300 </strong>');
+                                        }
+                                    }).prev(".ui-dialog-titlebar").css({"color":"red","font-weight":"bold"});
+                                }else{
+                                    $("#updates_products").prop('disabled',false);
+                                    var reader = new FileReader();
+                                    reader.onload = function (e) {
+                                        $('#'+idImg).show();
+                                        $('#'+idImg).attr('src', e.target.result);
+                                    };
+                                    reader.readAsDataURL(input.files[0]);
+                                }
+                            };
+                        }
+                    }
+                }
+                function bytesToSize(bytes) {
+                    var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                    if (bytes == 0) return '0 Byte';
+                    var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+                    return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+                }
+            </script>
+            <div id="dialogerror" title="Basic dialog" style="display:none;">
+                        <p id="error_file_to_large"></p>
+                    </div> 
+            <?php
         include_once DOL_DOCUMENT_ROOT.'/core/tpl/document_actions_post_headers.tpl.php';
     }
     // Merge propal PDF document PDF files

@@ -7430,8 +7430,8 @@ abstract class CommonObject
 		include_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
 		include_once DOL_DOCUMENT_ROOT.'/core/lib/images.lib.php';
 
-		$sortfield = 'position_name';
-		$sortorder = 'asc';
+		$sortfield = 'date';
+		$sortorder = 'DESC';
 
 		$dir = $sdir.'/';
 		$pdir = '/';
