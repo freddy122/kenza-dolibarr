@@ -3106,8 +3106,8 @@ else
     elseif ($object->id > 0)
     {
         /* modif fred */
-        if($object->product_type_txt == "fab" && ($action !== "edit" || empty($action) || !$status_product)) {
-             exit;
+        if($object->product_type_txt == "fab" && ($action !== "edit" || empty($action) || !$status_product) && $action !== "view") {
+            exit;
         }
         
         // Fiche en mode edition
@@ -3132,7 +3132,7 @@ else
             }else{
                 $action_edit = $_SERVER['PHP_SELF'].'?id='.$object->id;
             }
-            print '<form action="'.$action_edit.'" method="POST" enctype="multipart/form-data">'."\n";
+            print '<form action="'.$action_edit.'" method="POST" enctype="multipart/form-data" id="form_edit_product">'."\n";
             print '<input type="hidden" name="token" value="'.newToken().'">';
             print '<input type="hidden" name="action" value="update">';
             print '<input type="hidden" name="id" value="'.$object->id.'">';
@@ -3141,7 +3141,7 @@ else
             $head = product_prepare_head($object);
             $titre = $langs->trans("CardProduct".$object->type);
             $picto = ($object->type == Product::TYPE_SERVICE ? 'service' : 'product');
-            
+            /* modif fred */
             if($status_product && $status_product == "produitfab") {
                 //dol_fiche_head($head, 'card', $titre, 0, $picto);
                 print load_fiche_titre("Modification produit fab", "<a href='".DOL_URL_ROOT."/product/listproduitfab.php?leftmenu=product&type=0&idmenu=37'>Retour</a>", $picto);
@@ -3666,6 +3666,13 @@ else
                     </div>
                     <script type="text/javascript">
                             jQuery(document).ready(function () {
+                                $('#form_edit_product').on('keyup keypress', function(e) {
+                                    var keyCode = e.keyCode || e.which;
+                                    if (keyCode === 13) { 
+                                      e.preventDefault();
+                                      return false;
+                                    }
+                                });
                                 $("#select_price_base_type option:contains('HT')").attr("disabled","disabled").hide();
                                 $(".option-heading").on('click', function() {
                                     $(this).toggleClass('is-active').next(".option-content-couleur").stop().slideToggle(500);
@@ -3833,12 +3840,14 @@ else
                                                         <button class="btn btn-info" type="button" id="copie_val_reftissus_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('ref_tissus_couleur_${rowIdx}','copie_val_reftissus_${rowIdx}','class_color_input_${splitArrTailles[1]}')">Copier pour ce couleur</button>
                                                     </td>
                                                     <td class="qtycomm text-align-left"> 
-                                                        <input type="number" value=""  name="qtycomm[]" id="qtycomm_${rowIdx}" oninput="changeValueInputComp('qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')" >
-                                                    <button class="btn btn-info" type="button" id="copie_val_qtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtycomm_','qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                        <input type="number" value=""  name="qtycomm[]" id="qtycomm_${rowIdx}" oninput="changeValueInputComp('qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}','copie_val_colorqtycomm_${rowIdx}')" class="class_color_qtycomm_${splitArrTailles[1]}">
+                                                        <button class="btn btn-info" type="button" id="copie_val_qtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtycomm_','qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}','copie_val_colorqtycomm_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                        <button class="btn btn-info" type="button" id="copie_val_colorqtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('qtycomm_${rowIdx}','copie_val_colorqtycomm_${rowIdx}','class_color_qtycomm_${splitArrTailles[1]}','copie_val_qtycomm_${rowIdx}')">Copier pour ce couleur</button>
                                                     </td>
                                                     <td class="qtyfabriq text-align-left"> 
-                                                        <input type="number" value=""  name="qtyfabriq[]" id="qtyfabriq_${rowIdx}" oninput="changeValueInputComp('qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">
-                                                        <button class="btn btn-info" type="button" id="copie_val_qtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtyfabriq_','qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">Copier pour toutes les lignes</button>
+                                                        <input type="number" value=""  name="qtyfabriq[]" id="qtyfabriq_${rowIdx}" oninput="changeValueInputComp('qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}','copie_val_colorqtyfabriq_${rowIdx}')" class="class_color_qtyfabriq_${splitArrTailles[1]}">
+                                                        <button class="btn btn-info" type="button" id="copie_val_qtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtyfabriq_','qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}','copie_val_colorqtyfabriq_${rowIdx}')">Copier pour toutes les lignes</button>
+                                                        <button class="btn btn-info" type="button" id="copie_val_colorqtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('qtyfabriq_${rowIdx}','copie_val_colorqtyfabriq_${rowIdx}','class_color_qtyfabriq_${splitArrTailles[1]}','copie_val_qtyfabriq_${rowIdx}')">Copier pour ce couleur</button>
                                                     </td>
                                                     <td class="poidsfabriq text-align-left"> 
                                                         <input type="text" value=""  name="poidsfabriq[]">
@@ -3936,12 +3945,14 @@ else
                                                             <button class="btn btn-info" type="button" id="copie_val_reftissus_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('ref_tissus_couleur_${rowIdx}','copie_val_reftissus_${rowIdx}','class_color_input_${splitArrColors[1]}')">Copier pour ce couleur</button>
                                                         </td>
                                                         <td class="qtycomm text-align-left"> 
-                                                            <input type="number" value=""  name="qtycomm[]" id="qtycomm_${rowIdx}" oninput="changeValueInputComp('qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')" >
-                                                        <button class="btn btn-info" type="button" id="copie_val_qtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtycomm_','qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                            <input type="number" value=""  name="qtycomm[]" id="qtycomm_${rowIdx}" oninput="changeValueInputComp('qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}','copie_val_colorqtycomm_${rowIdx}')" class="class_color_qtycomm_${splitArrColors[1]}">
+                                                            <button class="btn btn-info" type="button" id="copie_val_qtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtycomm_','qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}','copie_val_colorqtycomm_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                            <button class="btn btn-info" type="button" id="copie_val_colorqtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('qtycomm_${rowIdx}','copie_val_colorqtycomm_${rowIdx}','class_color_qtycomm_${splitArrColors[1]}','copie_val_qtycomm_${rowIdx}')">Copier pour ce couleur</button> 
                                                         </td>
                                                         <td class="qtyfabriq text-align-left"> 
-                                                            <input type="number" value=""  name="qtyfabriq[]" id="qtyfabriq_${rowIdx}" oninput="changeValueInputComp('qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">
-                                                            <button class="btn btn-info" type="button" id="copie_val_qtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtyfabriq_','qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">Copier pour toutes les lignes</button>
+                                                            <input type="number" value=""  name="qtyfabriq[]" id="qtyfabriq_${rowIdx}" oninput="changeValueInputComp('qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}','copie_val_colorqtyfabriq_${rowIdx}')" class="class_color_qtyfabriq_${splitArrColors[1]}">
+                                                            <button class="btn btn-info" type="button" id="copie_val_qtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtyfabriq_','qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}','copie_val_colorqtyfabriq_${rowIdx}')">Copier pour toutes les lignes</button>
+                                                            <button class="btn btn-info" type="button" id="copie_val_colorqtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('qtyfabriq_${rowIdx}','copie_val_colorqtyfabriq_${rowIdx}','class_color_qtyfabriq_${splitArrColors[1]}','copie_val_qtyfabriq_${rowIdx}')">Copier pour ce couleur</button>
                                                         </td>
                                                         <td class="poidsfabriq text-align-left"> 
                                                             <input type="text" value=""  name="poidsfabriq[]">
@@ -4043,12 +4054,14 @@ else
                                                         <input type="number" value=""  name="qtycomm[]" >
                                                     </td>
                                                     <td class="qtycomm text-align-left"> 
-                                                        <input type="number" value=""  name="qtycomm[]" id="qtycomm_${rowIdx}" oninput="changeValueInputComp('qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')" >
-                                                    <button class="btn btn-info" type="button" id="copie_val_qtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtycomm_','qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                        <input type="number" value=""  name="qtycomm[]" id="qtycomm_${rowIdx}" oninput="changeValueInputComp('qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}','copie_val_colorqtycomm_${rowIdx}')" class="class_color_qtycomm_${splitArrColors[1]}">
+                                                        <button class="btn btn-info" type="button" id="copie_val_qtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtycomm_','qtycomm_${rowIdx}','copie_val_qtycomm_${rowIdx}','copie_val_colorqtycomm_${rowIdx}')">Copier pour toutes les lignes</button> 
+                                                        <button class="btn btn-info" type="button" id="copie_val_colorqtycomm_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('qtycomm_${rowIdx}','copie_val_colorqtycomm_${rowIdx}','class_color_qtycomm_${splitArrColors[1]}','copie_val_qtycomm_${rowIdx}')">Copier pour ce couleur</button>
                                                     </td>
                                                     <td class="qtyfabriq text-align-left"> 
-                                                        <input type="number" value=""  name="qtyfabriq[]" id="qtyfabriq_${rowIdx}" oninput="changeValueInputComp('qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">
-                                                        <button class="btn btn-info" type="button" id="copie_val_qtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtyfabriq_','qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}')">Copier pour toutes les lignes</button>
+                                                        <input type="number" value=""  name="qtyfabriq[]" id="qtyfabriq_${rowIdx}" oninput="changeValueInputComp('qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}','copie_val_colorqtyfabriq_${rowIdx}')" class="class_color_qtyfabriq_${splitArrColors[1]}">
+                                                        <button class="btn btn-info" type="button" id="copie_val_qtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowComposition('qtyfabriq_','qtyfabriq_${rowIdx}','copie_val_qtyfabriq_${rowIdx}','copie_val_colorqtyfabriq_${rowIdx}')">Copier pour toutes les lignes</button>
+                                                        <button class="btn btn-info" type="button" id="copie_val_colorqtyfabriq_${rowIdx}" style="display:none;" onclick="copyValuesOfRowRefTissus('qtyfabriq_${rowIdx}','copie_val_colorqtyfabriq_${rowIdx}','class_color_qtyfabriq_${splitArrColors[1]}','copie_val_qtyfabriq_${rowIdx}')">Copier pour ce couleur</button>
                                                     </td>
                                                     <td class="compfabriq text-align-left"> 
                                                         <input type="text" value=""  name="compfabriq[]" id="composition_${rowIdx}" oninput="changeValueInputComp('composition_${rowIdx}','copie_val_comp_${rowIdx}')" >
@@ -4116,7 +4129,8 @@ else
                                             // Modifying row index. 
                                             idx.attr('value',`${dig - 1}`);
                                             var refCumules = '<?php echo $object->ref; ?>';
-                                            var references = parseInt(refCumules+"0000") + parseInt(`${dig - 1}`);
+                                            //var references = parseInt(refCumules+"0000") + parseInt(`${dig - 1}`);
+                                            var references = parseInt(cdbares.val().substr(0,12));
                                             var codebarress = parseInt(currentCodebares.substring(0, currentCodebares.length - 1))+parseInt(cmtLigne);
                                             refs.attr('value',`${references}`);
                                             cdbares.attr('value',codebarress.toString()+""+getLastEan13Digit(codebarress.toString()));
@@ -4125,7 +4139,7 @@ else
                                         });
                                         // Removing the current row. 
                                         $(this).closest('tr').remove(); 
-                                        rowIdx--; 
+                                        rowIdx--;
                                 });
                                 $('a.edit_row_declinaison').click(function (e) {
                                         e.preventDefault();
@@ -4236,22 +4250,25 @@ else
                                 }
                                 $("#"+buttonInput).hide();
                             }
-                            function changeValueInputComp(inputComp,copyval){
+                            function changeValueInputComp(inputComp,copyval,copyvalColor = ""){
                                 var resy = $("#"+inputComp).val();
                                 /* traitement ajout boutton copy */
                                 if(resy !== ""){
                                     $("#"+copyval).show();
+                                    $("#"+copyvalColor).show();
                                 }else{
                                     $("#"+copyval).hide();
+                                    $("#"+copyvalColor).hide();
                                 }
                             }
-                            function copyValuesOfRowComposition(inputId,compositionInput,buttonInput){
+                            function copyValuesOfRowComposition(inputId,compositionInput,buttonInput,buttonColorInput = ""){
                                 var hiddenRowIdx = $('#id_rowx').val().split('|');
                                 var valueCurrentComposition = $("#"+compositionInput).val();
                                 for(var i = 0; i < hiddenRowIdx.length; i++){
                                     $("#"+inputId+hiddenRowIdx[i]).val(valueCurrentComposition);
                                 }
                                 $("#"+buttonInput).hide();
+                                $("#"+buttonColorInput).hide();
                             }
                             
                             function changeValueInputRefTissus(inputComp,copyval){
@@ -4263,10 +4280,11 @@ else
                                     $("#"+copyval).hide();
                                 }
                             }
-                            function copyValuesOfRowRefTissus(refTissusInput,buttonInput,colorInput){
+                            function copyValuesOfRowRefTissus(refTissusInput,buttonInput,colorInput,buttoncopivalligne = ""){
                                 var valueCurrentTissus = $("#"+refTissusInput).val();
                                 $("."+colorInput).val(valueCurrentTissus);
                                 $("#"+buttonInput).hide();
+                                $("#"+buttoncopivalligne).hide();
                             }
                             function unique(array){
                                 return array.filter(function(el, index, arr) {
@@ -4308,6 +4326,198 @@ else
                                     }
                                 }
                             }
+                            
+                            function showInputEdit(edit_input,p_input){
+                                $("#"+edit_input).show();
+                                $("#"+p_input).hide();
+                            }
+                            
+                            function copyValuesOfInput(loadUpdate,idparent,flag, isColorOnly = false, buttonColor = "", valInput = "", valColor = "", valEuro = "", valTauxYuanEuro = "", valYuan = ""){
+                                $("#"+loadUpdate).show();
+                                var qtyComm = $("#"+valInput).val();
+                                var qtyfab = $("#"+valInput).val();
+                                var composition = $("#"+valInput).val();
+                                /*var prixYuan = $("#price_yuan").val();
+                                var tauxChange = $("#taux_change").val();
+                                var prixEuro = $("#price_euro").val();*/
+                                var dataTosend = {};
+                                if(flag === "qtycomm"){
+                                    dataTosend = {
+                                        qtyComm: qtyComm,
+                                        parentId:idparent
+                                    };
+                                    if(isColorOnly === true){
+                                        dataTosend.isColor = 1;
+                                        dataTosend.valCoul = valColor;
+                                    }else{
+                                        dataTosend.isColor = 0;
+                                    }
+                                }
+                                if(flag === "qtyfab"){
+                                    dataTosend = {
+                                        qtyfab:qtyfab,
+                                        parentId:idparent
+                                    };
+                                    if(isColorOnly  === true){
+                                        dataTosend.isColor = 1;
+                                        dataTosend.valCoul = valColor;
+                                    }else{
+                                        dataTosend.isColor = 0;
+                                    }
+                                }
+                                if(flag === "composition"){
+                                    dataTosend = {
+                                        composition:composition,
+                                        parentId:idparent
+                                    };
+                                    if(isColorOnly === true){
+                                        dataTosend.isColor = 1;
+                                        dataTosend.valCoul = valColor;
+                                    }else{
+                                        dataTosend.isColor = 0;
+                                    }
+                                }
+                                if(flag === "price_yuan" || flag === "taux_change"){
+                                    dataTosend = {
+                                        prixYuan:$("#"+valYuan).val(),
+                                        tauxChange:$("#"+valTauxYuanEuro).val(),
+                                        prixEuro:$("#"+valEuro).val(),
+                                        parentId:idparent
+                                    };
+                                    if(isColorOnly === true){
+                                        dataTosend.isColor = 1;
+                                        dataTosend.valCoul = valColor;
+                                    }else{
+                                            dataTosend.isColor = 0;
+                                    }
+                                }
+                                $.ajax("<?php echo DOL_URL_ROOT.'/product/ajax/updateOtherInfo.php'; ?>", {
+                                    type: "POST",
+                                    data : dataTosend,
+                                    success: function (data){
+                                        $("#"+loadUpdate).hide();
+                                        if(data.success){
+                                            if(buttonColor){
+                                                    $("#"+buttonColor).hide();
+                                            }
+                                            window.location.reload();
+                                        }else{
+                                            alert("Une erreur est survenu");
+                                        }
+                                    }
+                                });
+                            }
+                            
+                            function cancelUpdate(){
+                                window.location.reload();
+                            }
+                            
+                            function changeEuroEditForm(yuan, euro, tauxchangeVal, yuanHidden = "", tauxchangeValHidden = ""){
+                                var resy = document.getElementById(yuan).value;
+                                var tauxchange = document.getElementById(tauxchangeVal).value;
+                                //console.log(resy+" ----- "+yuanHidden);
+                                if(resy){
+                                    document.getElementById(euro).value =  (parseFloat(resy.replace(',','.'))/parseFloat(tauxchange.replace(',','.'))).toFixed(2);
+                                    if(yuanHidden){
+                                        document.getElementById(yuanHidden).value =  (parseFloat(resy.replace(',','.'))).toFixed(2);
+                                    }
+                                    if(tauxchangeValHidden){
+                                        document.getElementById(tauxchangeValHidden).value =  (parseFloat(tauxchange.replace(',','.'))).toFixed(2);
+                                    }
+                                }else{
+                                    document.getElementById(euro).value = 0;
+                                    if(yuanHidden){
+                                        document.getElementById(yuanHidden).value = 0;
+                                    }
+                                    if(tauxchangeValHidden){
+                                        document.getElementById(tauxchangeValHidden).value = 0;
+                                    }
+                                }
+                            }
+                            
+                            function updateSingleInfo(valueInput,idparent, idchild,  flag, divinfo, loadUpdate, valYuan = "",valTauxYuanEuro = "",valEuro = ""){
+                                $("#"+loadUpdate).show();
+                                var valToEdit = $("#"+valueInput).val();
+                                var dataTosend = {};
+                                if(flag === "qtycomm"){
+                                    dataTosend = {
+                                        qtyComm:valToEdit,
+                                        parentId:idparent,
+                                        childId:idchild
+                                    };
+                                }
+                                
+                                if(flag === "qtyfab"){
+                                    dataTosend = {
+                                            qtyfab:valToEdit,
+                                            parentId:idparent,
+                                            childId:idchild
+                                    };
+                                }
+                                
+                                if(flag === "composition"){
+                                    dataTosend = {
+                                            composition:valToEdit,
+                                            parentId:idparent,
+                                            childId:idchild
+                                    };
+                                }
+                                
+                                if(flag === "price_yuan" || flag === "taux_change"){
+                                    dataTosend = {
+                                            prixYuan:$("#"+valYuan).val(),
+                                            tauxChange:$("#"+valTauxYuanEuro).val(),
+                                            prixEuro:$("#"+valEuro).val(),
+                                            parentId:idparent,
+                                            childId:idchild
+                                    };
+                                }
+                                
+                                $.ajax("<?php echo DOL_URL_ROOT.'/product/ajax/updateSingleVariant.php'; ?>", {
+                                    type: "POST",
+                                    data : dataTosend,
+                                    success: function (data){
+                                        $("#"+loadUpdate).hide();
+                                        if(data.success){
+                                            if(divinfo){
+                                                    $("#"+divinfo).hide();
+                                            }
+                                            window.location.reload();
+                                        }else{
+                                            alert("Une erreur est survenu");
+                                        }
+                                    }
+                                });
+                            }
+                            
+                            function copyValuesOfRowRefTissus2(idparent,loadimageajax,inputref, valcolor,divvalcoul){
+                                $("#"+loadimageajax).show();
+                                var refs = $("#"+inputref).val();
+                                $.ajax("<?php echo DOL_URL_ROOT.'/product/ajax/updaterefcolor.php'; ?>", {
+                                    type: "POST",
+                                    data : {valCoul:valcolor, parentId:idparent, refValue:refs},
+                                    success: function (data){
+                                        $("#"+loadimageajax).hide();
+                                        if(data.success){
+                                            $("#"+divvalcoul).hide();
+                                            window.location.reload();
+                                        }else{
+                                            alert("Une erreur est survenu");
+                                        }
+                                    }
+                                });
+                            }
+                            
+                            /*function changeValueBlur(event,input_value,div_value){
+                                /*if(event.key === "enter" || event.keyCode === 13){
+                                    event.preventDefault();
+                                    return false;
+                                }
+                                $("#"+input_value).hide();
+                                $("#"+div_value).show();
+                                return true;
+                                //window.location.reload();
+                            }*/
                     </script>
                     <div id="dialogerror" title="Basic dialog" style="display:none;">
                         <p id="error_file_to_large"></p>
@@ -4341,6 +4551,103 @@ else
                                 $dialog.dialog('open');
                         });
                     });
+                    
+                    function changeEuroEditForm(yuan, yuanHidden, euro, tauxchangeVal){
+                        var resy = document.getElementById(yuan).value;
+                        var tauxchange = document.getElementById(tauxchangeVal).value;
+                        if(resy){
+                            document.getElementById(euro).value =  (parseFloat(resy.replace(',','.'))/parseFloat(tauxchange.replace(',','.'))).toFixed(2);
+                            document.getElementById(yuanHidden).value =  (parseFloat(resy.replace(',','.'))).toFixed(2);
+                        }else{
+                            document.getElementById(euro).value = 0;
+                            document.getElementById(yuanHidden).value = 0;
+                        }
+                    }
+                    
+                    function showInputEdit(edit_input,p_input){
+                        $("#"+edit_input).show();
+                        $("#"+p_input).hide();
+                    }
+                    
+                    function cancelUpdate(){
+                        window.location.reload();
+                    }
+                    
+                    function copyValuesOfInput(loadUpdate,idparent,flag, isColorOnly = false, buttonColor = "", valInput = "", valColor = "", valEuro = "", valTauxYuanEuro = "", valYuan = ""){
+                        $("#"+loadUpdate).show();
+                        var qtyComm = $("#"+valInput).val();
+                        var qtyfab = $("#"+valInput).val();
+                        var composition = $("#"+valInput).val();
+                        /*var prixYuan = $("#price_yuan").val();
+                        var tauxChange = $("#taux_change").val();
+                        var prixEuro = $("#price_euro").val();*/
+                        var dataTosend = {};
+                        if(flag === "qtycomm"){
+                            dataTosend = {
+                                qtyComm: qtyComm,
+                                parentId:idparent
+                            };
+                            if(isColorOnly === true){
+                                dataTosend.isColor = 1;
+                                dataTosend.valCoul = valColor;
+                            }else{
+                                dataTosend.isColor = 0;
+                            }
+                        }
+                        if(flag === "qtyfab"){
+                            dataTosend = {
+                                qtyfab:qtyfab,
+                                parentId:idparent
+                            };
+                            if(isColorOnly  === true){
+                                dataTosend.isColor = 1;
+                                dataTosend.valCoul = valColor;
+                            }else{
+                                dataTosend.isColor = 0;
+                            }
+                        }
+                        if(flag === "composition"){
+                            dataTosend = {
+                                composition:composition,
+                                parentId:idparent
+                            };
+                            if(isColorOnly === true){
+                                dataTosend.isColor = 1;
+                                dataTosend.valCoul = valColor;
+                            }else{
+                                dataTosend.isColor = 0;
+                            }
+                        }
+                        if(flag === "price_yuan" || flag === "taux_change"){
+                            dataTosend = {
+                                prixYuan:$("#"+valYuan).val(),
+                                tauxChange:$("#"+valTauxYuanEuro).val(),
+                                prixEuro:$("#"+valEuro).val(),
+                                parentId:idparent
+                            };
+                            if(isColorOnly === true){
+                                dataTosend.isColor = 1;
+                                dataTosend.valCoul = valColor;
+                            }else{
+                                dataTosend.isColor = 0;
+                            }
+                        }
+                        $.ajax("<?php echo DOL_URL_ROOT.'/product/ajax/updateOtherInfo.php'; ?>", {
+                            type: "POST",
+                            data : dataTosend,
+                            success: function (data){
+                                $("#"+loadUpdate).hide();
+                                if(data.success){
+                                    if(buttonColor){
+                                        $("#"+buttonColor).hide();
+                                    }
+                                    window.location.reload();
+                                }else{
+                                    alert("Une erreur est survenu");
+                                }
+                            }
+                        });
+                    }
                     </script>    
                     <?php
                 }
@@ -4409,18 +4716,85 @@ else
                         if($resu_fab == "fab"){
                             $bgColors = "background-color:#a9aaad;color:black";
                         }
+                        $qtyCommandesVal = ($prodChild->quantite_commander?$prodChild->quantite_commander:0);
+                        $qtyFabsVal = ($prodChild->quantite_fabriquer?$prodChild->quantite_fabriquer:0);
+                        $priceYuanVal = ($prodChild->price_yuan?price($prodChild->price_yuan):price(0));
+                        $priceEuroVal = ($prodChild->price_euro?price($prodChild->price_euro):price(0));
+                        $tauxEuroYuanVal = (str_replace(".",",",$prodChild->taux_euro_yuan));
                         print "<tr>";
                         print "<td style='".$bgColors."' class='centered_text'>".$attributesVals['value']."</td>";
-                        print "<td style='".$bgColors."' class='centered_text'>".($prodChild->quantite_commander?$prodChild->quantite_commander:0)."</td>";
-                        print "<td style='".$bgColors."'>".$prodChild->ref_tissus_couleur."</td>";
+                        print "<td style='".$bgColors."' class='centered_text'>"
+                                /*. " <input type='text' value='".$qtyCommandesVal."' id='input_comm_edited_".$idChilds."' style='display:none;' tabindex='0' onblur=\"return changeValueBlur(event,'input_comm_edited_".$idChilds."','qty_comm_edited_".$idChilds."');\">"*/
+                                . "<div style='display:none;' id='input_comm_edited_".$idChilds."'> "
+                                    . "<input type='text' value='".$qtyCommandesVal."' id='value_of_qty_comm_".$idChilds."'> <br>"
+                                    . '<span style="width: 7%;display:none;margin-top:1%;" id="load_update_qtycomm_'.$idChilds.'"><img src = "'.DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif"><br></span>'
+                                    . '<button type="button" id="copie_val_qtycomm_'.$idChilds.'" style="margin-top: 1%;" onclick="updateSingleInfo(\'value_of_qty_comm_'.$idChilds.'\','.$object->id.', '.$idChilds.',\'qtycomm\',\'input_comm_edited_'.$idChilds.'\',\'load_update_qtycomm_'.$idChilds.'\')">Modifier</button><br> '
+                                    . '<button type="button" id="copie_val_qtycomm_color_'.$idChilds.'" style="margin-top: 1%;" onclick="copyValuesOfInput(\'load_update_qtycomm_'.$idChilds.'\',\''.$object->id.'\',\'qtycomm\',true,\'input_comm_edited_'.$idChilds.'\',\'value_of_qty_comm_'.$idChilds.'\',\''.$kaff.'\')">Appliquer la modification pour déclinaison de la même couleur</button><br> '
+                                    . '<button type="button" id="copie_val_qtycomm_all_'.$idChilds.'" style="margin-top: 1%;" onclick="copyValuesOfInput(\'load_update_qtycomm_'.$idChilds.'\',\''.$object->id.'\',\'qtycomm\',false,\'input_comm_edited_'.$idChilds.'\',\'value_of_qty_comm_'.$idChilds.'\',\''.$kaff.'\')">Appliquer la modification pour toutes les déclinaisons</button> '
+                                    . '<button type="button" style="margin-top: 1%;" onclick="cancelUpdate()">Annuler</button> '
+                                . '</div>'
+                                . "<div title='Modifier quantité commander' onclick=\"showInputEdit('input_comm_edited_".$idChilds."','qty_comm_edited_".$idChilds."');\" style='cursor:pointer;height: 20px;' id='qty_comm_edited_".$idChilds."'>".$qtyCommandesVal."</div>"
+                                . "</td>";
+                        print "<td style='".$bgColors."'>"
+                                . "<div style='display:none;' id='input_ref_tissus_edited_".$idChilds."' class='centered_text'>"
+                                . "<input type='text' value='".$prodChild->ref_tissus_couleur."' id='value_of_ref_tissus_".$idChilds."'> <br>"
+                                . '<span style="width: 7%;display:none;margin-top:1%;" id="load_update_ref_tissus_'.$idChilds.'"><img src = "'.DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif"><br></span>'
+                                . '<button type="button" id="copie_val_ref_tissus_color_'.$idChilds.'" style="margin-top: 1%;" onclick="copyValuesOfRowRefTissus2(\''.$object->id.'\',\'load_update_ref_tissus_'.$idChilds.'\',\'value_of_ref_tissus_'.$idChilds.'\', \''.$kaff.'\',\'input_ref_tissus_edited_'.$idChilds.'\')">Appliquer la modification pour déclinaison de la même couleur</button><br> '
+                                . '<button type="button" style="margin-top: 1%;" onclick="cancelUpdate()">Annuler</button> '
+                                . "</div>"
+                                . "<div title='Modifier Réference tissus' onclick=\"showInputEdit('input_ref_tissus_edited_".$idChilds."','qty_ref_tissus_edited_".$idChilds."');\" style='cursor:pointer;height: 20px;' id='qty_ref_tissus_edited_".$idChilds."'>".$prodChild->ref_tissus_couleur."</div>"
+                                . "</td>";
                         print "<td style='".$bgColors."' class='centered_text'>".$prodChild->ref."</td>";
                         print "<td style='".$bgColors."' class='centered_text'>".$prodChild->barcode."</td>";
-                        print "<td  class='centered_text'>".($prodChild->quantite_fabriquer?$prodChild->quantite_fabriquer:0)."</td>";
+                        print "<td  class='centered_text'> "
+                            . " <div style='display:none;' id='input_fab_edited_".$idChilds."'>"
+                                . " <input type='text' value='".$qtyFabsVal."' id='value_of_qty_fabriq_".$idChilds."'> <br> "
+                                . '<span style="width: 7%;display:none;margin-top:1%;" id="load_update_qtyfab_'.$idChilds.'"><img src = "'.DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif"><br></span>'
+                                . '<button type="button" id="copie_val_qtyfab_'.$idChilds.'" style="margin-top: 1%;" onclick="updateSingleInfo(\'value_of_qty_fabriq_'.$idChilds.'\','.$object->id.', '.$idChilds.',\'qtyfab\',\'input_fab_edited_'.$idChilds.'\',\'load_update_qtyfab_'.$idChilds.'\')">Modifier</button><br> '
+                                . '<button type="button" id="copie_val_qtyfab_color_'.$idChilds.'" style="margin-top: 1%;" onclick="copyValuesOfInput(\'load_update_qtyfab_'.$idChilds.'\',\''.$object->id.'\',\'qtyfab\',true,\'input_fab_edited_'.$idChilds.'\',\'value_of_qty_fabriq_'.$idChilds.'\',\''.$kaff.'\')">Appliquer la modification pour déclinaison de la même couleur</button><br> '
+                                . '<button type="button" id="copie_val_qtyfab_all_'.$idChilds.'" style="margin-top: 1%;" onclick="copyValuesOfInput(\'load_update_qtyfab_'.$idChilds.'\',\''.$object->id.'\',\'qtyfab\',false,\'input_fab_edited_'.$idChilds.'\',\'value_of_qty_fabriq_'.$idChilds.'\',\''.$kaff.'\')">Appliquer la modification pour toutes les déclinaisons</button>'
+                                . '<button type="button" style="margin-top: 1%;" onclick="cancelUpdate()">Annuler</button> '
+                            . '</div>'
+                            . " <div title='Modifier quantité fabriquer' onclick=\"showInputEdit('input_fab_edited_".$idChilds."','qty_fab_edited_".$idChilds."');\" style='cursor:pointer;height: 20px;' id='qty_fab_edited_".$idChilds."'>".$qtyFabsVal."</div> "
+                            . "</td>";
                         print "<td  class='centered_text'>".($prodChild->weight_variant == 0.000 ? "": str_replace(".",",",$prodChild->weight_variant))."</td>";
-                        print "<td >".$prodChild->composition."</td>";
-                        print "<td >".($prodChild->price_yuan?price($prodChild->price_yuan):price(0))." </td>";
-                        print "<td style='".$bgColors."'>".(str_replace(".",",",$prodChild->taux_euro_yuan))."</td>";
-                        print "<td style='".$bgColors."'>".($prodChild->price_euro?price($prodChild->price_euro):price(0))." </td>";
+                        print "<td>"
+                        . "<div style='display:none;' id='input_composition_edited_".$idChilds."' class='centered_text'>"
+                            . "<input type='text' value='".$prodChild->composition."' id='value_of_composition_".$idChilds."'> <br> "
+                            . '<span style="width: 7%;display:none;margin-top:1%;" id="load_update_composition_'.$idChilds.'"><img src = "'.DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif"><br></span>'
+                            . '<button type="button" id="copie_val_composition_'.$idChilds.'" style="margin-top: 1%;" onclick="updateSingleInfo(\'value_of_composition_'.$idChilds.'\','.$object->id.', '.$idChilds.',\'composition\',\'input_composition_edited_'.$idChilds.'\',\'load_update_composition_'.$idChilds.'\')">Modifier</button><br> '
+                            . '<button type="button" id="copie_val_composition_color_'.$idChilds.'" style="margin-top: 1%;" onclick="copyValuesOfInput(\'load_update_composition_'.$idChilds.'\',\''.$object->id.'\',\'composition\',true,\'input_composition_edited_'.$idChilds.'\',\'value_of_composition_'.$idChilds.'\',\''.$kaff.'\')">Appliquer la modification pour déclinaison de la même couleur</button><br> '
+                            . '<button type="button" id="copie_val_composition_all_'.$idChilds.'" style="margin-top: 1%;" onclick="copyValuesOfInput(\'load_update_composition_'.$idChilds.'\',\''.$object->id.'\',\'composition\',false,\'input_composition_edited_'.$idChilds.'\',\'value_of_composition_'.$idChilds.'\',\''.$kaff.'\')">Appliquer la modification pour toutes les déclinaisons</button>'
+                            . '<button type="button" style="margin-top: 1%;" onclick="cancelUpdate()">Annuler</button> '
+                        . "</div>"
+                        . " <div title='Modifier Composition' onclick=\"showInputEdit('input_composition_edited_".$idChilds."','composition_edited_".$idChilds."');\" style='cursor:pointer;height: 20px;' id='composition_edited_".$idChilds."'>".$prodChild->composition."</div> "
+                        ."</td>";
+                        print "<td>"
+                        . "<input type='hidden' value='".floatval(str_replace(",",".",$priceYuanVal))."' id='value_of_price_yuan_hidden_".$idChilds."'>"
+                        . "<input type='hidden' value='".floatval(str_replace(",",".",$priceEuroVal))."' id='value_of_price_euro_".$idChilds."'>"
+                        . "<input type='hidden' value='".floatval(str_replace(",",".",$tauxEuroYuanVal))."' id='value_of_taux_yuan_euro_".$idChilds."'>"
+                        . "<div style='display:none;' id='input_price_yuan_edited_".$idChilds."' class='centered_text'>"
+                            . "<input type='text' value='".$priceYuanVal."' id='value_of_price_yuan_".$idChilds."' oninput='changeEuroEditForm(\"value_of_price_yuan_".$idChilds."\",\"value_of_price_euro_".$idChilds."\", \"value_of_taux_yuan_euro_".$idChilds."\",\"value_of_price_yuan_hidden_".$idChilds."\");'> <br> "
+                            . '<span style="width: 7%;display:none;margin-top:1%;" id="load_update_price_yuan_'.$idChilds.'"><img src = "'.DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif"><br></span>'
+                            . '<button type="button" id="copie_val_price_yuan_'.$idChilds.'" style="margin-top: 1%;" onclick="updateSingleInfo(\'value_of_price_yuan_'.$idChilds.'\','.$object->id.', '.$idChilds.',\'price_yuan\',\'input_price_yuan_edited_'.$idChilds.'\',\'load_update_price_yuan_'.$idChilds.'\',\'value_of_price_yuan_hidden_'.$idChilds.'\',\'value_of_taux_yuan_euro_'.$idChilds.'\',\'value_of_price_euro_'.$idChilds.'\')">Modifier</button><br> '
+                            . '<button type="button" id="copie_val_price_yuan_color_'.$idChilds.'" style="margin-top: 1%;" onclick="copyValuesOfInput(\'load_update_price_yuan_'.$idChilds.'\',\''.$object->id.'\',\'price_yuan\',true,\'input_price_yuan_edited_'.$idChilds.'\',\'value_of_price_yuan_'.$idChilds.'\',\''.$kaff.'\',\'value_of_price_euro_'.$idChilds.'\',\'value_of_taux_yuan_euro_'.$idChilds.'\',\'value_of_price_yuan_hidden_'.$idChilds.'\')">Appliquer la modification pour déclinaison de la même couleur</button><br> '
+                            . '<button type="button" id="copie_val_price_yuan_all_'.$idChilds.'" style="margin-top: 1%;" onclick="copyValuesOfInput(\'load_update_price_yuan_'.$idChilds.'\',\''.$object->id.'\',\'price_yuan\',false,\'input_price_yuan_edited_'.$idChilds.'\',\'value_of_price_yuan_'.$idChilds.'\',\''.$kaff.'\',\'value_of_price_euro_'.$idChilds.'\',\'value_of_taux_yuan_euro_'.$idChilds.'\',\'value_of_price_yuan_hidden_'.$idChilds.'\')">Appliquer la modification pour toutes les déclinaisons</button>'
+                            . '<button type="button" style="margin-top: 1%;" onclick="cancelUpdate()">Annuler</button> '
+                        . "</div>"
+                        . "<div title='Modifier Prix yuan' onclick=\"showInputEdit('input_price_yuan_edited_".$idChilds."','price_yuan_edited_".$idChilds."');\" style='cursor:pointer;height: 20px;' id='price_yuan_edited_".$idChilds."'>".$priceYuanVal." </div>"
+                        . "</td>";
+                        print "<td style='".$bgColors."'>"
+                                . "<div style='display:none;' id='input_taux_euro_yuan_edited_".$idChilds."' class='centered_text'>"
+                                    . "<input type='text' value='".$tauxEuroYuanVal."' id='value_of_taux_euro_yuan_".$idChilds."' oninput='changeEuroEditForm(\"value_of_price_yuan_".$idChilds."\",\"value_of_price_euro_".$idChilds."\", \"value_of_taux_euro_yuan_".$idChilds."\",\"value_of_price_yuan_hidden_".$idChilds."\",\"value_of_taux_yuan_euro_".$idChilds."\");'> <br> "
+                                    . '<span style="width: 7%;display:none;margin-top:1%;" id="load_update_taux_euro_yuan_'.$idChilds.'"><img src = "'.DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif"><br></span>'
+                                    . '<button type="button" id="copie_val_taux_euro_yuan_'.$idChilds.'" style="margin-top: 1%;" onclick="updateSingleInfo(\'value_of_taux_euro_yuan_'.$idChilds.'\','.$object->id.', '.$idChilds.',\'taux_change\',\'input_taux_euro_yuan_edited_'.$idChilds.'\',\'load_update_taux_euro_yuan_'.$idChilds.'\',\'value_of_price_yuan_hidden_'.$idChilds.'\',\'value_of_taux_yuan_euro_'.$idChilds.'\',\'value_of_price_euro_'.$idChilds.'\')">Modifier</button><br> '
+                                    . '<button type="button" id="copie_val_taux_euro_yuan_color_'.$idChilds.'" style="margin-top: 1%;" onclick="copyValuesOfInput(\'load_update_taux_euro_yuan_'.$idChilds.'\',\''.$object->id.'\',\'taux_change\',true,\'input_taux_euro_yuan_edited_'.$idChilds.'\',\'value_of_taux_euro_yuan_'.$idChilds.'\',\''.$kaff.'\',\'value_of_price_euro_'.$idChilds.'\',\'value_of_taux_yuan_euro_'.$idChilds.'\',\'value_of_price_yuan_hidden_'.$idChilds.'\')">Appliquer la modification pour déclinaison de la même couleur</button><br> '
+                                    . '<button type="button" id="copie_val_taux_euro_yuan_all_'.$idChilds.'" style="margin-top: 1%;" onclick="copyValuesOfInput(\'load_update_taux_euro_yuan_'.$idChilds.'\',\''.$object->id.'\',\'taux_change\',false,\'input_taux_euro_yuan_edited_'.$idChilds.'\',\'value_of_taux_euro_yuan_'.$idChilds.'\',\''.$kaff.'\',\'value_of_price_euro_'.$idChilds.'\',\'value_of_taux_yuan_euro_'.$idChilds.'\',\'value_of_price_yuan_hidden_'.$idChilds.'\')">Appliquer la modification pour toutes les déclinaisons</button>'
+                                    . '<button type="button" style="margin-top: 1%;" onclick="cancelUpdate()">Annuler</button> '
+                                . "</div>"
+                                . " <div title='Modifier Taux euro yuan' onclick=\"showInputEdit('input_taux_euro_yuan_edited_".$idChilds."','taux_euro_yuan_edited_".$idChilds."');\" style='cursor:pointer;height: 20px;' id='taux_euro_yuan_edited_".$idChilds."'>".$tauxEuroYuanVal." </div>"
+                                . "</td>";
+                        print "<td style='".$bgColors."'>".$priceEuroVal." </td>";
                         print "<td style='".$bgColors."'>".price($prodChild->quantite_fabriquer*$prodChild->price_yuan)." </td>";
                         print "<td style='".$bgColors."'>".price($prodChild->quantite_fabriquer*$prodChild->price_euro)." </td>";
                         print "<td><a class='custom_button edit_row_declinaison' href='".DOL_URL_ROOT."/product/variant/edit.php?productid=".$prodChild->id."&parentId=".$object->id."&valColor=".$kaff."' target='_blank'>Modifier</a>"
@@ -4501,9 +4875,26 @@ else
 		    $head = product_prepare_head($object);
             $titre = $langs->trans("CardProduct".$object->type);
             $picto = ($object->type == Product::TYPE_SERVICE ? 'service' : 'product');
-
-            dol_fiche_head($head, 'card', $titre, -1, $picto);
-
+            if($object->product_type_txt == 'fab'){
+                $headProductFab = [];
+                foreach($head as $kFab => $resFab){
+                    if($resFab[2] == "suppliers"){
+                        $resFab[0] = DOL_URL_ROOT."/product/fournisseurs.php?id=".$object->id;
+                        array_push($headProductFab,$resFab);
+                    }
+                    if($resFab[2] == "card"){
+                        $resFab[0] = DOL_URL_ROOT."/product/card.php?id=".$object->id;
+                        array_push($headProductFab,$resFab);
+                    }
+                    if($resFab[2] == "documents"){
+                        $resFab[0] = DOL_URL_ROOT."/product/document.php?id=".$object->id;
+                        array_push($headProductFab,$resFab);
+                    }
+                }
+                dol_fiche_head($headProductFab, 'card', $titre, -1, $picto);
+            }else{
+                dol_fiche_head($head, 'card', $titre, -1, $picto);
+            }
             $linkback = '<a href="'.DOL_URL_ROOT.'/product/list.php?restore_lastsearch_values=1&type='.$object->type.'">'.$langs->trans("BackToList").'</a>';
             $object->next_prev_filter = " fk_product_type = ".$object->type;
 
@@ -4519,17 +4910,21 @@ else
             print '<div class="underbanner clearboth"></div>';
             print '<table class="border tableforfield" width="100%">';
 
-			// Type
-			if (!empty($conf->product->enabled) && !empty($conf->service->enabled))
-			{
-				// TODO change for compatibility with edit in place
-				$typeformat = 'select;0:'.$langs->trans("Product").',1:'.$langs->trans("Service");
-				print '<tr><td class="titlefield">';
-				print (empty($conf->global->PRODUCT_DENY_CHANGE_PRODUCT_TYPE)) ? $form->editfieldkey("Type", 'fk_product_type', $object->type, $object, $usercancreate, $typeformat) : $langs->trans('Type');
-				print '</td><td colspan="2">';
-				print $form->editfieldval("Type", 'fk_product_type', $object->type, $object, $usercancreate, $typeformat);
-				print '</td></tr>';
-			}
+            // Type
+            if (!empty($conf->product->enabled) && !empty($conf->service->enabled))
+            {
+                    // TODO change for compatibility with edit in place
+                    $typeformat = 'select;0:'.$langs->trans("Product").',1:'.$langs->trans("Service");
+                    print '<tr><td class="titlefield">';
+                    if($object->product_type_txt == 'fab') {
+                        print "Type";
+                    }else{
+                        print (empty($conf->global->PRODUCT_DENY_CHANGE_PRODUCT_TYPE)) ? $form->editfieldkey("Type", 'fk_product_type', $object->type, $object, $usercancreate, $typeformat) : $langs->trans('Type');
+                    }
+                    print '</td><td colspan="2">';
+                    print $form->editfieldval("Type", 'fk_product_type', $object->type, $object, $usercancreate, $typeformat);
+                    print '</td></tr>';
+            }
 
             if ($showbarcode)
             {
@@ -4538,7 +4933,11 @@ else
                 print '<table width="100%" class="nobordernopadding"><tr><td class="nowrap">';
                 print $langs->trans("BarcodeType");
                 print '</td>';
-                if (($action != 'editbarcodetype') && $usercancreate && $createbarcode) print '<td class="right"><a class="editfielda" href="'.$_SERVER["PHP_SELF"].'?action=editbarcodetype&amp;id='.$object->id.'">'.img_edit($langs->trans('Edit'), 1).'</a></td>';
+                if($object->product_type_txt == 'fab') {
+                    
+                }else{
+                    if (($action != 'editbarcodetype') && $usercancreate && $createbarcode) print '<td class="right"><a class="editfielda" href="'.$_SERVER["PHP_SELF"].'?action=editbarcodetype&amp;id='.$object->id.'">'.img_edit($langs->trans('Edit'), 1).'</a></td>';
+                }
                 print '</tr></table>';
                 print '</td><td colspan="2">';
                 if ($action == 'editbarcodetype' || $action == 'editbarcode')
@@ -4562,7 +4961,11 @@ else
                 print '<table width="100%" class="nobordernopadding"><tr><td class="nowrap">';
                 print $langs->trans("BarcodeValue");
                 print '</td>';
-                if (($action != 'editbarcode') && $usercancreate && $createbarcode) print '<td class="right"><a class="editfielda" href="'.$_SERVER["PHP_SELF"].'?action=editbarcode&amp;id='.$object->id.'">'.img_edit($langs->trans('Edit'), 1).'</a></td>';
+                if($object->product_type_txt == 'fab') {
+                    
+                }else{
+                    if (($action != 'editbarcode') && $usercancreate && $createbarcode) print '<td class="right"><a class="editfielda" href="'.$_SERVER["PHP_SELF"].'?action=editbarcode&amp;id='.$object->id.'">'.img_edit($langs->trans('Edit'), 1).'</a></td>';
+                }
                 print '</tr></table>';
                 print '</td><td colspan="2">';
                 if ($action == 'editbarcode')
@@ -4743,7 +5146,11 @@ else
 
                     // Parent product
                     print '<tr><td>'.$langs->trans("ParentProduct").'</td><td colspan="2">';
-                    print $prodstatic->getNomUrl(1);
+                    if($object->product_type_txt == 'fab') {
+                        print $prodstatic->label;
+                    }else{
+                        print $prodstatic->getNomUrl(1);
+                    }
                     print '</td></tr>';
                 }
             }
@@ -4956,7 +5363,7 @@ if (($action == 'clone' && (empty($conf->use_javascript_ajax) || !empty($conf->d
 /* Barre d'action                                                             */
 /*                                                                            */
 /* ************************************************************************** */
-if ($action != 'create' && $action != 'edit')
+if ($action != 'create' && $action != 'edit' && $object->product_type_txt != 'fab')
 {
     print "\n".'<div class="tabsAction">'."\n";
 
@@ -5096,8 +5503,8 @@ if (!empty($conf->global->PRODUCT_ADD_FORM_ADD_TO) && $object->id && ($action ==
     if (!empty($html))
     {
 	    print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'">';
-    	print '<input type="hidden" name="token" value="'.newToken().'">';
-    	print '<input type="hidden" name="action" value="addin">';
+            print '<input type="hidden" name="token" value="'.newToken().'">';
+            print '<input type="hidden" name="action" value="addin">';
 
 	    print load_fiche_titre($langs->trans("AddToDraft"), '', '');
 
@@ -5128,7 +5535,7 @@ if (!empty($conf->global->PRODUCT_ADD_FORM_ADD_TO) && $object->id && ($action ==
  * Documents generes
  */
 
-if ($action != 'create' && $action != 'edit' && $action != 'delete')
+if ($action != 'create' && $action != 'edit' && $action != 'delete' && $object->product_type_txt != 'fab')
 {
     print '<div class="fichecenter"><div class="fichehalfleft">';
     print '<a name="builddoc"></a>'; // ancre

@@ -470,7 +470,27 @@ if ($id > 0 || $ref)
 			$titre = $langs->trans("CardProduct".$object->type);
 			$picto = ($object->type == Product::TYPE_SERVICE ? 'service' : 'product');
 
-			dol_fiche_head($head, 'suppliers', $titre, -1, $picto);
+			//dol_fiche_head($head, 'suppliers', $titre, -1, $picto);
+                        if($object->product_type_txt == 'fab'){
+                            $headProductFab = [];
+                            foreach($head as $kFab => $resFab){
+                                if($resFab[2] == "suppliers"){
+                                    $resFab[0] = DOL_URL_ROOT."/product/fournisseurs.php?id=".$object->id;
+                                    array_push($headProductFab,$resFab);
+                                }
+                                if($resFab[2] == "card"){
+                                    $resFab[0] = DOL_URL_ROOT."/product/card.php?id=".$object->id;
+                                    array_push($headProductFab,$resFab);
+                                }
+                                if($resFab[2] == "documents"){
+                                    $resFab[0] = DOL_URL_ROOT."/product/document.php?id=".$object->id;
+                                    array_push($headProductFab,$resFab);
+                                }
+                            }
+                            dol_fiche_head($headProductFab, 'suppliers', $titre, -1, $picto);
+                        }else{
+                            dol_fiche_head($head, 'suppliers', $titre, -1, $picto);
+                        }
 
 			$linkback = '<a href="'.DOL_URL_ROOT.'/product/list.php?restore_lastsearch_values=1">'.$langs->trans("BackToList").'</a>';
 		    $object->next_prev_filter = " fk_product_type = ".$object->type;
@@ -1111,7 +1131,7 @@ SCRIPT;
 
 			print "\n<div class=\"tabsAction\">\n";
 
-			if ($action != 'add_price' && $action != 'update_price')
+			if ($action != 'add_price' && $action != 'update_price' && $object->product_type_txt != 'fab')
 			{
 				$parameters = array();
 				$reshook = $hookmanager->executeHooks('addMoreActionsButtons', $parameters, $object, $action); // Note that $action and $object may have been modified by hook

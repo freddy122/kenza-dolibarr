@@ -220,7 +220,27 @@ if ($object->id)
         }
         dol_fiche_head($headProductFab, 'documents', $titre, -1, $picto);
     }else{
-        dol_fiche_head($head, 'documents', $titre, -1, $picto);
+        if($object->product_type_txt == 'fab'){
+            $headProductFab = [];
+            foreach($head as $kFab => $resFab){
+                if($resFab[2] == "suppliers"){
+                    $resFab[0] = DOL_URL_ROOT."/product/fournisseurs.php?id=".$object->id;
+                    array_push($headProductFab,$resFab);
+                }
+                if($resFab[2] == "card"){
+                    $resFab[0] = DOL_URL_ROOT."/product/card.php?id=".$object->id;
+                    array_push($headProductFab,$resFab);
+                }
+                if($resFab[2] == "documents"){
+                    $resFab[0] = DOL_URL_ROOT."/product/document.php?id=".$object->id;
+                    array_push($headProductFab,$resFab);
+                }
+            }
+            dol_fiche_head($headProductFab, 'documents', $titre, -1, $picto);
+        }else{
+            dol_fiche_head($head, 'documents', $titre, -1, $picto);
+        }
+        //dol_fiche_head($head, 'documents', $titre, -1, $picto);
     }
     $parameters = array();
     $reshook = $hookmanager->executeHooks('formObjectOptions', $parameters, $object, $action); // Note that $action and $object may have been modified by hook

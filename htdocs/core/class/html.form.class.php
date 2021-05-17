@@ -2834,7 +2834,7 @@ class Form
             $langs->load('other');
         }
 
-		$sql = "SELECT p.rowid, p.ref, p.label, p.price, p.duration, p.fk_product_type,";
+		$sql = "SELECT p.rowid, p.ref, p.label, p.price, p.duration, p.fk_product_type,p.price_euro,p.product_type_txt, ";
 		$sql .= " pfp.ref_fourn, pfp.rowid as idprodfournprice, pfp.price as fprice, pfp.quantity, pfp.remise_percent, pfp.remise, pfp.unitprice,";
 		$sql .= " pfp.fk_supplier_price_expression, pfp.fk_product, pfp.tva_tx, pfp.fk_soc, s.nom as name,";
 		$sql .= " pfp.supplier_reputation";
@@ -3052,8 +3052,8 @@ class Form
 					}
 					else                                            // No supplier price defined for product, even on other suppliers
 					{
-						$optlabel .= " - <span class='opacitymedium'>".$langs->trans("NoPriceDefinedForThisSupplier").'</span>';
-						$outvallabel .= ' - '.$langs->transnoentities("NoPriceDefinedForThisSupplier");
+                                            $optlabel .=  ($objp->product_type_txt == "fab")? (!empty($objp->price_euro) ? " -- ".floatval($objp->price_euro)." € /Unité": " -- ".floatval($objp->price)."€ /Unité") :" - <span class='opacitymedium'>".$langs->trans("NoPriceDefinedForThisSupplier").'</span>' ;
+                                            $outvallabel .= ' - '.$langs->transnoentities("NoPriceDefinedForThisSupplier");
 					}
 				}
 
@@ -7361,24 +7361,27 @@ class Form
 		// Right part of banner
 		if ($morehtmlright) $ret .= '<div class="inline-block floatleft">'.$morehtmlright.'</div>';
 
-		if ($previous_ref || $next_ref || $morehtml)
-		{
-			$ret .= '<div class="pagination paginationref"><ul class="right">';
-		}
-		if ($morehtml)
-		{
-			$ret .= '<li class="noborder litext">'.$morehtml.'</li>';
-		}
-		if ($shownav && ($previous_ref || $next_ref))
-		{
-			$ret .= '<li class="pagination">'.$previous_ref.'</li>';
-			$ret .= '<li class="pagination">'.$next_ref.'</li>';
-		}
-		if ($previous_ref || $next_ref || $morehtml)
-		{
-			$ret .= '</ul></div>';
-		}
-
+                if($object->element == "product" && $object->product_type_txt == "fab"){
+                    
+                }else{
+                    if ($previous_ref || $next_ref || $morehtml)
+                    {
+                            $ret .= '<div class="pagination paginationref"><ul class="right">';
+                    }
+                    if ($morehtml)
+                    {
+                            $ret .= '<li class="noborder litext">'.$morehtml.'</li>';
+                    }
+                    if ($shownav && ($previous_ref || $next_ref))
+                    {
+                            $ret .= '<li class="pagination">'.$previous_ref.'</li>';
+                            $ret .= '<li class="pagination">'.$next_ref.'</li>';
+                    }
+                    if ($previous_ref || $next_ref || $morehtml)
+                    {
+                            $ret .= '</ul></div>';
+                    }
+                }
 		$parameters = array();
 		$reshook = $hookmanager->executeHooks('moreHtmlStatus', $parameters, $object); // Note that $action and $object may have been modified by hook
 		if (empty($reshook)) $morehtmlstatus .= $hookmanager->resPrint;
