@@ -29,6 +29,9 @@ require_once DOL_DOCUMENT_ROOT.'/core/modules/printsheet/modules_labels.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/genericobject.class.php';
 require_once DOL_DOCUMENT_ROOT.'/variants/class/ProductCombination.class.php';
 
+$nombre_car_nom_prod_max = 20;
+$nombre_car_decl_coul_max = 10;
+$nombre_car_decl_taille_max = 5;
 // Load translation files required by the page
 $langs->loadLangs(array('admin', 'members', 'errors'));
 
@@ -44,6 +47,10 @@ $modellabel = GETPOST("modellabel"); // Doc template to use
 $numberofsticker = GETPOST('numberofsticker', 'int');
 $isShowLabel = GETPOST("choix_labels");
 $parentId = !empty(GETPOST("parentId")) ? GETPOST("parentId") : "";
+$defaultQtyFab = 10;
+if(GETPOST('qtyfab') !== null && (GETPOST('qtyfab'))){
+    $defaultQtyFab = intval((GETPOST('qtyfab')));
+}
 
 $mesg = '';
 
@@ -134,9 +141,11 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
                     padding:7px;text-transform:uppercase;
                     font-weight:bold;
                     position:relative;
-                    margin-top:-20px;
+                    margin-top:0px;
                     font-family: Arial, Helvetica, sans-serif;
+                    font-size: 22px;
                 }
+                html, body { height: 100%; }
            }
            .carte_metisse_style {
                     color:white;
@@ -144,8 +153,9 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
                     padding:7px;text-transform:uppercase;
                     font-weight:bold;
                     position:relative;
-                    margin-top:-20px;
+                    margin-top:0px;
                     font-family: Arial, Helvetica, sans-serif;
+                    font-size: 22px;
             }
         </style>";
         for($i=1;$i<=$numberofsticker;$i++){
@@ -158,15 +168,18 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
                 $policeWidth = "18px";
                 $paddingTop = "165px";
             }else{
-                if($i%1 == 0) {
+                if($i%1 == 0 && $numberofsticker != $i) {
                     $breakbefore = "page-break-after: always;";
-                }
+                }/*elseif($numberofsticker == $i){
+                    $breakbefore = "page-break-after: auto;";
+                }*/
                 if($producttmp->product_type_txt == "fab" && $isShowLabel != 1){
                     $tableWidth = "3cm";
                 }else{
-                    $tableWidth = "410px";
+                    //$tableWidth = "410px";
+                    $tableWidth = "421px";
                 }
-                $policeWidth = "20px";
+                $policeWidth = "28px";
                 $paddingTop = "150px";
             }
             //$htmlDataToPrint .= "<table style='width:".$tableWidth.";height:auto;".$breakbefore."'>";
@@ -179,6 +192,42 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
                 $resParentId = $db->getRows($sqlParentId);
                 
                 if(!empty($resParentId)){
+                    
+                    if(strlen($_POST['product_name']) > $nombre_car_nom_prod_max) {
+                        $langs->load("errors");
+                        $errors[] = 'Le nom produit devrait être 20 caractrères ou moins';
+                        $error++;
+                        setEventMessages($errors, null, 'errors');
+                        $codebaregp = GETPOST("codebare") ? GETPOST("codebare") : GETPOST("forbarcode");
+                        $parentIdgp = GETPOST("parentId") ? GETPOST("parentId") : 0;
+                        $qtyfabgp = GETPOST("qtyfab") ? GETPOST("qtyfab") : 0;
+                        header("Location: ".$_SERVER['PHP_SELF']."?codebare=".$codebaregp."&parentId=".$parentIdgp."&qtyfab=".$qtyfabgp);
+                        exit;
+                    }
+                    
+                    if(strlen($_POST['product_name_decl']['Couleur']) > $nombre_car_decl_coul_max) {
+                        $langs->load("errors");
+                        $errors[] = 'Le couleur devrait être 10 caractère ou moins';
+                        $error++;
+                        setEventMessages($errors, null, 'errors');
+                        $codebaregp = GETPOST("codebare") ? GETPOST("codebare") : GETPOST("forbarcode");
+                        $parentIdgp = GETPOST("parentId") ? GETPOST("parentId") : 0;
+                        $qtyfabgp = GETPOST("qtyfab") ? GETPOST("qtyfab") : 0;
+                        header("Location: ".$_SERVER['PHP_SELF']."?codebare=".$codebaregp."&parentId=".$parentIdgp."&qtyfab=".$qtyfabgp);
+                        exit;
+                    }
+                    if(strlen($_POST['product_name_decl']['Taille']) > $nombre_car_decl_taille_max) {
+                        $langs->load("errors");
+                        $errors[] = 'La taille devrait être 5 caractère ou moins';
+                        $error++;
+                        setEventMessages($errors, null, 'errors');
+                        $codebaregp = GETPOST("codebare") ? GETPOST("codebare") : GETPOST("forbarcode");
+                        $parentIdgp = GETPOST("parentId") ? GETPOST("parentId") : 0;
+                        $qtyfabgp = GETPOST("qtyfab") ? GETPOST("qtyfab") : 0;
+                        header("Location: ".$_SERVER['PHP_SELF']."?codebare=".$codebaregp."&parentId=".$parentIdgp."&qtyfab=".$qtyfabgp);
+                        exit;
+                    }
+                    
                     $productParent = new Product($db);
                     $productParent->fetch(intval($resParentId[0]->fk_product_parent));
                     $prodPrincipaleName = $productParent->label;
@@ -186,7 +235,7 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
                             . " pacv.fk_prod_attr, "
                             . " pacv.fk_prod_attr_val  "
                             . " FROM ".MAIN_DB_PREFIX."product_attribute_combination2val pacv "
-                            . " left join llx_product_attribute_combination pac on pac.rowid = pacv.fk_prod_combination "
+                            . " left join ".MAIN_DB_PREFIX."product_attribute_combination pac on pac.rowid = pacv.fk_prod_combination "
                             . " WHERE pac.fk_product_child = ".$producttmp->id."  and pac.fk_product_parent = ".$resParentId[0]->fk_product_parent." order by pacv.fk_prod_attr asc";
                     $resuCombinationss = $db->getRows($sqlCombinationss);
                     //$sqlParentId = "SELECT fk_product_parent FROM  ".MAIN_DB_PREFIX."product_attribute_combination WHERE fk_product_child = ".$producttmp->id;
@@ -195,11 +244,41 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
                     foreach($resuCombinationss as $rescomb) {
                         $attributes = $prodcombi->getAttributeById($rescomb->fk_prod_attr);
                         $attributesValue = $prodcombi->getAttributeValueById($rescomb->fk_prod_attr_val);
-                        $arrCombinationss[] = $attributesValue['value'];
+                        $arrCombinationss[] = $attributes['label']." : ".$attributesValue['value'];
                     }
-                    $htmlDataToPrint .= "<p style='font-size:".$policeWidth.";text-transform:uppercase;font-family: Arial, Helvetica, sans-serif;font-weight:bold;'>".$prodPrincipaleName." ".(!empty($arrCombinationss) ? implode(' ',$arrCombinationss) : "")."</p>";
+                    $words  = explode(' ', $prodPrincipaleName);
+                    $longestWordLength = 0;
+                    $longestWord = '';
+                    foreach ($words as $word) {
+                       if (strlen($word) > $longestWordLength) { 
+                          $longestWordLength = strlen($word);
+                          $longestWord = $word;
+                       }
+                    }
+                    if($longestWordLength >= 20){
+                        $prodPrincipaleName = substr($prodPrincipaleName,0,20)." ".substr($prodPrincipaleName,20,$longestWordLength);
+                    }
+                    $divCustomLabel = "font-size:22px;";
+                    $divCustomUnderLabel = "font-size:16px;";
+                    
+                    if(strlen($prodPrincipaleName) >= 20 ){
+                        // font-size : 17px
+                        $divCustomLabel = "font-size:20px;width:68%;";
+                    }
+                    if(!empty($arrCombinationss)){
+                        if(strlen(implode(', ',$arrCombinationss)) >= 30 ){
+                            // font-size : 14px
+                            $divCustomUnderLabel = "font-size:16px;width:68%;";
+                        }
+                    }
+                    $arrCombinationOk =[];
+                    foreach($_POST['product_name_decl'] as $kpnd => $vpnd){
+                        $arrCombinationOk[] = $kpnd ." : ".$vpnd;
+                    }
+                    $htmlDataToPrint .= "<div style='".$divCustomLabel."text-transform:uppercase;font-family: Arial, Helvetica, sans-serif;font-weight:bold;margin-bottom: -5px;'>".$_POST['product_name']."</div>";
+                    $htmlDataToPrint .= "<div style='".$divCustomUnderLabel."margin-top: 5px;font-family: Arial, Helvetica, sans-serif;margin-bottom: -1%;'>".(!empty($arrCombinationOk) ? implode(', ',$arrCombinationOk) : "")."</div>";
                 }else{
-                    $htmlDataToPrint .= "<p style='font-size:".$policeWidth.";text-transform:uppercase;font-family: Arial, Helvetica, sans-serif;font-weight:bold;'>".$producttmp->label."</p>";
+                    $htmlDataToPrint .= "<p style='font-size:20px;text-transform:uppercase;font-family: Arial, Helvetica, sans-serif;font-weight:bold;margin-bottom: -5px;'>".$producttmp->label."</p>";
                 }
                 $htmlDataToPrint .= "</td>";
                 $htmlDataToPrint .= "</tr>";
@@ -209,7 +288,7 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
                             . " pacv.fk_prod_attr, "
                             . " pacv.fk_prod_attr_val  "
                             . " FROM ".MAIN_DB_PREFIX."product_attribute_combination2val pacv "
-                            . " left join llx_product_attribute_combination pac on pac.rowid = pacv.fk_prod_combination "
+                            . " left join ".MAIN_DB_PREFIX."product_attribute_combination pac on pac.rowid = pacv.fk_prod_combination "
                             . " WHERE pac.fk_product_child = ".$producttmp->id."  and pac.fk_product_parent = ".$parentId;
                     $resuCombinationss = $db->getRows($sqlCombinationss);
                     //$sqlParentId = "SELECT fk_product_parent FROM  ".MAIN_DB_PREFIX."product_attribute_combination WHERE fk_product_child = ".$producttmp->id;
@@ -224,6 +303,18 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
                     $prodPrincipaleName = "";
                     if(!empty($parentId)){
                         $prodPrincipaleName = $productParent->label;
+                        $words  = explode(' ', $prodPrincipaleName);
+                        $longestWordLength = 0;
+                        $longestWord = '';
+                        foreach ($words as $word) {
+                           if (strlen($word) > $longestWordLength) { 
+                              $longestWordLength = strlen($word);
+                              $longestWord = $word;
+                           }
+                        }
+                        if($longestWordLength >= 20){
+                            $prodPrincipaleName = substr($prodPrincipaleName,0,20)." ".substr($prodPrincipaleName,20,$longestWordLength);
+                        }
                     }
                     $htmlDataToPrint .= "<tr style='text-align:center'>";
                     $htmlDataToPrint .= "<td colspan=2>";
@@ -247,7 +338,6 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
                 if(!empty($productParent->icone_prod_1)){
                     $thumbs1Mini    = explode('.',$productParent->icone_prod_1)[0]."_mini.".explode('.',$productParent->icone_prod_1)[1];
                     $thumbs1Small   = explode('.',$productParent->icone_prod_1)[0]."_small.".explode('.',$productParent->icone_prod_1)[1];
-                    //var_dump(strpos($productParent->icone_prod_1,'icon1'));die('okk');
                     //if(strpos($productParent->icone_prod_1,'icon1') !== false){
                     $htmlDataToPrint .= '<img src="'.DOL_URL_ROOT.'/viewimage.php?modulepart=product&entity=1&file=/'.$productParent->ref.'/thumbs/'.$thumbs1Small.'" style="width:50%"/>';
                 }
@@ -265,20 +355,40 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
                 }
                 $htmlDataToPrint .= "</td>";
             }else{
-                $htmlDataToPrint .= "<td style='width:60%'>";
-                $htmlDataToPrint .= "<img src='data:image/png;base64,".$imgDataFromPng."' style='margin-bottom:25px;'>";
+                $style_not_firefox_img = "";
+                if(!strpos($_SERVER['HTTP_USER_AGENT'], 'Firefox')){
+                    //$style_not_firefox_img = "    margin-top: -29%;";
+                    $style_not_firefox_img = "width:90%;";
+                }else{
+                    //$style_not_firefox_img = "    margin-top: -28%;";
+                    $style_not_firefox_img = "width:90%;";
+                }
+                $htmlDataToPrint .= "<td style='width:40%'>";
+                $htmlDataToPrint .= "<img src='data:image/png;base64,".$imgDataFromPng."' style='".$style_not_firefox_img."'>";
                 $htmlDataToPrint .= "</td>";
             }
             if($isShowLabel == 1){
-                $htmlDataToPrint .= "<td style='width:40%;padding-top:".$paddingTop.";'>";
-                $htmlDataToPrint .= "<p style='float:right;font-weight:bold;font-family: Arial, Helvetica, sans-serif;font-size:22px'>".$priceTTc. " €"."</p>";
+                //$htmlDataToPrint .= "<td style='width:60%;padding-top:".$paddingTop.";'>";
+                $htmlDataToPrint .= "<td style='width:60%;padding-top:6%'>";
+                //margin-top: -94px;
+                // au cas long description label ou déclinaison => font-size : 23px;
+                $htmlDataToPrint .= "<div style='float:left;font-weight:bold;font-family: Arial, Helvetica, sans-serif;font-size:27px;'>".$priceTTc. " €"."</div>";
                 $htmlDataToPrint .= "</td>";
             }
             $htmlDataToPrint .= "</tr>";
             if($isShowLabel == 1){
+                $style_not_firefox_carte_metisse = "";
+                if(!strpos($_SERVER['HTTP_USER_AGENT'], 'Firefox')){
+                    //$style_not_firefox_carte_metisse = "margin-top: -16%;padding: 1px 1px 0px;";
+                    $style_not_firefox_carte_metisse = "padding: 1px 1px 0px;";
+                }else{
+                    //$style_not_firefox_carte_metisse = "margin-top: -15%;padding: 1px 1px 0px;";
+                    $style_not_firefox_carte_metisse = "padding: 1px 1px 0px;";
+                }
                 $htmlDataToPrint .= "<tr>";
                 $htmlDataToPrint .= "<td colspan=2>";
-                $htmlDataToPrint .= "<p class='carte_metisse_style'>Carte metisse: ".price($carteMetisse)." €</p>";
+                // au cas long description label ou déclinaison => width: 60%; font-size : 20px
+                $htmlDataToPrint .= "<div class='carte_metisse_style' style='width:".((strlen($priceTTc." €") < 9) ? "62%":"65%").";".$style_not_firefox_carte_metisse."'>Carte metisse: ".price($carteMetisse)." €</div>";
                 $htmlDataToPrint .= "</td>";
                 $htmlDataToPrint .= "</tr>";
             }
@@ -299,7 +409,7 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
                 setTimeout(function() {
                     printWindow.document.close();
                     printWindow.print();
-                    location.href="<?php echo $hosts.DOL_URL_ROOT.'/barcode/printsheet.php?codebare='.$codebarValue."&parentId=".$parentId; ?>";
+                    location.href="<?php echo $hosts.DOL_URL_ROOT.'/barcode/printsheet.php?codebare='.$codebarValue."&parentId=".$parentId."&qtyfab=".$defaultQtyFab; ?>";
                 },1500);
             };
         </script>
@@ -526,7 +636,6 @@ if ($action == 'builddoc')
                 $template = 'tcpdflabel';
                 $encoding = $module->getTcpdfEncodingType($encoding); //convert to TCPDF compatible encoding types
                 /*echo "<pre>";
-                // print_r($stdobject);die();
                 $height = 50;
                 $width = 1;
                 require_once TCPDF_PATH.'tcpdf_barcodes_1d.php';
@@ -638,6 +747,7 @@ dol_htmloutput_errors($mesg);
 
 print '<form action="'.$_SERVER["PHP_SELF"].'" method="POST">';
 print '<input type="hidden" name="parentId" value="'.$parentId.'">';
+print '<input type="hidden" name="qtyfab" value="'.$defaultQtyFab.'">';
 print '<input type="hidden" name="mode" value="label">';
 print '<input type="hidden" name="action" value="builddoc">';
 print '<input type="hidden" name="token" value="'.newtoken().'">';
@@ -666,7 +776,9 @@ print '	<div class="tagtr">';
 print '	<div class="tagtd" style="overflow: hidden; white-space: nowrap; max-width: 300px;">';
 print $langs->trans("NumberOfStickers").' &nbsp; ';
 print '</div><div class="tagtd maxwidthonsmartphone" style="overflow: hidden; white-space: nowrap;">';
-print '<input size="4" type="text" name="numberofsticker" value="'.(GETPOST('numberofsticker') ?GETPOST('numberofsticker', 'int') : 10).'">';
+
+print '<input size="4" type="text" name="numberofsticker" value="'.(GETPOST('numberofsticker') ?GETPOST('numberofsticker', 'int') : $defaultQtyFab).'">';
+
 print '</div></div>';
 print '</div>';
 print '<br>';
@@ -784,6 +896,110 @@ if(!empty(GETPOST('codebare'))) {
 }
 print '<input size="16" type="text" name="forbarcode" id="forbarcode" value="'.$barCodes.'">';
 print '</div></div>';
+
+$prntId = "";
+$arrCombinationss = [];
+if(GETPOST("codebare")){
+    $producttmp->fetch('','','',GETPOST("codebare"));
+    $sqlParentId = "SELECT fk_product_parent FROM  ".MAIN_DB_PREFIX."product_attribute_combination WHERE fk_product_child = ".$producttmp->id;
+    $prntId = $db->getRows($sqlParentId);
+    
+    if(!empty($prntId)){
+        $sqlCombinationss = "SELECT "
+                . " pacv.fk_prod_attr, "
+                . " pacv.fk_prod_attr_val  "
+                . " FROM ".MAIN_DB_PREFIX."product_attribute_combination2val pacv "
+                . " left join ".MAIN_DB_PREFIX."product_attribute_combination pac on pac.rowid = pacv.fk_prod_combination "
+                . " WHERE pac.fk_product_child = ".$producttmp->id."  and pac.fk_product_parent = ".$prntId[0]->fk_product_parent." order by pacv.fk_prod_attr asc";
+        $resuCombinationss = $db->getRows($sqlCombinationss);
+        $prodcombi = new ProductCombination($db);
+        
+        foreach($resuCombinationss as $rescomb) {
+            $attributes = $prodcombi->getAttributeById($rescomb->fk_prod_attr);
+            $attributesValue = $prodcombi->getAttributeValueById($rescomb->fk_prod_attr_val);
+            $arrCombinationss[] = $attributes['label']." : ".$attributesValue['value'];
+        }
+        //print_r($arrCombinationss);
+        $producttmp->fetch($prntId[0]->fk_product_parent);
+    }
+}
+?>
+<script>
+function getMaxChar(idInput, idDivError, carProd = "", carCoul = "", carTaille = ""){
+    var inputValues = $("#"+idInput).val();
+    if(carProd){
+        if(parseInt(inputValues.length) > parseInt(carProd)){
+            $("#"+idDivError).show();
+        }else{
+            $("#"+idDivError).hide();
+        }
+    }
+    if(carCoul){
+        if(parseInt(inputValues.length) > parseInt(carCoul)){
+            $("#"+idDivError).show();
+        }else{
+            $("#"+idDivError).hide();
+        }
+    }
+    if(carTaille){
+        if(parseInt(inputValues.length) > parseInt(carTaille)){
+            $("#"+idDivError).show();
+        }else{
+            $("#"+idDivError).hide();
+        }
+    }
+}
+</script>    
+<?php
+
+print '<div class="tagtr">';
+print '<div class="tagtd" style="overflow: hidden; white-space: nowrap; max-width: 300px;">';
+print 'Nom du produit <span style="color:red;">(Nombre de caractère max : '.$nombre_car_nom_prod_max.')</span>&nbsp; ';
+print '</div><div class="tagtd" style="overflow: hidden; white-space: nowrap; max-width: 900px;">';
+print '<input size="40" type="text" name="product_name" id="product_name" value="'.($_POST['product_name']? $_POST['product_name']:$producttmp->label).'" oninput="getMaxChar(\'product_name\',\'nb_char_prod_error\',\''.$nombre_car_nom_prod_max.'\')">';
+$displays = "none;";
+if(strlen($producttmp->label) > $nombre_car_nom_prod_max){
+    $displays = "block;";
+}
+print '<p style="color:red; display:'.$displays.';" id="nb_char_prod_error">Le nombre de caractère maximale pour le nom produit dépasse '.$nombre_car_nom_prod_max.'</p>';
+
+print '</div>'
+. '</div>';
+
+if(!empty($arrCombinationss)){
+    foreach($arrCombinationss as $res){
+        $val = explode(":", $res);
+        print '	<div class="tagtr">';
+        $infoCharLimit = "";
+        if(trim($val[0]) == "Couleur"){
+            $infoCharLimit = '<span style="color:red;">  (Nombre de caractère max : '.$nombre_car_decl_coul_max.')</span>';
+        }else{
+            $infoCharLimit = '<span style="color:red;">  (Nombre de caractère max : '.$nombre_car_decl_taille_max.')</span>';
+        }
+        print '	<div class="tagtd" style="overflow: hidden; white-space: nowrap; max-width: 300px;">';
+        print trim($val[0]).$infoCharLimit.' &nbsp; ';
+        print '</div><div class="tagtd" style="overflow: hidden; white-space: nowrap; max-width: 900px;">';
+        if(trim($val[0]) == "Couleur"){
+            print '<input size="40" type="text" name="product_name_decl['.trim($val[0]).']" id="product_name_decl_'.trim($val[0]).'" value="'.($_POST['product_name_decl']['Couleur']?$_POST['product_name_decl']['Couleur']:trim($val[1])).'" oninput="getMaxChar(\'product_name_decl_'.trim($val[0]).'\',\'nb_char_prod_error_'.trim($val[0]).'\',\'\',\''.$nombre_car_decl_coul_max.'\')">';
+            $displays = "none;";
+            if(strlen(trim($val[1])) > $nombre_car_decl_coul_max){
+                $displays = "block;";
+            }
+            print '<p style="color:red; display:'.$displays.';" id="nb_char_prod_error_'.trim($val[0]).'">Le nombre de caractère maximale pour le couleur dépasse '.$nombre_car_decl_coul_max.'</p>';
+        }else{
+            print '<input size="40" type="text" name="product_name_decl['.trim($val[0]).']" id="product_name_decl_'.trim($val[0]).'" value="'.($_POST['product_name_decl']['Taille']?$_POST['product_name_decl']['Taille']:trim($val[1])).'" oninput="getMaxChar(\'product_name_decl_'.trim($val[0]).'\',\'nb_char_prod_error_'.trim($val[0]).'\',\'\',\'\',\''.$nombre_car_decl_taille_max.'\')">';
+            $displays = "none;";
+            if(strlen(trim($val[1])) > $nombre_car_decl_taille_max){
+                $displays = "block;";
+            }
+            print '<p style="color:red; display:'.$displays.';" id="nb_char_prod_error_'.trim($val[0]).'">Le nombre de caractère maximale pour le couleur dépasse '.$nombre_car_decl_taille_max.'</p>';
+            
+        }
+        print '</div>'
+        . '</div>';
+    }
+}
+
 /*
 $barcodestickersmask=GETPOST('barcodestickersmask');
 print '<br>'.$langs->trans("BarcodeStickersMask").':<br>';
