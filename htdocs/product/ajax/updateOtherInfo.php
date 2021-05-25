@@ -143,9 +143,10 @@ foreach($resProdSame as $res){
                     . " taux_euro_yuan = ".floatval(str_replace(',','.',$tauxChange)).", "
                     . " total_montant_yuan = ".floatval($totalYuan).", "
                     . " total_montant_euro = ".floatval($totalEuro).", "
-                    . " price_euro = ".floatval(str_replace(',','.',$prixEuro)).", "
-                    . " price = ".floatval(str_replace(',','.',$prixEuro)).", "
-                    . " price_ttc = ".floatval(str_replace(',','.',$prixEuro))."  where rowid=".$res->fk_product_child;
+                    . " price_euro = ".floatval(str_replace(',','.',$prixEuro))." "
+                    /*. " price = ".floatval(str_replace(',','.',$prixEuro)).", "
+                    . " price_ttc = ".floatval(str_replace(',','.',$prixEuro)).""*/
+                    . " where rowid=".$res->fk_product_child;
                     $db->query($sqlUpdateSame);
                     
                     /* prix fournisseur */
@@ -168,9 +169,10 @@ foreach($resProdSame as $res){
                     . " taux_euro_yuan = ".floatval(str_replace(',','.',$tauxChange)).", "
                     . " total_montant_yuan = ".floatval($totalYuan).", "
                     . " total_montant_euro = ".floatval($totalEuro).", "
-                    . " price_euro = ".floatval(str_replace(',','.',$prixEuro)).", "
-                    . " price = ".floatval(str_replace(',','.',$prixEuro)).", "
-                    . " price_ttc = ".floatval(str_replace(',','.',$prixEuro))."  where rowid=".$res->fk_product_child;
+                    . " price_euro = ".floatval(str_replace(',','.',$prixEuro))." "
+                    /*. " price = ".floatval(str_replace(',','.',$prixEuro)).", "
+                    . " price_ttc = ".floatval(str_replace(',','.',$prixEuro))."  "*/
+                    . " where rowid=".$res->fk_product_child;
             $db->query($sqlUpdateSame);
             
             /* prix fournisseur */

@@ -60,6 +60,12 @@ class ProductAttributeValue
 	public $code_couleur;
         
 	/**
+	 * Attribute value valeur_courte
+	 * @var string
+	 */
+	public $valeur_courte;
+        
+	/**
 	 * Attribute value image_couleur
 	 * @var string
 	 */
@@ -94,7 +100,7 @@ class ProductAttributeValue
 	 */
 	public function fetch($valueid)
 	{
-		$sql = "SELECT rowid, fk_product_attribute, ref, value, code_couleur, image_couleur, type_taille FROM ".MAIN_DB_PREFIX."product_attribute_value WHERE rowid = ".(int) $valueid." AND entity IN (".getEntity('product').")";
+		$sql = "SELECT rowid, fk_product_attribute, ref, value, code_couleur,valeur_courte, image_couleur, type_taille FROM ".MAIN_DB_PREFIX."product_attribute_value WHERE rowid = ".(int) $valueid." AND entity IN (".getEntity('product').")";
 
 		$query = $this->db->query($sql);
 
@@ -112,6 +118,7 @@ class ProductAttributeValue
 		$this->fk_product_attribute = $obj->fk_product_attribute;
 		$this->ref = $obj->ref;
 		$this->code_couleur = $obj->code_couleur;
+		$this->valeur_courte = $obj->valeur_courte;
 		$this->image_couleur = $obj->image_couleur;
 		$this->type_taille = $obj->type_taille;
 		$this->value = $obj->value;
@@ -137,7 +144,7 @@ class ProductAttributeValue
 			$sql .= 'DISTINCT ';
 		}
 
-		$sql .= 'v.fk_product_attribute, v.rowid, v.ref, v.value, v.code_couleur, v.image_couleur, v.type_taille FROM '.MAIN_DB_PREFIX.'product_attribute_value v ';
+		$sql .= 'v.fk_product_attribute, v.rowid, v.ref, v.value, v.code_couleur,v.valeur_courte, v.image_couleur, v.type_taille FROM '.MAIN_DB_PREFIX.'product_attribute_value v ';
 
 		if ($only_used) {
 			$sql .= 'LEFT JOIN '.MAIN_DB_PREFIX.'product_attribute_combination2val c2v ON c2v.fk_prod_attr_val = v.rowid ';
@@ -163,6 +170,9 @@ class ProductAttributeValue
 			$tmp->value = $result->value;
                         if($result->code_couleur){
                             $tmp->code_couleur = $result->code_couleur;
+                        }
+                        if($result->valeur_courte){
+                            $tmp->valeur_courte = $result->valeur_courte;
                         }
                         if($result->image_couleur){
                             $tmp->image_couleur = $result->image_couleur;
@@ -195,7 +205,7 @@ class ProductAttributeValue
 			$sql .= 'DISTINCT ';
 		}
 
-		$sql .= 'v.fk_product_attribute, v.rowid, v.ref, v.value, v.code_couleur, v.image_couleur, v.type_taille FROM '.MAIN_DB_PREFIX.'product_attribute_value v ';
+		$sql .= 'v.fk_product_attribute, v.rowid, v.ref, v.value, v.code_couleur,v.valeur_courte, v.image_couleur, v.type_taille FROM '.MAIN_DB_PREFIX.'product_attribute_value v ';
 
 		if ($only_used) {
 			$sql .= 'LEFT JOIN '.MAIN_DB_PREFIX.'product_attribute_combination2val c2v ON c2v.fk_prod_attr_val = v.rowid ';
@@ -228,6 +238,9 @@ class ProductAttributeValue
                         if($result->code_couleur){
                             $tmp->code_couleur = $result->code_couleur;
                         }
+                        if($result->valeur_courte){
+                            $tmp->valeur_courte = $result->valeur_courte;
+                        }
                         if($result->image_couleur){
                             $tmp->image_couleur = $result->image_couleur;
                         }
@@ -255,9 +268,9 @@ class ProductAttributeValue
 		// Ref must be uppercase
 		$this->ref = strtoupper($this->ref);
 
-		$sql = "INSERT INTO ".MAIN_DB_PREFIX."product_attribute_value (fk_product_attribute, ref, value, entity, code_couleur, image_couleur, type_taille)
+		$sql = "INSERT INTO ".MAIN_DB_PREFIX."product_attribute_value (fk_product_attribute, ref, value, entity, code_couleur,valeur_courte, image_couleur, type_taille)
 		VALUES ('".(int) $this->fk_product_attribute."', '".$this->db->escape($this->ref)."',
-		'".$this->db->escape($this->value)."', ".(int) $this->entity.", '".$this->db->escape($this->code_couleur)."', '".$this->db->escape($this->image_couleur)."', '".$this->db->escape($this->type_taille)."')";
+		'".$this->db->escape($this->value)."', ".(int) $this->entity.", '".$this->db->escape($this->code_couleur)."', '".$this->db->escape($this->valeur_courte)."' , '".$this->db->escape($this->image_couleur)."', '".$this->db->escape($this->type_taille)."')";
 
 		$query = $this->db->query($sql);
 
@@ -283,7 +296,7 @@ class ProductAttributeValue
 
 		$sql = "UPDATE ".MAIN_DB_PREFIX."product_attribute_value
 		SET fk_product_attribute = '".(int) $this->fk_product_attribute."', ref = '".$this->db->escape($this->ref)."',
-		value = '".$this->db->escape($this->value)."', code_couleur = '".$this->db->escape($this->code_couleur)."', image_couleur = '".$this->db->escape($this->image_couleur)."', type_taille ='".$this->db->escape($this->type_taille)."' WHERE rowid = ".(int) $this->id;
+		value = '".$this->db->escape($this->value)."', code_couleur = '".$this->db->escape($this->code_couleur)."',valeur_courte='".$this->db->escape($this->valeur_courte)."', image_couleur = '".$this->db->escape($this->image_couleur)."', type_taille ='".$this->db->escape($this->type_taille)."' WHERE rowid = ".(int) $this->id;
 
 		if ($this->db->query($sql)) {
 			return 1;

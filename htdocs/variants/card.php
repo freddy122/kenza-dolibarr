@@ -64,6 +64,7 @@ if ($_POST) {
 			$objectval->ref = cleanSpecialChar(cleanString($ref));
 			$objectval->value = GETPOST('value', 'alpha');
 			$objectval->code_couleur = GETPOST('code_couleur', 'alpha');
+			$objectval->valeur_courte = GETPOST('valeur_courte', 'alpha');
                         
                         if(!empty($_FILES['image_couleur']['name'])){
                             $sdir = $conf->medias->multidir_output[$conf->entity];
@@ -277,8 +278,9 @@ if ($action == 'edit') {
 	print '<table class="liste">';
 	print '<tr class="liste_titre">';
 	print '<th class="liste_titre titlefield">'.$langs->trans('Ref').'</th>';
-	print '<th class="liste_titre">'.$langs->trans('Value').'</th>';
+	print '<th class="liste_titre">Libellé</th>';
         if($object->id == 1) {
+            print '<th class="liste_titre">Libellé courte (10 caractères max)</th>';
             print '<th class="liste_titre">Code couleur</th>';
             print '<th class="liste_titre">Image couleur</th>';
         }
@@ -303,6 +305,11 @@ if ($action == 'edit') {
                                     </select>
                                 </td>
                                 <?php endif;?>
+                                
+                                <?php if($object->id == 1): ?>
+                                 <td>
+                                     <input id="valeur_courte" type="text" name="valeur_courte" maxlength="10" value="<?php echo $attrval->valeur_courte ?>">
+                                </td>
                                 <?php if(!empty($attrval->code_couleur)): ?>
                                     <td>
                                         <input id="code_couleur" type="text" name="code_couleur" value="<?php echo $attrval->code_couleur ?>">
@@ -316,7 +323,7 @@ if ($action == 'edit') {
                                         </script>
                                     </td>
                                 <?php endif ?>
-                                <?php if($object->id == 1): ?>
+                                
                                     <td>
                                         <input id="image_couleur" type="file" name="image_couleur" id="image_couleur" onchange="readURL(this,'blah<?php echo $attrval->id; ?>','image_couleur');" /><i style="color:red;font-size: 12px;">(Taille max : 2M, Largeur max : 1200, Hauteur max : 1200, Type  : jpeg, jpg, png, gif </i> <br>
                                         <?php 
@@ -400,6 +407,7 @@ if ($action == 'edit') {
                                             $thumbsMini    = explode('.',$attrval->image_couleur)[0]."_mini.".explode('.',$attrval->image_couleur)[1];
                                             $thumbsSmall   = explode('.',$attrval->image_couleur)[0]."_small.".explode('.',$attrval->image_couleur)[1];
                                         ?>
+                                    <td><?php echo dol_htmlentities($attrval->valeur_courte) ?></td>
                                     <td><?php echo dol_htmlentities($attrval->code_couleur) ?><p style="width:10px;height:10px; background-color:<?php echo dol_htmlentities($attrval->code_couleur) ?>; "></p></td>
                                     <td><img id="blah" src="<?php echo DOL_URL_ROOT.'/viewimage.php?modulepart=medias&entity=1&file=/'. strtoupper($attrval->ref).'/thumbs/'.$thumbsSmall; ?>" style="width:12%;"/></td>
 				<?php endif;?>

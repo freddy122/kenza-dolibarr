@@ -594,7 +594,7 @@ class ProductCombination
          * @author Fréderic id web <freddyhat122@gmail.com>
          */
         public function getAttributeValueById($idAttrVal) {
-            $sql = "select rowid,ref,value,code_couleur,fk_product_attribute,image_couleur from ".MAIN_DB_PREFIX."product_attribute_value where rowid = ".$idAttrVal;
+            $sql = "select rowid,ref,value,code_couleur,valeur_courte,fk_product_attribute,image_couleur from ".MAIN_DB_PREFIX."product_attribute_value where rowid = ".$idAttrVal;
             $query = $this->db->query($sql);
             return (array)$this->db->fetch_object($query);
         }
@@ -727,12 +727,12 @@ class ProductCombination
                     $newproduct->quantite_fabriquer = $arrayOtherInformation['quantite_fabriquer'];
                     $newproduct->composition = strval($arrayOtherInformation['composition']);
                     $newproduct->ref_fab_frs = strval($arrayOtherInformation['ref_fab_frs']);
+                    $newproduct->lib_court = strval($arrayOtherInformation['lib_court']);
                     $newproduct->price_yuan = $arrayOtherInformation['price_yuan'];
                     $newproduct->price_euro = $arrayOtherInformation['price_euro'];
                     $newproduct->taux_euro_yuan = str_replace(',','.',$arrayOtherInformation['tauxChange']);
-                    $newproduct->price = floatval($arrayOtherInformation['price_euro']);
-                    $newproduct->price_ttc = floatval($arrayOtherInformation['price_euro']);
-                    $newproduct->price_ttc = floatval($arrayOtherInformation['codebares']);
+                    $newproduct->price = floatval(str_replace(",",".",$arrayOtherInformation['sell_price']));
+                    $newproduct->price_ttc = floatval(str_replace(",",".",$arrayOtherInformation['sell_price']));
                     /*$sqlupdateother = "UPDATE ".MAIN_DB_PREFIX."product set price = ".floatval($arrayOtherInformation['price_euro'])." , price_ttc = ".floatval($arrayOtherInformation['price_euro']).", where rowid = ".$newproduct->id;
                     $db->query($sqlupdateother);*/
                 }
@@ -860,6 +860,10 @@ class ProductCombination
                     
                     if(!empty($arrayOtherInformation['ref_fab_frs'])){
                         $sqlupdateother .= " ref_fab_frs='".$arrayOtherInformation['ref_fab_frs']."', ";
+                    }
+                    
+                    if(!empty($arrayOtherInformation['lib_court'])){
+                        $sqlupdateother .= " lib_court='".$arrayOtherInformation['lib_court']."', ";
                     }
                     
                     if(!empty($arrayOtherInformation['ref_tissus_couleur'])){

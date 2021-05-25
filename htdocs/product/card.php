@@ -590,6 +590,7 @@ if (empty($reshook))
                                     . " weight = ".(!empty(GETPOST('weight'))?GETPOST('weight'):0)." , "
                                     . " weight_units = ".(!empty(GETPOST('weight_units'))?GETPOST('weight_units'):0)." , "
                                     . " tobuy = 1 , "
+                                    . " lib_court = '". GETPOST("lib_court")."' , "
                                     . " ref_fab_frs = '".GETPOST('ref_fab_frs')."' where rowid =  ".$id;
                             $db->query($sqlUpdateProdType);
                             
@@ -626,8 +627,10 @@ if (empty($reshook))
                                 $arrOtherInfo["poidsfabriq"]        = floatval(str_replace(',','.',$arrposted['poidsfabriq'][$i]));
                                 $arrOtherInfo["tauxChange"]         = floatval(str_replace(',','.',$arrposted['tauxChange'][$i]));
                                 $arrOtherInfo["ref_fab_frs"]        = GETPOST('ref_fab_frs');
+                                $arrOtherInfo["lib_court"]        = GETPOST('lib_court');
                                 $arrOtherInfo["codebares"]          = $arrposted['codebares'][$i];
                                 $arrOtherInfo["product_type_txt"] = "fab";
+                                $arrOtherInfo["sell_price"] = GETPOST('price');
                                 $arrOtherInfo["tva_tx_fourn"] = floatval(str_replace(",",".",$_POST['tva_tx_fourn']));
                                 $prodcomb = new ProductCombination($db);
                                 $prodcomb->createProductCombination($user, $object, $arrCombi, array(), false, false, false, false,$arrOtherInfo);
@@ -902,7 +905,9 @@ if (empty($reshook))
                         $arrOtherInfo["codebares"] = $arrposted['codebares'][$i];
                         $arrOtherInfo["tauxChange"]  = floatval(str_replace(',','.',$arrposted['tauxChange'][$i]));
                         $arrOtherInfo["ref_fab_frs"] = GETPOST("ref_fab_frs");
+                        $arrOtherInfo["lib_court"] = GETPOST("lib_court");
                         $arrOtherInfo["product_type_txt"] = "fab";
+                        $arrOtherInfo["sell_price"] = GETPOST('price');
                         $arrOtherInfo["tva_tx_fourn"] = floatval(str_replace(",",".",$_POST['tva_tx_fourn']));
                         $prodcomb = new ProductCombination($db);
                         $prodcomb->createProductCombination($user, $object, $arrCombi, array(), false, false, false, false,$arrOtherInfo);
@@ -963,6 +968,7 @@ if (empty($reshook))
                                 . " label = '".GETPOST('label', $label_security_check)."', "
                                 . " description='".GETPOST('desc')."', "
                                 . " ref_fab_frs = '".GETPOST('ref_fab_frs')."', "
+                                . " lib_court = '".GETPOST('lib_court')."', "
                                 . " tobuy = 1 , "
                                 . " weight = ".floatval(str_replace(',','.',GETPOST('weight')))." , "
                                 . " weight_units = ".GETPOST('weight_units')." , "
@@ -989,7 +995,7 @@ if (empty($reshook))
                             $attributesVals = $prodcombi->getAttributeValueById($tailles[$reChil ->fk_product_child][0]);
                             $attributesValscolor = $prodcombi->getAttributeValueById($color[$reChil ->fk_product_child][0]);
                             $childsss = " ".$attributesValscolor["value"]." ".$attributesVals['value'];
-                            $sqlUpdatechildname = "update ".MAIN_DB_PREFIX."product set label = '".GETPOST('label', $label_security_check).$childsss."' where rowid =".$reChil ->fk_product_child;
+                            $sqlUpdatechildname = "update ".MAIN_DB_PREFIX."product set label = '".GETPOST('label', $label_security_check).$childsss."',price=".floatval(str_replace(",",".", GETPOST("price"))).", price_ttc=".floatval(str_replace(",",".", GETPOST("price")))." where rowid =".$reChil ->fk_product_child;
                             $db->query($sqlUpdatechildname);
                             
                             if(!empty(GETPOST("price_fourn_ht"))){
@@ -1054,6 +1060,9 @@ if (empty($reshook))
                             }
                         }
                         
+                        // Category association
+                        $categories = GETPOST('categories', 'array');
+                        $object->setCategories($categories);
                         //die('aaa');
                         /**/
                         //$productFournisseur = new ProductFournisseur($db);
@@ -1633,9 +1642,15 @@ else
         
         if($status_product && $status_product == "produitfab") { 
             print '<tr>'
+            . '<td>Libellé court (pour le code-barre, 20 caractères max)</td>'
+            . '<td colspan="3">'
+            . '<input name="lib_court" maxlength="20" class="minwidth300 maxwidth400onsmartphone"  value="'.dol_escape_htmltag(GETPOST('lib_court', $label_security_check)).'">'
+            . '</td>'
+            . '</tr>';
+            print '<tr>'
             . '<td>Réf fab/frs</td>'
             . '<td colspan="3">'
-            . '<input name="ref_fab_frs" class="minwidth300 maxwidth400onsmartphone" maxlength="255" value="'.dol_escape_htmltag(GETPOST('label', $label_security_check)).'">'
+            . '<input name="ref_fab_frs" class="minwidth300 maxwidth400onsmartphone" maxlength="255" value="'.dol_escape_htmltag(GETPOST('ref_fab_frs', $label_security_check)).'">'
             . '</td>'
             . '</tr>';
         }
@@ -2997,9 +3012,9 @@ else
                 print $formaccounting->select_account($accountancy_code_sell_export, 'accountancy_code_sell_export', 1, null, 1, 1, '');
                 print '</td></tr>';
 
-                            // Accountancy_code_buy
-                            print '<tr><td>'.$langs->trans("ProductAccountancyBuyCode").'</td>';
-                            print '<td>';
+                // Accountancy_code_buy
+                print '<tr><td>'.$langs->trans("ProductAccountancyBuyCode").'</td>';
+                print '<td>';
                 if ($type == 0)
                 {
                     $accountancy_code_buy = (GETPOST('accountancy_code_buy', 'alpha') ? (GETPOST('accountancy_code_buy', 'alpha')) : $conf->global->ACCOUNTING_PRODUCT_BUY_ACCOUNT);
@@ -3171,6 +3186,10 @@ else
             print '<tr><td class="fieldrequired">'.$langs->trans("Label").'</td><td colspan="3"><input name="label" class="minwidth300 maxwidth400onsmartphone" required maxlength="255" value="'.dol_escape_htmltag($object->label).'"></td></tr>';
             
             if($status_product && $status_product == "produitfab") {
+                print '<tr>'
+                . '<td >Libellé court (pour le code-barre, 20 caractères max)</td>'
+                . '<td colspan="3">'
+                . '<input name="lib_court" class="minwidth300 maxwidth400onsmartphone"  maxlength="20" value="'.dol_escape_htmltag($object->lib_court).'"></td></tr>';
                 print '<tr>'
                 . '<td >Réf fab/frs</td>'
                 . '<td colspan="3">'
@@ -4551,28 +4570,33 @@ else
                                 $dialog.dialog('open');
                         });
                     });
-                    
-                    function changeEuroEditForm(yuan, yuanHidden, euro, tauxchangeVal){
-                        var resy = document.getElementById(yuan).value;
-                        var tauxchange = document.getElementById(tauxchangeVal).value;
-                        if(resy){
-                            document.getElementById(euro).value =  (parseFloat(resy.replace(',','.'))/parseFloat(tauxchange.replace(',','.'))).toFixed(2);
-                            document.getElementById(yuanHidden).value =  (parseFloat(resy.replace(',','.'))).toFixed(2);
-                        }else{
-                            document.getElementById(euro).value = 0;
-                            document.getElementById(yuanHidden).value = 0;
+                    function changePriceEuroDeclinaison(price_fourn_ht){
+                        if($("#id_rowx").val()){
+                            var arrvalDecl = $("#id_rowx").val().split('|');
+                            const uniqueArray = unique(arrvalDecl);
+                            var theRemovedElement = uniqueArray.shift();
+                            //console.log(uniqueArray);
+                            for(var cnts = 0; cnts < uniqueArray.length; cnts++){
+                                if(!isNaN(parseFloat($("#"+price_fourn_ht).val()))){
+                                    $("#price_euro_"+uniqueArray[cnts]).val(parseFloat($("#"+price_fourn_ht).val().replace(",",".")));
+                                }else{
+                                    $("#price_euro_"+uniqueArray[cnts]).val("");
+                                }
+                                var txchng = $("#taux_change_"+uniqueArray[cnts]).val();
+                                var price_yuan = Math.round(parseFloat(txchng) * parseFloat($("#"+price_fourn_ht).val().replace(",",".")));
+                                if(!isNaN(parseFloat(price_yuan))){
+                                    $("#price_yuan_"+uniqueArray[cnts]).val(price_yuan);
+                                }
+                            }
                         }
                     }
-                    
                     function showInputEdit(edit_input,p_input){
                         $("#"+edit_input).show();
                         $("#"+p_input).hide();
                     }
-                    
                     function cancelUpdate(){
                         window.location.reload();
                     }
-                    
                     function copyValuesOfInput(loadUpdate,idparent,flag, isColorOnly = false, buttonColor = "", valInput = "", valColor = "", valEuro = "", valTauxYuanEuro = "", valYuan = ""){
                         $("#"+loadUpdate).show();
                         var qtyComm = $("#"+valInput).val();
@@ -4629,7 +4653,7 @@ else
                                 dataTosend.isColor = 1;
                                 dataTosend.valCoul = valColor;
                             }else{
-                                dataTosend.isColor = 0;
+                                    dataTosend.isColor = 0;
                             }
                         }
                         $.ajax("<?php echo DOL_URL_ROOT.'/product/ajax/updateOtherInfo.php'; ?>", {
@@ -4639,8 +4663,102 @@ else
                                 $("#"+loadUpdate).hide();
                                 if(data.success){
                                     if(buttonColor){
-                                        $("#"+buttonColor).hide();
+                                            $("#"+buttonColor).hide();
                                     }
+                                    window.location.reload();
+                                }else{
+                                    alert("Une erreur est survenu");
+                                }
+                            }
+                        });
+                    }
+                    function changeEuroEditForm(yuan, euro, tauxchangeVal, yuanHidden = "", tauxchangeValHidden = ""){
+                        var resy = document.getElementById(yuan).value;
+                        var tauxchange = document.getElementById(tauxchangeVal).value;
+                        //console.log(resy+" ----- "+yuanHidden);
+                        if(resy){
+                            document.getElementById(euro).value =  (parseFloat(resy.replace(',','.'))/parseFloat(tauxchange.replace(',','.'))).toFixed(2);
+                            if(yuanHidden){
+                                document.getElementById(yuanHidden).value =  (parseFloat(resy.replace(',','.'))).toFixed(2);
+                            }
+                            if(tauxchangeValHidden){
+                                document.getElementById(tauxchangeValHidden).value =  (parseFloat(tauxchange.replace(',','.'))).toFixed(2);
+                            }
+                        }else{
+                            document.getElementById(euro).value = 0;
+                            if(yuanHidden){
+                                document.getElementById(yuanHidden).value = 0;
+                            }
+                            if(tauxchangeValHidden){
+                                document.getElementById(tauxchangeValHidden).value = 0;
+                            }
+                        }
+                    }
+                    function updateSingleInfo(valueInput,idparent, idchild,  flag, divinfo, loadUpdate, valYuan = "",valTauxYuanEuro = "",valEuro = ""){
+                        $("#"+loadUpdate).show();
+                        var valToEdit = $("#"+valueInput).val();
+                        var dataTosend = {};
+                        if(flag === "qtycomm"){
+                            dataTosend = {
+                                qtyComm:valToEdit,
+                                parentId:idparent,
+                                childId:idchild
+                            };
+                        }
+
+                        if(flag === "qtyfab"){
+                            dataTosend = {
+                                    qtyfab:valToEdit,
+                                    parentId:idparent,
+                                    childId:idchild
+                            };
+                        }
+
+                        if(flag === "composition"){
+                            dataTosend = {
+                                    composition:valToEdit,
+                                    parentId:idparent,
+                                    childId:idchild
+                            };
+                        }
+
+                        if(flag === "price_yuan" || flag === "taux_change"){
+                            dataTosend = {
+                                    prixYuan:$("#"+valYuan).val(),
+                                    tauxChange:$("#"+valTauxYuanEuro).val(),
+                                    prixEuro:$("#"+valEuro).val(),
+                                    parentId:idparent,
+                                    childId:idchild
+                            };
+                        }
+
+                        $.ajax("<?php echo DOL_URL_ROOT.'/product/ajax/updateSingleVariant.php'; ?>", {
+                            type: "POST",
+                            data : dataTosend,
+                            success: function (data){
+                                $("#"+loadUpdate).hide();
+                                if(data.success){
+                                    if(divinfo){
+                                            $("#"+divinfo).hide();
+                                    }
+                                    window.location.reload();
+                                }else{
+                                    alert("Une erreur est survenu");
+                                }
+                            }
+                        });
+                    }
+
+                    function copyValuesOfRowRefTissus2(idparent,loadimageajax,inputref, valcolor,divvalcoul){
+                        $("#"+loadimageajax).show();
+                        var refs = $("#"+inputref).val();
+                        $.ajax("<?php echo DOL_URL_ROOT.'/product/ajax/updaterefcolor.php'; ?>", {
+                            type: "POST",
+                            data : {valCoul:valcolor, parentId:idparent, refValue:refs},
+                            success: function (data){
+                                $("#"+loadimageajax).hide();
+                                if(data.success){
+                                    $("#"+divvalcoul).hide();
                                     window.location.reload();
                                 }else{
                                     alert("Une erreur est survenu");
@@ -4716,13 +4834,16 @@ else
                         if($resu_fab == "fab"){
                             $bgColors = "background-color:#a9aaad;color:black";
                         }
+                        if($res_fab !== "fab"){
+                            $bgColorsAdmin = "background-color:#a9aaad;color:black";
+                        }
                         $qtyCommandesVal = ($prodChild->quantite_commander?$prodChild->quantite_commander:0);
                         $qtyFabsVal = ($prodChild->quantite_fabriquer?$prodChild->quantite_fabriquer:0);
                         $priceYuanVal = ($prodChild->price_yuan?price($prodChild->price_yuan):price(0));
                         $priceEuroVal = ($prodChild->price_euro?price($prodChild->price_euro):price(0));
                         $tauxEuroYuanVal = (str_replace(".",",",$prodChild->taux_euro_yuan));
                         print "<tr>";
-                        print "<td style='".$bgColors."' class='centered_text'>".$attributesVals['value']."</td>";
+                        print "<td style='".$bgColors." ".$bgColorsAdmin."' class='centered_text'>".$attributesVals['value']."</td>";
                         print "<td style='".$bgColors."' class='centered_text'>"
                                 /*. " <input type='text' value='".$qtyCommandesVal."' id='input_comm_edited_".$idChilds."' style='display:none;' tabindex='0' onblur=\"return changeValueBlur(event,'input_comm_edited_".$idChilds."','qty_comm_edited_".$idChilds."');\">"*/
                                 . "<div style='display:none;' id='input_comm_edited_".$idChilds."'> "
@@ -4744,8 +4865,8 @@ else
                                 . "</div>"
                                 . "<div title='Modifier Réference tissus' onclick=\"showInputEdit('input_ref_tissus_edited_".$idChilds."','qty_ref_tissus_edited_".$idChilds."');\" style='cursor:pointer;height: 20px;' id='qty_ref_tissus_edited_".$idChilds."'>".$prodChild->ref_tissus_couleur."</div>"
                                 . "</td>";
-                        print "<td style='".$bgColors."' class='centered_text'>".$prodChild->ref."</td>";
-                        print "<td style='".$bgColors."' class='centered_text'>".$prodChild->barcode."</td>";
+                        print "<td style='".$bgColors."".$bgColorsAdmin."' class='centered_text'>".$prodChild->ref."</td>";
+                        print "<td style='".$bgColors."".$bgColorsAdmin."' class='centered_text'>".$prodChild->barcode."</td>";
                         print "<td  class='centered_text'> "
                             . " <div style='display:none;' id='input_fab_edited_".$idChilds."'>"
                                 . " <input type='text' value='".$qtyFabsVal."' id='value_of_qty_fabriq_".$idChilds."'> <br> "
@@ -4783,20 +4904,24 @@ else
                         . "</div>"
                         . "<div title='Modifier Prix yuan' onclick=\"showInputEdit('input_price_yuan_edited_".$idChilds."','price_yuan_edited_".$idChilds."');\" style='cursor:pointer;height: 20px;' id='price_yuan_edited_".$idChilds."'>".$priceYuanVal." </div>"
                         . "</td>";
-                        print "<td style='".$bgColors."'>"
-                                . "<div style='display:none;' id='input_taux_euro_yuan_edited_".$idChilds."' class='centered_text'>"
-                                    . "<input type='text' value='".$tauxEuroYuanVal."' id='value_of_taux_euro_yuan_".$idChilds."' oninput='changeEuroEditForm(\"value_of_price_yuan_".$idChilds."\",\"value_of_price_euro_".$idChilds."\", \"value_of_taux_euro_yuan_".$idChilds."\",\"value_of_price_yuan_hidden_".$idChilds."\",\"value_of_taux_yuan_euro_".$idChilds."\");'> <br> "
-                                    . '<span style="width: 7%;display:none;margin-top:1%;" id="load_update_taux_euro_yuan_'.$idChilds.'"><img src = "'.DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif"><br></span>'
-                                    . '<button type="button" id="copie_val_taux_euro_yuan_'.$idChilds.'" style="margin-top: 1%;" onclick="updateSingleInfo(\'value_of_taux_euro_yuan_'.$idChilds.'\','.$object->id.', '.$idChilds.',\'taux_change\',\'input_taux_euro_yuan_edited_'.$idChilds.'\',\'load_update_taux_euro_yuan_'.$idChilds.'\',\'value_of_price_yuan_hidden_'.$idChilds.'\',\'value_of_taux_yuan_euro_'.$idChilds.'\',\'value_of_price_euro_'.$idChilds.'\')">Modifier</button><br> '
-                                    . '<button type="button" id="copie_val_taux_euro_yuan_color_'.$idChilds.'" style="margin-top: 1%;" onclick="copyValuesOfInput(\'load_update_taux_euro_yuan_'.$idChilds.'\',\''.$object->id.'\',\'taux_change\',true,\'input_taux_euro_yuan_edited_'.$idChilds.'\',\'value_of_taux_euro_yuan_'.$idChilds.'\',\''.$kaff.'\',\'value_of_price_euro_'.$idChilds.'\',\'value_of_taux_yuan_euro_'.$idChilds.'\',\'value_of_price_yuan_hidden_'.$idChilds.'\')">Appliquer la modification pour déclinaison de la même couleur</button><br> '
-                                    . '<button type="button" id="copie_val_taux_euro_yuan_all_'.$idChilds.'" style="margin-top: 1%;" onclick="copyValuesOfInput(\'load_update_taux_euro_yuan_'.$idChilds.'\',\''.$object->id.'\',\'taux_change\',false,\'input_taux_euro_yuan_edited_'.$idChilds.'\',\'value_of_taux_euro_yuan_'.$idChilds.'\',\''.$kaff.'\',\'value_of_price_euro_'.$idChilds.'\',\'value_of_taux_yuan_euro_'.$idChilds.'\',\'value_of_price_yuan_hidden_'.$idChilds.'\')">Appliquer la modification pour toutes les déclinaisons</button>'
-                                    . '<button type="button" style="margin-top: 1%;" onclick="cancelUpdate()">Annuler</button> '
-                                . "</div>"
-                                . " <div title='Modifier Taux euro yuan' onclick=\"showInputEdit('input_taux_euro_yuan_edited_".$idChilds."','taux_euro_yuan_edited_".$idChilds."');\" style='cursor:pointer;height: 20px;' id='taux_euro_yuan_edited_".$idChilds."'>".$tauxEuroYuanVal." </div>"
-                                . "</td>";
+                        if($resu_fab !== "fab"){
+                            print "<td style='".$bgColors."'>"
+                                    . "<div style='display:none;' id='input_taux_euro_yuan_edited_".$idChilds."' class='centered_text'>"
+                                        . "<input type='text' value='".$tauxEuroYuanVal."' id='value_of_taux_euro_yuan_".$idChilds."' oninput='changeEuroEditForm(\"value_of_price_yuan_".$idChilds."\",\"value_of_price_euro_".$idChilds."\", \"value_of_taux_euro_yuan_".$idChilds."\",\"value_of_price_yuan_hidden_".$idChilds."\",\"value_of_taux_yuan_euro_".$idChilds."\");'> <br> "
+                                        . '<span style="width: 7%;display:none;margin-top:1%;" id="load_update_taux_euro_yuan_'.$idChilds.'"><img src = "'.DOL_URL_ROOT.'/cyberoffice/ajax-loading-gif-1.gif"><br></span>'
+                                        . '<button type="button" id="copie_val_taux_euro_yuan_'.$idChilds.'" style="margin-top: 1%;" onclick="updateSingleInfo(\'value_of_taux_euro_yuan_'.$idChilds.'\','.$object->id.', '.$idChilds.',\'taux_change\',\'input_taux_euro_yuan_edited_'.$idChilds.'\',\'load_update_taux_euro_yuan_'.$idChilds.'\',\'value_of_price_yuan_hidden_'.$idChilds.'\',\'value_of_taux_yuan_euro_'.$idChilds.'\',\'value_of_price_euro_'.$idChilds.'\')">Modifier</button><br> '
+                                        . '<button type="button" id="copie_val_taux_euro_yuan_color_'.$idChilds.'" style="margin-top: 1%;" onclick="copyValuesOfInput(\'load_update_taux_euro_yuan_'.$idChilds.'\',\''.$object->id.'\',\'taux_change\',true,\'input_taux_euro_yuan_edited_'.$idChilds.'\',\'value_of_taux_euro_yuan_'.$idChilds.'\',\''.$kaff.'\',\'value_of_price_euro_'.$idChilds.'\',\'value_of_taux_yuan_euro_'.$idChilds.'\',\'value_of_price_yuan_hidden_'.$idChilds.'\')">Appliquer la modification pour déclinaison de la même couleur</button><br> '
+                                        . '<button type="button" id="copie_val_taux_euro_yuan_all_'.$idChilds.'" style="margin-top: 1%;" onclick="copyValuesOfInput(\'load_update_taux_euro_yuan_'.$idChilds.'\',\''.$object->id.'\',\'taux_change\',false,\'input_taux_euro_yuan_edited_'.$idChilds.'\',\'value_of_taux_euro_yuan_'.$idChilds.'\',\''.$kaff.'\',\'value_of_price_euro_'.$idChilds.'\',\'value_of_taux_yuan_euro_'.$idChilds.'\',\'value_of_price_yuan_hidden_'.$idChilds.'\')">Appliquer la modification pour toutes les déclinaisons</button>'
+                                        . '<button type="button" style="margin-top: 1%;" onclick="cancelUpdate()">Annuler</button> '
+                                    . "</div>"
+                                    . " <div title='Modifier Taux euro yuan' onclick=\"showInputEdit('input_taux_euro_yuan_edited_".$idChilds."','taux_euro_yuan_edited_".$idChilds."');\" style='cursor:pointer;height: 20px;' id='taux_euro_yuan_edited_".$idChilds."'>".$tauxEuroYuanVal." </div>"
+                                    . "</td>";
+                        }else{
+                            print "<td style='".$bgColors."'>".$tauxEuroYuanVal."</td>";
+                        }
                         print "<td style='".$bgColors."'>".$priceEuroVal." </td>";
-                        print "<td style='".$bgColors."'>".price($prodChild->quantite_fabriquer*$prodChild->price_yuan)." </td>";
-                        print "<td style='".$bgColors."'>".price($prodChild->quantite_fabriquer*$prodChild->price_euro)." </td>";
+                        print "<td style='".$bgColors."".$bgColorsAdmin."'>".price($prodChild->quantite_fabriquer*$prodChild->price_yuan)." </td>";
+                        print "<td style='".$bgColors."".$bgColorsAdmin."'>".price($prodChild->quantite_fabriquer*$prodChild->price_euro)." </td>";
                         print "<td><a class='custom_button edit_row_declinaison' href='".DOL_URL_ROOT."/product/variant/edit.php?productid=".$prodChild->id."&parentId=".$object->id."&valColor=".$kaff."' target='_blank'>Modifier</a>"
                                 . "<a class='custom_button' href='".DOL_URL_ROOT."/barcode/printsheet.php?codebare=".$prodChild->barcode."&parentId=".$object->id."&qtyfab=".($prodChild->quantite_fabriquer)."' target='_blank'>Imprimer code</a>";
                         if($resu_fab !== "fab"){
@@ -4872,7 +4997,7 @@ else
             $showbarcode = empty($conf->barcode->enabled) ? 0 : 1;
             if (!empty($conf->global->MAIN_USE_ADVANCED_PERMS) && empty($user->rights->barcode->lire_advance)) $showbarcode = 0;
 
-		    $head = product_prepare_head($object);
+            $head = product_prepare_head($object);
             $titre = $langs->trans("CardProduct".$object->type);
             $picto = ($object->type == Product::TYPE_SERVICE ? 'service' : 'product');
             if($object->product_type_txt == 'fab'){

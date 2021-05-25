@@ -28,6 +28,7 @@ $id = GETPOST('id', 'int');
 $ref = GETPOST('ref', 'alpha');
 $value = GETPOST('value', 'alpha');
 $code_couleur = GETPOST('code_couleur', 'alpha');
+$valeur_courte = GETPOST('valeur_courte', 'alpha');
 $image_couleur = GETPOST('image_couleur', 'alpha');
 $type_taille = GETPOST('type_taille', 'alpha');
 $dataPopup = GETPOST('data_popup');
@@ -95,6 +96,7 @@ if ($action == 'add')
 		$objectval->ref = cleanSpecialChar(cleanString($ref));
 		$objectval->value = $value;
 		$objectval->code_couleur = $code_couleur;
+		$objectval->valeur_courte = $valeur_courte;
                 
                 if(!empty($_FILES['image_couleur']['name'])){
                     $sdir = $conf->medias->multidir_output[$conf->entity];
@@ -206,6 +208,12 @@ dol_fiche_head();
                 </tr>
             <?php endif; ?>
             <?php if($object->id == 1): ?>
+                <tr>
+                    <td class="fieldrequired"><label for="value">Libellé courte (10 caractères max)</label></td>
+                    <td>
+                        <input id="valeur_courte" type="text" name="valeur_courte" maxlength="10">
+                    </td>
+                </tr>
                 <tr>
                     <td class="fieldrequired"><label for="value">Couleur</label></td>
                     <td>
