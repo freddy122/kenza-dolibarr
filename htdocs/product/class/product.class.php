@@ -344,6 +344,12 @@ class Product extends CommonObject
      */
     public $ref_fab_frs;
     
+     /**
+     * libelle court
+     * @var string
+     */
+    public $lib_court;
+    
     /**
      * Taux euro en yuan
      * @var string
@@ -1246,6 +1252,7 @@ class Product extends CommonObject
             $sql .= ", composition = ".($this->composition != '' ? "'".$this->db->escape($this->composition)."'" : 'null');
             $sql .= ", product_type_txt = ".($this->product_type_txt != '' ? "'".$this->db->escape($this->product_type_txt)."'" : 'null');
             $sql .= ", ref_fab_frs = ".($this->ref_fab_frs != '' ? "'".$this->db->escape($this->ref_fab_frs)."'" : 'null');
+            $sql .= ", lib_court = ".($this->lib_court != '' ? "'".$this->db->escape($this->lib_court)."'" : 'null');
             $sql .= ", ref_tissus_couleur = ".($this->ref_tissus_couleur != '' ? "'".$this->db->escape($this->ref_tissus_couleur)."'" : 'null');
             $sql .= ", icone_prod_1 = ".($this->icone_prod_1 != '' ? "'".$this->db->escape($this->icone_prod_1)."'" : 'null');
             $sql .= ", icone_prod_2 = ".($this->icone_prod_2 != '' ? "'".$this->db->escape($this->icone_prod_2)."'" : 'null');
@@ -2337,7 +2344,7 @@ class Product extends CommonObject
         $sql .= " accountancy_code_sell, accountancy_code_sell_intra, accountancy_code_sell_export, stock, pmp,";
         $sql .= " datec, tms, import_key, entity, desiredstock, tobatch, fk_unit,";
         $sql .= " fk_price_expression, price_autogen, transport_coefficient, transport_coast, coef_revient, cout_revient, ";
-        $sql .= " margin_product, suggest_price, coeff_vente_ttc, margin_rate_as_percentage, margin_ttc, brand_rate_in_percent, selling_price_excl_tax, vat_price, carte_metisse, quantite_commander, quantite_fabriquer, composition, price_yuan, product_type_txt, ref_fab_frs, ref_tissus_couleur,icone_prod_1,icone_prod_2, taux_euro_yuan, price_euro, weight_variant, total_quantite_commander, total_montant_yuan, total_montant_euro";
+        $sql .= " margin_product, suggest_price, coeff_vente_ttc, margin_rate_as_percentage, margin_ttc, brand_rate_in_percent, selling_price_excl_tax, vat_price, carte_metisse, quantite_commander, quantite_fabriquer, composition, price_yuan, product_type_txt, ref_fab_frs,lib_court, ref_tissus_couleur,icone_prod_1,icone_prod_2, taux_euro_yuan, price_euro, weight_variant, total_quantite_commander, total_montant_yuan, total_montant_euro";
         
         $sql .= " FROM ".MAIN_DB_PREFIX."product";
         if ($id) {
@@ -2400,6 +2407,7 @@ class Product extends CommonObject
 		$this->composition          = $obj->composition;
 		$this->product_type_txt          = $obj->product_type_txt;
 		$this->ref_fab_frs          = $obj->ref_fab_frs;
+		$this->lib_court          = $obj->lib_court;
 		$this->price_yuan          = $obj->price_yuan;
 		$this->price_euro          = $obj->price_euro;
 		$this->total_quantite_commander          = $obj->total_quantite_commander;
