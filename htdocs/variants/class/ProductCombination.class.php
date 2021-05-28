@@ -549,7 +549,9 @@ class ProductCombination
                     LEFT JOIN ".MAIN_DB_PREFIX."product_attribute a ON a.rowid = fk_prod_attr 
                     LEFT JOIN ".MAIN_DB_PREFIX."product_attribute_value pav on c2v.fk_prod_attr_val = pav.rowid
                     WHERE c.fk_product_parent = ".$productId." and c.fk_product_child in (".implode(',',$pchild).") and c2v.fk_prod_attr = 2
-                   order by pav.type_taille, SUBSTRING(pav.value,1,1) asc";
+                   order by c2v.fk_prod_attr_val asc";
+                    //order by pav.type_taille, SUBSTRING(pav.value,1,1) asc";
+                    //print_r($sql);
             $query = $this->db->query($sql);
             $arrAssociate = [];
             $i = 0;

@@ -188,14 +188,6 @@ foreach($resProdSame as $res){
     }
     
 }
-/*Mise à jour qty produit parent */
-if(intval($qtyfab)>=0){
-    $sqlUpdateQtyParent = "UPDATE ".MAIN_DB_PREFIX."product_stock "
-                        . " set tms = '".date('Y-m-d h:i:s')."', "
-                        . " fk_entrepot  = 1 ,"
-                        . " reel = ".$totalQtyfab." where fk_product = ".intval($parentId);
-    $db->query($sqlUpdateQtyParent);
-}
 
 $prodCombinates = new ProductCombination($db);
 $resProdChild = $prodCombinates->fetchAllByFkProductParent($parentId);
@@ -210,6 +202,16 @@ foreach($resProdChild as $reChil){
     $totalYuan        += $prodChildUpdate->quantite_fabriquer*$prodChildUpdate->price_yuan;
     $totalEuro        += $prodChildUpdate->quantite_fabriquer*$prodChildUpdate->price_euro;
 }
+
+/*Mise à jour qty produit parent */
+if(intval($qtyfab)>=0){
+    $sqlUpdateQtyParent = "UPDATE ".MAIN_DB_PREFIX."product_stock "
+                        . " set tms = '".date('Y-m-d h:i:s')."', "
+                        . " fk_entrepot  = 1 ,"
+                        . " reel = ".$totalQuantiteCom." where fk_product = ".intval($parentId);
+    $db->query($sqlUpdateQtyParent);
+}
+
 /*Total Qty comm, yuan , euro*/
 $sqlUpdateMontantTotal = "update ".MAIN_DB_PREFIX."product "
 . " set total_quantite_commander = ".$totalQuantiteCom.", "

@@ -21,17 +21,18 @@ foreach($resProdChild as $chilP){
 $getTaille = $prodCombinations->getProductTailleWithDetail($parentId,$arrProdChild);
 if($_POST['parentId']){
     foreach($_POST['val_prod_taille'] as $kl => $vl){
-        if(!empty($_POST['val_poids_taille'][$kl])){
+        //if(!empty($_POST['val_poids_taille'][$kl])){
             //print_r($vl."----".$_POST['val_poids_taille'][$kl]."<br>");
+            $valWeighttoUpdate = empty($_POST['val_poids_taille'][$kl]) ? floatval(str_replace(",",".",$_POST['val_poids_taille'][$kl])) : 0;
             $sqlUpdateProduct = "UPDATE ".MAIN_DB_PREFIX."product set "
                     . " weight_variant = ".floatval(str_replace(",",".",$_POST['val_poids_taille'][$kl])).", "
-                    . " weight = ".floatval(str_replace(",",".",$_POST['val_poids_taille'][$kl]))." where rowid in (".$vl.") ";
+                    . " weight = ".$valWeighttoUpdate." where rowid in (".$vl.") ";
             $db->query($sqlUpdateProduct);
-        }
+        //}
     }
     echo ' <script type="text/javascript">
-        window.parent.location.reload()
-    </script>';
+             window.parent.location.reload()
+            </script>';
 }
 ?>
 <h2>Modification poids</h2>
@@ -98,7 +99,7 @@ if($_POST['parentId']){
                 $sqlRt = "SELECT distinct weight, weight_variant from ".MAIN_DB_PREFIX."product where rowid in (".implode(',',$vt).")";
                 $resus = $db->getRows($sqlRt);
             ?>
-            <td><input type="text" value="<?php echo (isset($_POST['val_poids_taille'][$kt])?$_POST['val_poids_taille'][$kt]:((!empty($resus[0]->weight_variant))?$resus[0]->weight_variant:"")); ?>" name="val_poids_taille[<?php echo $kt; ?>]"></td>   
+            <td><input type="text" value="<?php echo (isset($_POST['val_poids_taille'][$kt])?$_POST['val_poids_taille'][$kt]:((floatval($resus[0]->weight_variant)!=0)?$resus[0]->weight_variant:"")); ?>" name="val_poids_taille[<?php echo $kt; ?>]"></td>   
         </tr>
         <?php 
             }
