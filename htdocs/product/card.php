@@ -590,7 +590,7 @@ if (empty($reshook))
                                     . " weight = ".(!empty(GETPOST('weight'))?GETPOST('weight'):0)." , "
                                     . " weight_units = ".(!empty(GETPOST('weight_units'))?GETPOST('weight_units'):0)." , "
                                     . " tobuy = 1 , "
-                                    . " lib_court = '". GETPOST("lib_court")."' , "
+                                    . " lib_court = '". str_replace("'","\'",GETPOST("lib_court"))."' , "
                                     . " ref_fab_frs = '".GETPOST('ref_fab_frs')."' where rowid =  ".$id;
                             $db->query($sqlUpdateProdType);
                             
@@ -965,10 +965,10 @@ if (empty($reshook))
                         $result = $db->query($sql);*/
                         //print_r($object->price);
                         $sqlupdateother = "UPDATE ".MAIN_DB_PREFIX."product set "
-                                . " label = '".GETPOST('label', $label_security_check)."', "
+                                . " label = '".str_replace("'","\'",GETPOST('label', $label_security_check))."', "
                                 . " description='".GETPOST('desc')."', "
                                 . " ref_fab_frs = '".GETPOST('ref_fab_frs')."', "
-                                . " lib_court = '".GETPOST('lib_court')."', "
+                                . " lib_court = '".str_replace("'","\'",GETPOST('lib_court'))."', "
                                 . " tobuy = 1 , "
                                 . " weight = ".floatval(str_replace(',','.',GETPOST('weight')))." , "
                                 . " weight_units = ".GETPOST('weight_units')." , "
@@ -995,7 +995,7 @@ if (empty($reshook))
                             $attributesVals = $prodcombi->getAttributeValueById($tailles[$reChil ->fk_product_child][0]);
                             $attributesValscolor = $prodcombi->getAttributeValueById($color[$reChil ->fk_product_child][0]);
                             $childsss = " ".$attributesValscolor["value"]." ".$attributesVals['value'];
-                            $sqlUpdatechildname = "update ".MAIN_DB_PREFIX."product set label = '".GETPOST('label', $label_security_check).$childsss."',price=".floatval(str_replace(",",".", GETPOST("price"))).", price_ttc=".floatval(str_replace(",",".", GETPOST("price")))." where rowid =".$reChil ->fk_product_child;
+                            $sqlUpdatechildname = "update ".MAIN_DB_PREFIX."product set label = '".GETPOST('label', $label_security_check).$childsss."',price=".floatval(str_replace(",",".", GETPOST("price"))).", price_ttc=".floatval(str_replace(",",".", GETPOST("price"))).", ref_fab_frs = '".GETPOST('ref_fab_frs')."' where rowid =".$reChil ->fk_product_child;
                             $db->query($sqlUpdatechildname);
                             
                             if(!empty(GETPOST("price_fourn_ht"))){
@@ -1018,7 +1018,7 @@ if (empty($reshook))
                                     $qtyfabfournisseur = (!empty($prodChildUpdate->quantite_fabriquer)? intval($prodChildUpdate->quantite_fabriquer) : 1);
                                     $productFournisseur->update_buyprice($qtyfabfournisseur, floatval($qtyfabfournisseur*floatval(str_replace(',','.',GETPOST("price_fourn_ht")))), $user, $_POST["price_base_type_achat"], $supplierDefaultFong, 0, "ref_".$reChil ->fk_product_child, floatval(str_replace(",",".",$_POST['tva_tx_fourn'])), 0, 0, 0, 0, 0, "", array(), '', 0, 'HT', 1, '', "", $prodChildUpdate->barcode, "");
                                 }
-                                $sqlUpdatePriceEuro = "UPDATE ".MAIN_DB_PREFIX."product set price_yuan = ".(floatval(str_replace(',','.', GETPOST("price_fourn_ht")))*$prodChildUpdate->taux_euro_yuan).", price_euro =  ".floatval(str_replace(',','.', GETPOST("price_fourn_ht"))).""
+                                $sqlUpdatePriceEuro = "UPDATE ".MAIN_DB_PREFIX."product set price_yuan = ".round((floatval(str_replace(',','.', GETPOST("price_fourn_ht")))*$prodChildUpdate->taux_euro_yuan),1).", price_euro =  ".floatval(str_replace(',','.', GETPOST("price_fourn_ht"))).""
                                         . " where rowid = ".$reChil ->fk_product_child;
                                 $db->query($sqlUpdatePriceEuro);
                             }
@@ -1688,7 +1688,7 @@ else
 
         if ($showbarcode)
         {
- 	        print '<tr><td>'.$langs->trans('BarcodeType').'sefse</td><td>';
+ 	        print '<tr><td>'.$langs->trans('BarcodeType').'</td><td>';
  	        if (isset($_POST['fk_barcode_type']))
 	        {
 	         	$fk_barcode_type = GETPOST('fk_barcode_type');
@@ -2514,9 +2514,11 @@ else
                             var tauxchange = $("#"+tauxchangeVal).val();
                             /* traitement calcul prix euro */
                             if(resy){
-                                $("#"+euro).val((parseFloat(resy.replace(',','.'))/parseFloat(tauxchange.replace(',','.'))).toFixed(2))
+                                $("#"+euro).val((parseFloat(resy.replace(',','.'))/parseFloat(tauxchange.replace(',','.'))).toFixed(2));
+                                $("#price_fourn_ht").val((parseFloat(resy.replace(',','.'))/parseFloat(tauxchange.replace(',','.'))).toFixed(2));
                             }else{
-                                $("#"+euro).val(0)
+                                $("#"+euro).val("");
+                                $("#price_fourn_ht").val("");
                             }
                             /* traitement ajout boutton copy */
                             if(resy !== "" || tauxchange !== ""){
@@ -3126,7 +3128,10 @@ else
         }
         
         // Fiche en mode edition
-        if ($action == 'edit' && $usercancreate)
+        /* Avant modif fred */
+        //if ($action == 'edit' && $usercancreate)
+        /* Modif fred suppression $usercancreate */
+        if ($action == 'edit')
         {
             /* modif fred */
             $resu_fab = testUserFabricant();
@@ -4568,6 +4573,25 @@ else
                                     }
                                 });
                                 $dialog.dialog('open');
+                        });
+                        $('a#edit_weight').click(function (e) {
+                            e.preventDefault();
+                            var page = $(this).attr("href")
+                            var pagetitle = $(this).attr("title")
+                            var $dialog = $('<div></div>')
+                            .html('<iframe style="border: 0px; " src="' + page + '" width="100%" height="100%" id="newProductIframe"></iframe>')
+                            .dialog({
+                                autoOpen: false,
+                                modal: true,
+                                height: 750,
+                                width: 500,
+                                resizable: true,
+                                title: pagetitle,
+                                open: function(event, ui) {
+                                    $("#ui-id-3").css('overflow', 'hidden');
+                                }
+                            });
+                            $dialog.dialog('open');
                         });
                     });
                     function changePriceEuroDeclinaison(price_fourn_ht){

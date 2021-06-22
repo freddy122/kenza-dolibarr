@@ -287,7 +287,7 @@ print '</div><div class="fichetwothirdright"><div class="ficheaddleft">';
 if ((!empty($conf->product->enabled) || !empty($conf->service->enabled)) && ($user->rights->produit->lire || $user->rights->service->lire))
 {
 	$max = 15;
-	$sql = "SELECT p.rowid, p.label, p.price, p.ref, p.fk_product_type, p.tosell, p.tobuy, p.tobatch, p.fk_price_expression,";
+	$sql = "SELECT p.rowid, p.label, p.price, p.ref, p.fk_product_type, p.tosell, p.tobuy, p.tobatch,p.product_type_txt, p.fk_price_expression,";
 	$sql .= " p.entity,";
 	$sql .= " p.tms as datem";
 	$sql .= " FROM ".MAIN_DB_PREFIX."product as p";
@@ -336,6 +336,7 @@ if ((!empty($conf->product->enabled) || !empty($conf->service->enabled)) && ($us
 				$product_static->status = $objp->tosell;
 				$product_static->status_buy = $objp->tobuy;
 				$product_static->status_batch = $objp->tobatch;
+				$product_static->product_type_txt = $objp->product_type_txt;
 
 				//Multilangs
 				if (!empty($conf->global->MAIN_MULTILANGS))
@@ -356,7 +357,16 @@ if ((!empty($conf->product->enabled) || !empty($conf->service->enabled)) && ($us
 
 				print '<tr class="oddeven">';
 				print '<td class="nowrap">';
-				print $product_static->getNomUrl(1, '', 16);
+				//print $product_static->getNomUrl(1, '', 16);
+                                if($product_static->product_type_txt == "fab"){
+                                    if(strpos($product_static->ref,'_')){
+                                        print $product_static->ref;
+                                    }else{
+                                        print $product_static->getNomUrl(1,"",16,-1,0,true);
+                                    }
+                                }else{
+                                    print $product_static->getNomUrl(1,"",16);
+                                }
 				print "</td>\n";
 				print '<td>'.dol_trunc($objp->label, 32).'</td>';
 				print "<td>";
@@ -365,20 +375,20 @@ if ((!empty($conf->product->enabled) || !empty($conf->service->enabled)) && ($us
 				// Sell price
 				if (empty($conf->global->PRODUIT_MULTIPRICES))
 				{
-	                if (!empty($conf->dynamicprices->enabled) && !empty($objp->fk_price_expression))
-	                {
-	                	$product = new Product($db);
-	                	$product->fetch($objp->rowid);
-	                    $priceparser = new PriceParser($db);
-	                    $price_result = $priceparser->parseProduct($product);
-	                    if ($price_result >= 0) {
-	                        $objp->price = $price_result;
-	                    }
-	                }
-					print '<td class="nowrap right">';
-	    			if (isset($objp->price_base_type) && $objp->price_base_type == 'TTC') print price($objp->price_ttc).' '.$langs->trans("TTC");
-	    			else print price($objp->price).' '.$langs->trans("HT");
-	    			print '</td>';
+                                    if (!empty($conf->dynamicprices->enabled) && !empty($objp->fk_price_expression))
+                                    {
+                                            $product = new Product($db);
+                                            $product->fetch($objp->rowid);
+                                        $priceparser = new PriceParser($db);
+                                        $price_result = $priceparser->parseProduct($product);
+                                        if ($price_result >= 0) {
+                                            $objp->price = $price_result;
+                                        }
+                                    }
+                                    print '<td class="nowrap right">';
+                                    if (isset($objp->price_base_type) && $objp->price_base_type == 'TTC') print price($objp->price_ttc).' '.$langs->trans("TTC");
+                                    else print price($objp->price).' '.$langs->trans("HT");
+                                    print '</td>';
 				}
 				print '<td class="right nowrap width25"><span class="statusrefsell">';
 				print $product_static->LibStatut($objp->tosell, 3, 0);

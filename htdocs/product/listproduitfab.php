@@ -189,11 +189,11 @@ if (!empty($conf->global->PRODUCT_QUICKSEARCH_ON_FIELDS)) $fieldstosearchall = d
 
 if (empty($conf->global->PRODUIT_MULTIPRICES))
 {
-	$titlesellprice = $langs->trans("SellingPrice");
-	if (!empty($conf->global->PRODUIT_CUSTOMER_PRICES))
-	{
-		$titlesellprice = $form->textwithpicto($langs->trans("SellingPrice"), $langs->trans("DefaultPriceRealPriceMayDependOnCustomer"));
-	}
+    $titlesellprice = $langs->trans("SellingPrice");
+    if (!empty($conf->global->PRODUIT_CUSTOMER_PRICES))
+    {
+            $titlesellprice = $form->textwithpicto($langs->trans("SellingPrice"), $langs->trans("DefaultPriceRealPriceMayDependOnCustomer"));
+    }
 }
 
 $isInEEC = isInEEC($mysoc);
@@ -268,6 +268,14 @@ $arrayfields = dol_sort_array($arrayfields, 'position');
 
 if (GETPOST('cancel', 'alpha')) { $action = 'list'; $massaction = ''; }
 if (!GETPOST('confirmmassaction', 'alpha') && $massaction != 'presend' && $massaction != 'confirm_presend') { $massaction = ''; }
+if($massaction == "add_cart_supplier"){
+    $prdIds = GETPOST("toselect");
+    //header("Location: ".DOL_URL_ROOT.'/fourn/commande/card.php?action=create&leftmenu=orders_suppliers&prodIds='.implode(',',$prdIds));
+    print '<script>';
+    print 'window.open( "'.DOL_URL_ROOT.'/fourn/commande/card.php?action=create&leftmenu=orders_suppliers&prodIds='.implode(',',$prdIds).'","_blank");';
+    print '</script>';
+    //exit;
+}
 
 $parameters = array();
 $reshook = $hookmanager->executeHooks('doActions', $parameters, $object, $action); // Note that $action and $object may have been modified by some hooks
@@ -539,16 +547,19 @@ if ($resql)
             $objPHPExcel->setActiveSheetIndex(0);
             $arrColumn = array("A","B","C","D","E","F","G","H","I","J");
             $objPHPExcel->getActiveSheet()->SetCellValue('A1', 'CODE_INTERNE');
-            $objPHPExcel->getActiveSheet()->SetCellValue('B1', 'LIBELLE');
-            $objPHPExcel->getActiveSheet()->SetCellValue('C1', 'FOURNISSEUR_NOM');
-            $objPHPExcel->getActiveSheet()->SetCellValue('D1', 'PAHTBRUT');
-            $objPHPExcel->getActiveSheet()->SetCellValue('E1', 'PVTTC');
-            $objPHPExcel->getActiveSheet()->SetCellValue('F1', 'COULEUR');
-            $objPHPExcel->getActiveSheet()->SetCellValue('G1', 'TAILLE');
-            $objPHPExcel->getActiveSheet()->SetCellValue('H1', 'FAMILLE');
-            $objPHPExcel->getActiveSheet()->SetCellValue('I1', 'SS FAMILLE');
-            $objPHPExcel->getActiveSheet()->SetCellValue('J1', 'STOCK');
-            $objPHPExcel->getActiveSheet()->getStyle("A1:J1")->getFont()->setBold(true);
+            $objPHPExcel->getActiveSheet()->SetCellValue('B1', 'CODE-BARRE');
+            $objPHPExcel->getActiveSheet()->SetCellValue('C1', 'LIBELLE');
+            $objPHPExcel->getActiveSheet()->SetCellValue('D1', 'LIBELLE_ATTR');
+            $objPHPExcel->getActiveSheet()->SetCellValue('E1', 'FOURNISSEUR_NOM');
+            $objPHPExcel->getActiveSheet()->SetCellValue('F1', 'PAHTBRUT');
+            $objPHPExcel->getActiveSheet()->SetCellValue('G1', 'PVTTC');
+            $objPHPExcel->getActiveSheet()->SetCellValue('H1', 'CARTE_METISSE');
+            $objPHPExcel->getActiveSheet()->SetCellValue('I1', 'COULEUR');
+            $objPHPExcel->getActiveSheet()->SetCellValue('J1', 'TAILLE');
+            $objPHPExcel->getActiveSheet()->SetCellValue('K1', 'FAMILLE');
+            $objPHPExcel->getActiveSheet()->SetCellValue('L1', 'SS FAMILLE');
+            $objPHPExcel->getActiveSheet()->SetCellValue('M1', 'STOCK');
+            $objPHPExcel->getActiveSheet()->getStyle("A1:m1")->getFont()->setBold(true);
             foreach($arrColumn as $colIndice){
                 $objPHPExcel->getActiveSheet()->getColumnDimension($colIndice)->setAutoSize(false);
                 if($colIndice == "A"){
@@ -559,7 +570,7 @@ if ($resql)
             }
             $rowCount = 2;
             while ($datae = $db->fetch_object($resql)) {
-                $objPHPExcel->getActiveSheet()->setCellValueExplicit('A'.$rowCount, strval($datae->ref),PHPExcel_Cell_DataType::TYPE_STRING);
+                $objPHPExcel->getActiveSheet()->setCellValueExplicit('A'.$rowCount, strval($datae->ref_fab_frs),PHPExcel_Cell_DataType::TYPE_STRING);
                 $sqlParentId = "SELECT fk_product_parent FROM  ".MAIN_DB_PREFIX."product_attribute_combination WHERE fk_product_child = ".$datae->rowid;
                 $prntId = $db->getRows($sqlParentId);
                 $nameProd = $datae->label;
@@ -644,17 +655,21 @@ if ($resql)
                     $categChild = str_replace("&#039;","'",(implode(",",array_unique($arrCategChild))));
                 }
                 $res_frs = $frs->list_product_fournisseur_price($datae->rowid);
-                $objPHPExcel->getActiveSheet()->setCellValue('B'.$rowCount,$nameProd);
-                $objPHPExcel->getActiveSheet()->setCellValue('C'.$rowCount,$res_frs[0]->fourn_name);
-                $objPHPExcel->getActiveSheet()->getStyle("D".$rowCount)->getNumberFormat()->setFormatCode('0.00'); 
-                $objPHPExcel->getActiveSheet()->setCellValue('D'.$rowCount,($res_frs[0]->fourn_unitprice));
-                $objPHPExcel->getActiveSheet()->getStyle("E".$rowCount)->getNumberFormat()->setFormatCode('0.00'); 
-                $objPHPExcel->getActiveSheet()->setCellValue('E'.$rowCount,$priceSell);
-                $objPHPExcel->getActiveSheet()->setCellValueExplicit('F'.$rowCount,strval($colorProd),PHPExcel_Cell_DataType::TYPE_STRING);
-                $objPHPExcel->getActiveSheet()->setCellValueExplicit('G'.$rowCount,strval($tailleProd),PHPExcel_Cell_DataType::TYPE_STRING);
-                $objPHPExcel->getActiveSheet()->setCellValue('H'.$rowCount,$categPrincipale);
-                $objPHPExcel->getActiveSheet()->setCellValue('I'.$rowCount,$categChild);
-                $objPHPExcel->getActiveSheet()->setCellValue('J'.$rowCount,$qtyProducts);
+                $objPHPExcel->getActiveSheet()->setCellValueExplicit('B'.$rowCount, strval($datae->barcode),PHPExcel_Cell_DataType::TYPE_STRING);
+                $objPHPExcel->getActiveSheet()->setCellValue('C'.$rowCount,$nameProd);
+                $objPHPExcel->getActiveSheet()->setCellValue('D'.$rowCount,$nameProd." ".strval($colorProd)." ".strval($tailleProd));
+                $objPHPExcel->getActiveSheet()->setCellValue('E'.$rowCount,$res_frs[0]->fourn_name);
+                $objPHPExcel->getActiveSheet()->getStyle("F".$rowCount)->getNumberFormat()->setFormatCode('0.00'); 
+                $objPHPExcel->getActiveSheet()->setCellValue('F'.$rowCount,($res_frs[0]->fourn_unitprice));
+                $objPHPExcel->getActiveSheet()->getStyle("G".$rowCount)->getNumberFormat()->setFormatCode('0.00'); 
+                $objPHPExcel->getActiveSheet()->setCellValue('G'.$rowCount,$priceSell);
+                $objPHPExcel->getActiveSheet()->getStyle("H".$rowCount)->getNumberFormat()->setFormatCode('0.00'); 
+                $objPHPExcel->getActiveSheet()->setCellValue('H'.$rowCount,floor($priceSell*0.95*10)/10);
+                $objPHPExcel->getActiveSheet()->setCellValueExplicit('I'.$rowCount,strval($colorProd),PHPExcel_Cell_DataType::TYPE_STRING);
+                $objPHPExcel->getActiveSheet()->setCellValueExplicit('J'.$rowCount,strval($tailleProd),PHPExcel_Cell_DataType::TYPE_STRING);
+                $objPHPExcel->getActiveSheet()->setCellValue('K'.$rowCount,$categPrincipale);
+                $objPHPExcel->getActiveSheet()->setCellValue('L'.$rowCount,$categChild);
+                $objPHPExcel->getActiveSheet()->setCellValue('M'.$rowCount,$qtyProducts);
                 $rowCount++;
             }
             $objWriter  =   new PHPExcel_Writer_Excel2007($objPHPExcel);
@@ -738,14 +753,15 @@ if ($resql)
 	// List of mass actions available
 	$arrayofmassactions = array(
 		'generate_doc'=>$langs->trans("ReGeneratePDF"),
-	    //'builddoc'=>$langs->trans("PDFMerge"),
-	    //'presend'=>$langs->trans("SendByMail"),
+                'add_cart_supplier' => 'Créer une commande fournisseur à partir du produit selectionné'
+                //'builddoc'=>$langs->trans("PDFMerge"),
+                //'presend'=>$langs->trans("SendByMail"),
 	);
     $rightskey = 'produit';
 	if ($type == Product::TYPE_SERVICE) $rightskey = 'service';
 	if ($user->rights->{$rightskey}->supprimer) $arrayofmassactions['predelete'] = "<span class='fa fa-trash paddingrightonly'></span>".$langs->trans("Delete");
 	if (in_array($massaction, array('presend', 'predelete'))) $arrayofmassactions = array();
-	$massactionbutton = $form->selectMassAction('', $arrayofmassactions);
+	$massactionbutton = $form->selectMassAction("", $arrayofmassactions);
 
 	$newcardbutton = '';
 	if ($type === "") $perm = ($user->rights->produit->creer || $user->rights->service->creer);
@@ -1331,6 +1347,7 @@ if ($resql)
             $product_static->total_montant_yuan = $obj->total_montant_yuan;
             $product_static->total_montant_euro = $obj->total_montant_euro;
             $product_static->quantite_fabriquer = $obj->quantite_fabriquer;
+            $product_static->quantite_commander = $obj->quantite_commander;
         if (!empty($conf->global->PRODUCT_USE_UNITS)) {
             $product_static->fk_unit = $obj->fk_unit;
         }
@@ -1393,7 +1410,14 @@ if ($resql)
         if (!empty($arrayfields['p.total_quantite_commander']['checked']))
         {
             print '<td class="tdoverflowmax200">';
-            print $product_static->total_quantite_commander;
+            $sql_prod_child = "SELECT comb.fk_product_child,pr.quantite_commander "
+                    . " FROM ".MAIN_DB_PREFIX."product_attribute_combination comb left join ".MAIN_DB_PREFIX."product pr on pr.rowid = comb.fk_product_child where comb.fk_product_parent = ".$product_static->id;
+            $q_prod_child =$db->query($sql_prod_child);
+            $somme_parent = 0;
+            while ($r_prod_child = $q_prod_child->fetch_object()) {
+                $somme_parent += $r_prod_child->quantite_commander;
+            }
+            print (($somme_parent !=0) ? $somme_parent :$product_static->quantite_commander);
             print "</td>\n";
             if (!$i) $totalarray['nbfield']++;
         }

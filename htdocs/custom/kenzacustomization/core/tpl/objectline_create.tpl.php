@@ -312,7 +312,44 @@ if ($nolinesbefore) {
 					$alsoproductwithnosupplierprice = 1;
 				}
 				$form->select_produits_fournisseurs($object->socid, GETPOST('idprodfournprice'), 'idprodfournprice', '', '', $ajaxoptions, 1, $alsoproductwithnosupplierprice, 'maxwidth500');
-				if (!empty($conf->global->MAIN_AUTO_OPEN_SELECT2_ON_FOCUS_FOR_SUPPLIER_PRODUCTS))
+				?>
+                                <script type="text/javascript">
+                                    /*$(document).ready(function(){
+                                        $("#idprodfournprice").change(function(e){
+                                            var pbq = $('option:selected', this).attr('pbq');
+                                            console.log(pbq);
+                                            if(!pbq){
+                                                var valPfrs = $(this).val().split('_');
+                                                var idProdFrs = valPfrs[1];
+                                                $.ajax("<?php //echo DOL_URL_ROOT.'/fourn/ajax/getProductById.php'; ?>", {
+                                                    type: "POST",
+                                                    data : {idProdFrs:idProdFrs},
+                                                    success: function (data){
+                                                        var priceprod = 0;
+                                                        var qty = 1;
+                                                        //quantite_commander , quantite_fabriquer
+                                                        if(data.data.quantite_fabriquer){
+                                                            qty = parseFloat(data.data.quantite_fabriquer);
+                                                        }else{
+                                                            qty = 1;
+                                                        }
+
+                                                        if(data.data.price_euro){
+                                                            priceprod = parseFloat(data.data.price_euro);
+                                                        }else{
+                                                            priceprod = parseFloat(data.data.price);
+                                                        }
+                                                        $("#price_ht").val(priceprod);
+                                                        $("#qty").val(qty);
+                                                        //console.log(data.data);
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    });*/
+                                </script>
+                                <?php
+                                if (!empty($conf->global->MAIN_AUTO_OPEN_SELECT2_ON_FOCUS_FOR_SUPPLIER_PRODUCTS))
 				{
 					?>
 				<script type="text/javascript">

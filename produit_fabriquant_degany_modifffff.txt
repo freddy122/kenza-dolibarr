@@ -35,3 +35,6 @@ llx_product_attribute_combination2val -> à supprimer si on connait la valeur de
 llx_product -> rowid
 
 update  `llx_product_attribute_value` set type_taille = 3 WHERE type_taille = "bebe"
+
+
+-

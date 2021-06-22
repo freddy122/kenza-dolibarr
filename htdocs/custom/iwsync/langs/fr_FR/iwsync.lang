@@ -1,0 +1,71 @@
+# Copyright (C) 2021 SuperAdmin
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+#
+# Générique
+#
+
+# Module label 'ModuleIWSYNCName'
+ModuleIWSYNCName = Sync presta
+# Module description 'ModuleIWSYNCDesc'
+ModuleIWSYNCDesc = Module export produit vers prestashop
+
+#
+# Page d'administration
+#
+IWSYNCSetup = Configuration du module IWSYNC (Synchronisation prestashop)
+Settings = Réglages
+IWSYNCSetupPage = Page de configuration du module IWSYNC
+
+#
+# Page À propos
+#
+About = À propos
+IWSYNCAbout = À propos de IWSYNC
+IWSYNCAboutPage = Page à propos de IWSYNC
+
+#
+# Page d'exemple
+#
+MyPageName = Nom de ma page
+
+#
+# Box d'exemple
+#
+MyWidget = Mon widget
+MyWidgetDescription = Description de mon widget
+
+#
+# Admin page
+#
+IWSYNCSetup = Configuration
+Settings = Configuration
+IWSYNCSetupPage = Page de Configuration
+URL_PRESTA = Url de la boutique prestashop
+URL_PRESTATooltip = Url de la boutique prestashop
+CLE_API_PRESTA= Clé webservice prestashop
+CLE_API_PRESTATooltip= Clé webservice prestashop
+
+Canceliw= Annuler
+Saveiw= Enregistrer
+
+sinciwprodfab= Synchronisation produit FAB
+synciwprodsimple= Synchronisation produit Standard
+synciwprodorder= Synchronisation produit FAB commandé
+
+sinciwprodfabSetupPage= Configuration export des produits fabriqué vers prestashop
+synciwprodsimpleSetupPage= Configuration export des produits standard vers prestashop
+
+sinciwprodfabList = Produits FAB à exporter vers prestashop

@@ -1314,7 +1314,7 @@ if (empty($reshook))
 									'',
 									null,
 									null,
-                                    $array_option,
+                                                                        $array_option,
 									$lines[$i]->fk_unit,
 									0,
 									$element,
@@ -1353,6 +1353,72 @@ if (empty($reshook))
 				else
 				{
 			   		$id = $object->create($user);
+                                        /* Ajout produit dans le commande */
+                                        if(GETPOST("prodIds")){
+                                            require_once DOL_DOCUMENT_ROOT.'/societe/class/societe.class.php';
+                                            $arrPId = explode(',',GETPOST("prodIds"));
+                                            foreach($arrPId as $prodId){
+                                                $prodFourns = new ProductFournisseur($db);
+                                                $prodFourns->fetch($prodId);
+                                                $sqlMinFournPrice   = "SELECT rowid,fk_product,min(unitprice) as unitprice,fk_soc,ref_fourn,tva_tx  FROM ".MAIN_DB_PREFIX."product_fournisseur_price WHERE fk_product = ".intval($prodId);
+                                                $resuMinFournPrice  = $db->getRows($sqlMinFournPrice);
+                                                $seller = new Societe($db);
+                                                $seller->fetch(intval($resuMinFournPrice[0]->fk_soc));
+                                                
+                                                if(intval($seller->tva_assuj) != 0){
+                                                    $tva_tx_cal = price2num($resuMinFournPrice[0]->tva_tx,"MU");
+                                                    $tva_npr_cal = get_default_npr($object->thirdparty, $mysoc, $prodFourns->id, intval($resuMinFournPrice[0]->rowid));
+                                                    if (empty($tva_tx_cal)) { $tva_npr_cal = 0; }
+                                                    $localtax1_tx_cal = get_localtax($tva_tx_cal, 1, $mysoc, $object->thirdparty, $tva_npr_cal);
+                                                    $localtax2_tx_cal = get_localtax($tva_tx_cal, 2, $mysoc, $object->thirdparty, $tva_npr_cal);
+                                                }
+                                                
+                                                $qtyfab = !empty($prodFourns->quantite_fabriquer) ? $prodFourns->quantite_fabriquer : $prodFourns->total_quantite_commander;
+                                                $result = $object->addline(
+                                                        (!empty($prodFourns->description)?$prodFourns->description:$prodFourns->label),
+                                                        price2num($resuMinFournPrice[0]->unitprice,"MU"),
+                                                        $qtyfab,
+                                                        ($tva_tx_cal?$tva_tx_cal:0),
+                                                        ($localtax1_tx_cal?$localtax1_tx_cal:0),
+                                                        ($localtax2_tx_cal?$localtax2_tx_cal:0),
+                                                        $prodId,
+                                                        0, // We already have the $idprod always defined
+                                                        $resuMinFournPrice[0]->ref_fourn,
+                                                        0,
+                                                        "HT",
+                                                        0.0,
+                                                        0,
+                                                        0,
+                                                        '',
+                                                        null,
+                                                        null,
+                                                        0,
+                                                        null,
+                                                        0,
+                                                        '',
+                                                        0
+                                                );
+                                                /* Qty */
+                                                /*
+                                                print_r("-- desc ---".$prodFourns->description."<br>");
+                                                print_r("-- Pu --".price2num($resuMinFournPrice[0]->unitprice,"MU")."<br>");
+                                                print_r("-- Qty --".$qtyfab."<br>");
+                                                print_r("-- tva tx --".$tva_tx."<br>");
+                                                print_r("-- lc tax 1 --".$localtax1_tx."<br>");
+                                                print_r("-- lc tax 2 --".$localtax2_tx."<br>");
+                                                print_r("-- idprod --".$prodId."<br>");
+                                                print_r("-- ref_supplier --".$resuMinFournPrice[0]->ref_fourn."<br>");
+                                                print_r("-- remis --  0 <br>");
+                                                print_r("-- price_base_type --  HT <br>");
+                                                $prcTTc  = "";
+                                                print_r("-- price ttc --  HT <br>");
+                                                print_r("-- date_start --  ".$date_start." <br>");
+                                                print_r("-- date_end -- ".$date_end." <br>");
+                                                echo "<pre>";
+                                                print_r(intval($resuMinFournPrice[0]->rowid));
+                                                echo "</pre>";*/
+                                            }
+                                        }
 					if ($id < 0)
 					{
 						$error++;
@@ -1632,8 +1698,9 @@ if ($action == 'create')
 	// If not defined, set default value from constant
 	if (empty($cond_reglement_id) && !empty($conf->global->SUPPLIER_ORDER_DEFAULT_PAYMENT_TERM_ID)) $cond_reglement_id = $conf->global->SUPPLIER_ORDER_DEFAULT_PAYMENT_TERM_ID;
 	if (empty($mode_reglement_id) && !empty($conf->global->SUPPLIER_ORDER_DEFAULT_PAYMENT_MODE_ID)) $mode_reglement_id = $conf->global->SUPPLIER_ORDER_DEFAULT_PAYMENT_MODE_ID;
-
-	print '<form name="add" action="'.$_SERVER["PHP_SELF"].'" method="post">';
+        
+        $parminform = GETPOST("prodIds")?"?prodIds=".GETPOST("prodIds"):"";
+	print '<form name="add" action="'.$_SERVER["PHP_SELF"].$parminform.'" method="post">';
 	print '<input type="hidden" name="token" value="'.newToken().'">';
 	print '<input type="hidden" name="action" value="add">';
 	print '<input type="hidden" name="socid" value="'.$soc->id.'">'."\n";
@@ -1660,7 +1727,8 @@ if ($action == 'create')
 	}
 	else
 	{
-		print $form->select_company((empty($socid) ? '' : $socid), 'socid', 's.fournisseur=1', 'SelectThirdParty', 0, 0, null, 0, 'minwidth300');
+                // par defaut fong
+		print $form->select_company((empty($socid) ? 19 : $socid), 'socid', 's.fournisseur=1', 'SelectThirdParty', 0, 0, null, 0, 'minwidth300');
 		// reload page to retrieve customer informations
 		if (!empty($conf->global->RELOAD_PAGE_ON_SUPPLIER_CHANGE))
 		{

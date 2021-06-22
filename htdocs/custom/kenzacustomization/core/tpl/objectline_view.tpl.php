@@ -194,8 +194,15 @@ if (!empty($conf->accounting->enabled) && $line->fk_accounting_account > 0)
 print '</td>';
 if ($object->element == 'supplier_proposal' || $object->element == 'order_supplier' || $object->element == 'invoice_supplier')	// We must have same test in printObjectLines
 {
+        require_once DOL_DOCUMENT_ROOT.'/product/class/product.class.php';
+        $productLines       = new Product($this->db);
+        $productLines->fetch($line->fk_product);
 	print '<td class="linecolrefsupplier">';
-	print ($line->ref_fourn ? $line->ref_fourn : $line->ref_supplier);
+        if($productLines->product_type_txt == "fab"){
+            print $productLines->ref_fab_frs;
+        }else{
+            print ($line->ref_fourn ? $line->ref_fourn : $line->ref_supplier);
+        }
 	print '</td>';
 }
 // VAT Rate

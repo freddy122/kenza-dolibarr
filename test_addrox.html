@@ -1,0 +1,328 @@
+<!--HTML>
+<HEAD>
+	<TITLE> Add/Remove dynamic rows in HTML table </TITLE>
+	<SCRIPT language="javascript">
+		function addRow(tableID) {
+
+			var table = document.getElementById(tableID);
+
+			var rowCount = table.rows.length;
+			var row = table.insertRow(rowCount);
+
+			var colCount = table.rows[0].cells.length;
+
+			for(var i=0; i<colCount; i++) {
+
+				var newcell	= row.insertCell(i);
+
+				newcell.innerHTML = table.rows[0].cells[i].innerHTML;
+				//alert(newcell.childNodes);
+				switch(newcell.childNodes[0].type) {
+					case "text":
+							newcell.childNodes[0].value = "";
+							break;
+					case "checkbox":
+							newcell.childNodes[0].checked = false;
+							break;
+					case "select-one":
+							newcell.childNodes[0].selectedIndex = 0;
+							break;
+				}
+			}
+		}
+
+		function deleteRow(tableID) {
+			try {
+			var table = document.getElementById(tableID);
+			var rowCount = table.rows.length;
+
+			for(var i=0; i<rowCount; i++) {
+				var row = table.rows[i];
+				var chkbox = row.cells[0].childNodes[0];
+				if(null != chkbox && true == chkbox.checked) {
+					/*if(rowCount <= 1) {
+						alert("Cannot delete all the rows.");
+						break;
+					}*/
+					table.deleteRow(i);
+					rowCount--;
+					i--;
+				}
+
+
+			}
+			}catch(e) {
+				alert(e);
+			}
+		}
+
+	</SCRIPT>
+</HEAD>
+<BODY>
+
+	<INPUT type="button" value="Add Row" onclick="addRow('dataTable')" />
+
+	<INPUT type="button" value="Delete Row" onclick="deleteRow('dataTable')" />
+
+	<TABLE id="dataTable" width="350px" border="1">
+		<TR>
+			<TD><INPUT type="checkbox" name="chk"/></TD>
+			<TD><INPUT type="text" name="txt"/></TD>
+			<TD>
+				<SELECT name="country">
+					<OPTION value="in">India</OPTION>
+					<OPTION value="de">Germany</OPTION>
+					<OPTION value="fr">France</OPTION>
+					<OPTION value="us">United States</OPTION>
+					<OPTION value="ch">Switzerland</OPTION>
+				</SELECT>
+			</TD>
+		</TR>
+	</TABLE>
+
+</BODY>
+</HTML-->
+
+
+<!DOCTYPE html> 
+<html> 
+  
+<head> 
+  <title>test page</title> 
+
+  
+  <script src= 
+"https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"> 
+  </script> 
+
+
+  
+  <script> 
+    $(document).ready(function () { 
+  
+      // Denotes total number of rows 
+      var rowIdx = 0; 
+        // jQuery button click event to add a row 
+        $('#addBtn').on('click', function () { 
+            // Adding a row inside the tbody. 
+            $('#tbody').append(`<tr id="R${++rowIdx}"> 
+                 <td class="row-index text-center"> 
+                 <input type="text" value="${rowIdx}">
+                 </td> 
+                  <td class="text-center"> 
+                    <button class="btn btn-danger remove"
+                      type="button">Remove</button> 
+                    </td> 
+                  </tr>`);
+        }); 
+  
+      // jQuery button click event to remove a row. 
+      $('#tbody').on('click', '.remove', function () { 
+            // Getting all the rows next to the row 
+            var child = $(this).closest('tr').nextAll(); 
+            child.each(function () { 
+                // Getting <tr> id. 
+                var id = $(this).attr('id'); 
+                // Getting the <p> inside the .row-index class. 
+                var idx = $(this).children('.row-index').children('input'); 
+                
+                // Gets the row number from <tr> id. 
+                var dig = parseInt(id.substring(1)); 
+                // Modifying row index. 
+                idx.attr('value',`${dig - 1}`); 
+                // Modifying row id. 
+                $(this).attr('id', `R${dig - 1}`); 
+            }); 
+            // Removing the current row. 
+            $(this).closest('tr').remove(); 
+            rowIdx--; 
+      }); 
+    }); 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+                        
+                        var arrHead = new Array();
+                        arrHead = ['', 'Référence', 'Quantité commandé','Code barre','Quantité fabriqué','Poids','Composition','Prix Yuan','Taux','Prix euro','Total Yuan', 'Total Euros']; // table headers.
+                        // first create a TABLE structure by adding few headers.
+                        function createTable() {
+                            var empTable = document.createElement('table');
+                            empTable.setAttribute('id', 'empTable');  // table id.
+
+                            var tr = empTable.insertRow(-1);
+
+                            for (var h = 0; h < arrHead.length; h++) {
+                                var th = document.createElement('th'); // the header object.
+                                th.innerHTML = arrHead[h];
+                                tr.appendChild(th);
+                            }
+                            var div = document.getElementById('cont');
+                            div.appendChild(empTable);// add table to a container.
+                        }
+                        // function to add new row.
+                        function addRowss() {
+                            var choixCouleur = "";
+                            var choixTaille  = "";
+                            $('input[name="choix_couleur"]:checked').each(function(){
+                                var idVal =  $(this).attr('id');
+                                choixCouleur = $("label[for='"+idVal+"']").text();
+                            });
+                            
+                            $('input[name="choix_taille"]:checked').each(function(){
+                                var idVal =  $(this).attr('id');
+                                choixTaille = $("label[for='"+idVal+"']").text();
+                            });
+                            
+                            if(choixCouleur !== "" || choixTaille !== ""){
+                                alert('Veuillez saisir le couleur et / ou taille');
+                                return;
+                            }
+                            
+                            var empTab = document.getElementById('empTable');
+                            var rowCnt = empTab.rows.length;    // get the number of rows.
+                            var tr = empTab.insertRow(rowCnt); // table row.
+                            tr = empTab.insertRow(rowCnt);
+                            
+                            
+                            var comptLigne = 0;
+                            for (var c = 0; c < arrHead.length; c++) {
+                                var td = document.createElement('td');          // TABLE DEFINITION.
+                                td = tr.insertCell(c);
+
+                                if (c === 0) {   // if its the first column of the table.
+                                    // add a button control.
+                                    var button = document.createElement('input');
+                                    // set the attributes.
+                                    button.setAttribute('type', 'button');
+                                    button.setAttribute('value', 'Remove');
+                                    // add button's "onclick" event.
+                                    button.setAttribute('onclick', 'removeRow(this)');
+                                    td.appendChild(button);
+                                }
+                                else {
+                                    // the 2nd, 3rd and 4th column, will have textbox.
+                                    
+                                    var ele = document.createElement('input');
+                                    if(c === 1){
+                                        ele.setAttribute('type', 'text');
+                                        ele.setAttribute('name', 'reference[]');
+                                        var refCumules = '<?php echo $cumulcodeProd; ?>';
+                                        console.log(refCumules);
+                                        
+                                        ele.setAttribute('value', 'fredd');
+                                    }
+                                    if(c === 2){
+                                        ele.setAttribute('type', 'text');
+                                        ele.setAttribute('name', 'qty_com[]');
+                                    }
+                                    if(c === 3){
+                                        ele.setAttribute('type', 'text');
+                                        ele.setAttribute('name', 'code_barre[]');
+                                    }
+                                    if(c === 4){
+                                        ele.setAttribute('type', 'text');
+                                        ele.setAttribute('name', 'qty_fab[]');
+                                    }
+                                    
+                                    if(c === 5){
+                                        ele.setAttribute('type', 'text');
+                                        ele.setAttribute('name', 'poids[]');
+                                    }
+                                    if(c === 6){
+                                        ele.setAttribute('type', 'text');
+                                        ele.setAttribute('name', 'composition[]');
+                                    }
+                                    if(c === 7){
+                                        ele.setAttribute('type', 'text');
+                                        ele.setAttribute('name', 'price_yuan[]');
+                                    }
+                                    if(c === 8){
+                                        ele.setAttribute('type', 'text');
+                                        ele.setAttribute('name', 'taux[]');
+                                    }
+                                    if(c === 9){
+                                        ele.setAttribute('type', 'text');
+                                        ele.setAttribute('name', 'prix_euro[]');
+                                    }
+                                    if(c === 10){
+                                        ele.setAttribute('type', 'text');
+                                        ele.setAttribute('name', 'total_yuan[]');
+                                    }
+                                    if(c === 11){
+                                        ele.setAttribute('type', 'text');
+                                        ele.setAttribute('name', 'total_euro[]');
+                                    }
+                                    //ele.setAttribute('value', '');
+
+                                    td.appendChild(ele);
+                                    
+                                }
+                                comptLigne++;
+                            }
+                        }
+
+                        // function to delete a row.
+                        function removeRow(oButton) {
+                            var empTab = document.getElementById('empTable');
+                            empTab.deleteRow(oButton.parentNode.parentNode.rowIndex); // buttton -> td -> tr
+                        }
+                        
+                        // function to extract and submit table data.
+                        /*function submit() {
+                            var myTab = document.getElementById('empTable');
+                            var arrValues = new Array();
+                            // loop through each row of the table.
+                            var j = 0;
+                            for (row = 1; row < myTab.rows.length - 1; row++) {
+                                // loop through each cell in a row.
+                                for (c = 0; c < myTab.rows[row].cells.length; c++) {
+                                    var element = myTab.rows.item(row).cells[c];
+                                    if (element.childNodes[0].getAttribute('type') == 'text') {
+                                        var innerObj = {};
+                                        //innerObj['--'+c] = element.childNodes[0].value;
+                                        arrValues.push(element.childNodes[0].value);
+                                        //console.log(c);
+                                        //arrValues[] = element.childNodes[0].value;
+                                        j++;
+                                    }
+                                    
+                                }
+                                
+                                
+                            }
+                            console.log(arrValues);
+                        }*/
+  </script> 
+</head> 
+  
+<body> 
+  <div class="container pt-4"> 
+    <div class="table-responsive"> 
+      <table class="table table-bordered"> 
+        <thead> 
+          <tr> 
+            <th class="text-center">Row Number</th> 
+            <th class="text-center">Remove Row</th> 
+          </tr> 
+        </thead> 
+        <tbody id="tbody"> 
+  
+        </tbody> 
+      </table> 
+    </div> 
+    <button class="btn btn-md btn-primary" 
+      id="addBtn" type="button"> 
+        Add new Row 
+    </button> 
+  </div> 
+</body> 
+  
+</html> 
+
+

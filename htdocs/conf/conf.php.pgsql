@@ -39,7 +39,6 @@ $dolibarr_mailing_limit_sendbyweb='0';
 //$dolibarr_lib_ADODB_PATH='';
 //$dolibarr_lib_GEOIP_PATH='';
 //$dolibarr_lib_NUSOAP_PATH='';
-//$dolibarr_lib_PHPEXCEL_PATH='';
 //$dolibarr_lib_ODTPHP_PATH='';
 //$dolibarr_lib_ODTPHP_PATHTOPCLZIP='';
 //$dolibarr_js_CKEDITOR='';

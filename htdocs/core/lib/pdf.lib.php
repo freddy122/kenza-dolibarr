@@ -1377,7 +1377,13 @@ function pdf_getlinedesc($object, $i, $outputlangs, $hideref = 0, $hidedesc = 0,
 			else	// Common case
 			{
 				$ref_prodserv = $prodser->ref; // Show local ref
-				if ($ref_supplier) $ref_prodserv .= ($prodser->ref ? ' (' : '').$outputlangs->transnoentitiesnoconv("SupplierRef").' '.$ref_supplier.($prodser->ref ? ')' : '');
+                                $refAff = "";
+                                if($prodser->product_type_txt == "fab"){
+                                    $refAff = $prodser->ref_fab_frs;
+                                }else{
+                                    $refAff = $ref_supplier;
+                                }
+				if ($ref_supplier) $ref_prodserv .= ($prodser->ref ? ' (' : '').$outputlangs->transnoentitiesnoconv("SupplierRef").' : <b> '.$refAff."</b>".(($prodser->ref || $prodser->ref_fab_frs) ? ')' : '');
 			}
 		}
 		else

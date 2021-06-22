@@ -39,16 +39,24 @@ $langs->loadLangs(array('bills', 'banks', 'companies'));
 
 $id = GETPOST('id', 'int');
 $ref = GETPOST('ref', 'alpha');
-$action = GETPOST('action', 'alpha');
+$action = GETPOST('action', 'aZ09');
 $confirm = GETPOST('confirm', 'alpha');
 $backtopage = GETPOST('backtopage', 'alpha');
 
+$object = new Paiement($db);
+
+// Load object
+include DOL_DOCUMENT_ROOT.'/core/actions_fetchobject.inc.php'; // Must be include, not include_once.
+
+$result = restrictedArea($user, $object->element, $object->id, 'paiement', '');
+
 // Security check
 if ($user->socid) $socid = $user->socid;
-// TODO ajouter regle pour restreindre acces paiement
-//$result = restrictedArea($user, 'facture', $id,'');
-
-$object = new Paiement($db);
+// Now check also permission on thirdparty of invoices of payments. Thirdparty were loaded by the fetch_object before based on first invoice.
+// It should be enough because all payments are done on invoices of the same thirdparty.
+if ($socid && $socid != $object->thirdparty->id) {
+	accessforbidden();
+}
 
 
 /*
@@ -57,57 +65,48 @@ $object = new Paiement($db);
 
 if ($action == 'setnote' && $user->rights->facture->paiement)
 {
-    $db->begin();
+	$db->begin();
 
-    $object->fetch($id);
-    $result = $object->update_note(GETPOST('note', 'none'));
-    if ($result > 0)
-    {
-        $db->commit();
-        $action = '';
-    }
-    else
-    {
-	    setEventMessages($object->error, $object->errors, 'errors');
-        $db->rollback();
-    }
+	$result = $object->update_note(GETPOST('note', 'restricthtml'));
+	if ($result > 0)
+	{
+		$db->commit();
+		$action = '';
+	} else {
+		setEventMessages($object->error, $object->errors, 'errors');
+		$db->rollback();
+	}
 }
 
 if ($action == 'confirm_delete' && $confirm == 'yes' && $user->rights->facture->paiement)
 {
 	$db->begin();
 
-	$object->fetch($id);
 	$result = $object->delete();
 	if ($result > 0)
 	{
-        $db->commit();
+		$db->commit();
 
-        if ($backtopage)
-        {
-        	header("Location: ".$backtopage);
-        	exit;
-        }
-        else
-        {
-        	header("Location: list.php");
-        	exit;
-        }
-	}
-	else
-	{
-	    $langs->load("errors");
+		if ($backtopage)
+		{
+			header("Location: ".$backtopage);
+			exit;
+		} else {
+			header("Location: list.php");
+			exit;
+		}
+	} else {
+		$langs->load("errors");
 		setEventMessages($object->error, $object->errors, 'errors');
-        $db->rollback();
+		$db->rollback();
 	}
 }
 
-if ($action == 'confirm_valide' && $confirm == 'yes' && $user->rights->facture->paiement)
+if ($action == 'confirm_validate' && $confirm == 'yes' && $user->rights->facture->paiement)
 {
 	$db->begin();
 
-    $object->fetch($id);
-	if ($object->valide($user) > 0)
+	if ($object->validate($user) > 0)
 	{
 		$db->commit();
 
@@ -131,10 +130,8 @@ if ($action == 'confirm_valide' && $confirm == 'yes' && $user->rights->facture->
 
 		header('Location: '.$_SERVER['PHP_SELF'].'?id='.$object->id);
 		exit;
-	}
-	else
-	{
-	    $langs->load("errors");
+	} else {
+		$langs->load("errors");
 		setEventMessages($object->error, $object->errors, 'errors');
 		$db->rollback();
 	}
@@ -142,29 +139,23 @@ if ($action == 'confirm_valide' && $confirm == 'yes' && $user->rights->facture->
 
 if ($action == 'setnum_paiement' && !empty($_POST['num_paiement']))
 {
-	$object->fetch($id);
-    $res = $object->update_num($_POST['num_paiement']);
+	$res = $object->update_num($_POST['num_paiement']);
 	if ($res === 0)
 	{
 		setEventMessages($langs->trans('PaymentNumberUpdateSucceeded'), null, 'mesgs');
-	}
-	else
-	{
+	} else {
 		setEventMessages($langs->trans('PaymentNumberUpdateFailed'), null, 'errors');
 	}
 }
 
 if ($action == 'setdatep' && !empty($_POST['datepday']))
 {
-	$object->fetch($id);
 	$datepaye = dol_mktime(GETPOST('datephour', 'int'), GETPOST('datepmin', 'int'), GETPOST('datepsec', 'int'), GETPOST('datepmonth', 'int'), GETPOST('datepday', 'int'), GETPOST('datepyear', 'int'));
 	$res = $object->update_date($datepaye);
 	if ($res === 0)
 	{
 		setEventMessages($langs->trans('PaymentDateUpdateSucceeded'), null, 'mesgs');
-	}
-	else
-	{
+	} else {
 		setEventMessages($langs->trans('PaymentDateUpdateFailed'), null, 'errors');
 	}
 }
@@ -189,19 +180,19 @@ $form = new Form($db);
 
 $head = payment_prepare_head($object);
 
-dol_fiche_head($head, 'payment', $langs->trans("PaymentCustomerInvoice"), -1, 'payment');
+print dol_get_fiche_head($head, 'payment', $langs->trans("PaymentCustomerInvoice"), -1, 'payment');
 
-// Confirmation de la suppression du paiement
+// Confirmation of payment delete
 if ($action == 'delete')
 {
 	print $form->formconfirm($_SERVER['PHP_SELF'].'?id='.$object->id, $langs->trans("DeletePayment"), $langs->trans("ConfirmDeletePayment"), 'confirm_delete', '', 0, 2);
 }
 
-// Confirmation de la validation du paiement
+// Confirmation of payment validation
 if ($action == 'valide')
 {
 	$facid = $_GET['facid'];
-	print $form->formconfirm($_SERVER['PHP_SELF'].'?id='.$object->id.'&amp;facid='.$facid, $langs->trans("ValidatePayment"), $langs->trans("ConfirmValidatePayment"), 'confirm_valide', '', 0, 2);
+	print $form->formconfirm($_SERVER['PHP_SELF'].'?id='.$object->id.'&amp;facid='.$facid, $langs->trans("ValidatePayment"), $langs->trans("ConfirmValidatePayment"), 'confirm_validate', '', 0, 2);
 }
 
 $linkback = '<a href="'.DOL_URL_ROOT.'/compta/paiement/list.php?restore_lastsearch_values=1">'.$langs->trans("BackToList").'</a>';
@@ -277,10 +268,8 @@ print '</td></tr>';
 // Bank account
 if (!empty($conf->banque->enabled))
 {
-	if ($object->fk_account > 0)
-	{
-		if ($object->type_code == 'CHQ' && $bankline->fk_bordereau > 0)
-		{
+	if ($object->fk_account > 0) {
+		if ($object->type_code == 'CHQ' && $bankline->fk_bordereau > 0) {
 			dol_include_once('/compta/paiement/cheque/class/remisecheque.class.php');
 			$bordereau = new RemiseCheque($db);
 			$bordereau->fetch($bankline->fk_bordereau);
@@ -297,7 +286,12 @@ if (!empty($conf->banque->enabled))
 	print '<tr>';
 	print '<td>'.$langs->trans('BankTransactionLine').'</td>';
 	print '<td>';
-	print $bankline->getNomUrl(1, 0, 'showconciliatedandaccounted');
+	if ($object->fk_account > 0) {
+		print $bankline->getNomUrl(1, 0, 'showconciliatedandaccounted');
+	} else {
+		$langs->load("admin");
+		print '<span class="opacitymedium">'.$langs->trans("NoRecordFoundIBankcAccount", $langs->transnoentitiesnoconv("Module85Name")).'</span>';
+	}
 	print '</td>';
 	print '</tr>';
 }
@@ -311,7 +305,7 @@ print '</table>';
 
 print '</div>';
 
-dol_fiche_end();
+print dol_get_fiche_end();
 
 
 /*
@@ -344,9 +338,9 @@ if ($resql)
 	print '<td>'.$langs->trans('Company').'</td>';
 	if (!empty($conf->multicompany->enabled) && !empty($conf->global->MULTICOMPANY_INVOICE_SHARING_ENABLED)) print '<td>'.$langs->trans('Entity').'</td>';
 	print '<td class="right">'.$langs->trans('ExpectedToPay').'</td>';
-    print '<td class="right">'.$langs->trans('PayedByThisPayment').'</td>';
-    print '<td class="right">'.$langs->trans('RemainderToPay').'</td>';
-    print '<td class="right">'.$langs->trans('Status').'</td>';
+	print '<td class="right">'.$langs->trans('PayedByThisPayment').'</td>';
+	print '<td class="right">'.$langs->trans('RemainderToPay').'</td>';
+	print '<td class="right">'.$langs->trans('Status').'</td>';
 	print "</tr>\n";
 
 	if ($num > 0)
@@ -368,7 +362,7 @@ if ($resql)
 
 			print '<tr class="oddeven">';
 
-            // Invoice
+			// Invoice
 			print '<td>';
 			print $invoice->getNomUrl(1);
 			print "</td>\n";
@@ -388,11 +382,11 @@ if ($resql)
 			// Expected to pay
 			print '<td class="right">'.price($objp->total_ttc).'</td>';
 
-            // Amount payed
-            print '<td class="right">'.price($objp->amount).'</td>';
+			// Amount payed
+			print '<td class="right">'.price($objp->amount).'</td>';
 
-            // Remain to pay
-            print '<td class="right">'.price($remaintopay).'</td>';
+			// Remain to pay
+			print '<td class="right">'.price($remaintopay).'</td>';
 
 			// Status
 			print '<td class="right">'.$invoice->getLibStatut(5, $alreadypayed).'</td>';
@@ -413,16 +407,14 @@ if ($resql)
 	print '</div>';
 
 	$db->free($resql);
-}
-else
-{
+} else {
 	dol_print_error($db);
 }
 
 
 
 /*
- * Boutons Actions
+ * Actions Buttons
  */
 
 print '<div class="tabsAction">';
@@ -445,9 +437,7 @@ if ($user->socid == 0 && $action == '')
 		if (!$disable_delete)
 		{
 			print '<a class="butActionDelete" href="'.$_SERVER['PHP_SELF'].'?id='.$id.'&amp;action=delete">'.$langs->trans('Delete').'</a>';
-		}
-		else
-		{
+		} else {
 			print '<a class="butActionRefused classfortooltip" href="#" title="'.$title_button.'">'.$langs->trans('Delete').'</a>';
 		}
 	}

@@ -1,0 +1,155 @@
+---------------- commande à lancer pour la mise à jour après téléchargement dolibarr-13.0.2 -------------------------
+cp -r dolibarr-13.0.2/* kenza/ 
+--------------------------
+
+htdocs/societe/list.php
+htdocs/compta/facture/list.php
+htdocs/custom/kenzacustomization/core/tpl/objectline_create.tpl.php
+
+
+htdocs/langs/fr_FR/products.lang
+htdocs/langs/fr_FR/suppliers.lang
+htdocs/langs/fr_FR/main.lang
+htdocs/langs/fr_FR/orders.lang
+htdocs/langs/fr_CA/orders.lang
+
+
+
+htdocs/product/card.php
+htdocs/product/class/product.class.php
+htdocs/product/fournisseurs.php
+htdocs/product/price.php
+htdocs/product/list.php
+htdocs/product/index.php
+htdocs/product/document.php
+htdocs/product/ajax/updateSingleVariant.php
+
+
+htdocs/barcode/printsheet.php
+htdocs/barcodegen1d/generated/html/imageDisplayed.php
+htdocs/barcodegen1d/generated/html/image.php
+
+/* a ne pas changer */
+htdocs/includes/tecnickcom/tcpdf/tcpdf_barcodes_1d.php
+htdocs/theme/eldy/css/custom.css
+/* fin a  ne pas changer */
+
+
+
+htdocs/conf/conf.php
+htdocs/document.php
+htdocs/main.inc.php
+htdocs/index.php
+htdocs/core/lib/functions.lib.php
+htdocs/core/lib/pdf.lib.php
+htdocs/core/class/html.form.class.php
+htdocs/core/class/commonobject.class.php
+htdocs/core/class/html.formfile.class.php
+htdocs/core/menus/standard/eldy.lib.php
+htdocs/core/tpl/document_actions_post_headers.tpl.php
+htdocs/core/modules/export/export_pdf.modules.php
+
+
+
+htdocs/variants/combinations.php
+htdocs/variants/class/ProductCombination.class.php
+htdocs/variants/card.php
+htdocs/variants/class/ProductAttribute.class.php
+htdocs/variants/class/ProductAttributeValue.class.php
+htdocs/variants/create_val.php
+
+
+htdocs/fourn/commande/list.php
+htdocs/fourn/commande/dispatch.php
+htdocs/fourn/class/fournisseur.product.class.php
+htdocs/user/class/user.class.php
+
+htdocs/custom/iwsync/admin/class/sincprodfab.class.php
+htdocs/custom/iwsync/admin/sincprodfab.php
+
+
+---------------- commande à lancer pour la mise à jour après téléchargement dolibarr-13.0.2 -------------------------
+cp -r dolibarr-13.0.2/* manager.kenza.re/
+--------------------------
+
+
+
+------------------------------------------------------------------------------
+----------------- 08-04-2021----------------------------------------------------------
+------------------------------------------------
+htdocs/product/ajax/updateOtherInfo.php 
+htdocs/product/ajax/updaterefcolor.php 
+htdocs/product/card.php 
+htdocs/product/listproduitfab.php 
+htdocs/product/variant/edit.php 
+htdocs/product/document.php
+
+C:\wamp64\www\kenza\htdocs\core\class\html.formfile.class.php
+C:\wamp64\www\kenza\htdocs\core\tpl\document_actions_post_headers.tpl.php
+
+
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   composer.json
+        modified:   fichier_frequement_toucher.txt
+        modified:   nbproject/project.xml
+        modified:   produit_fabriquant_degany_modifffff.txt
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        array_php.php
+        composer.phar
+        dataposted_prod.php
+        dolibarr.log
+        htdocs/barcode.zip
+        htdocs/barcodegen1d.zip
+        htdocs/custom/iwsync.zip
+        htdocs/custom/iwsync/
+        htdocs/cyberoffice/ajax-loading-gif-1.gif
+        htdocs/dolibarr.log
+        htdocs/fourn/ajax/getProductInsideOrder.php
+        htdocs/imageoctes.php
+        htdocs/multicompany/
+        nbproject/private/private.xml
+        printsheet_.php
+        reqeeeeteeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.sql
+        test_addrox.html
+        test_addrox_1.html
+        vendor/
+		
+-------------------------------------------------------
+Identifiant du menu parent : fk_mainmenu=products&fk_leftmenu=product
+Titre : Liste produit FAB
+URL : /product/listproduitfab.php?leftmenu=product&type=0
+
+
+Identifiant du menu parent : fk_mainmenu=products&fk_leftmenu=product
+Titre : Nouveau produit FAB
+URL : /product/card.php?leftmenu=product&action=create&type=0&status_product=produitfab
+
+
+
+
+pour la récéption il faut activer le stock 
+
+pour  produit il faut activer codebare, produit et service
+
+
+
+- Etudier le fonctionnement et la configuration du module multicompany ainsi que les impacts sur les modifications qu'on a fait (creation société, creation utilisateur pour le société, création groupe dans le nouveau société, activation des modules utiles pour le nouveau société et les autres configuration comme dans le société maitre)
+
+Impact sur l'activation du module multicompany : 
+- Sur la création produit fab (après création d'une société et association d'un admin pour ce société, 
+toutes les paramètres pour le nouveau société sont réinitialisé, donc il faut réconfigurer dans le BO pour le nouveau société  ===> je vous envoie une video pour ça lundi)
+- Sur l'impression codebare (il y a un problème sur l'affichage de l'image du codebare, et la selection par defaut du codebare,  j'ai modifié dans le code et c'est bon  en local, je ferai une dernier check lundi et livre après)
+- Réglage sur l'upload image dans le couleur du variant du produit 
+
+- Concernant la mise à jour, je crois que toutes est bon  en local je livre lundi ou mardi
+
+
+
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+\kenzapresta\modules\cyberoffice\cyberoffice.php
+
+ 

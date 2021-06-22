@@ -439,11 +439,11 @@ class ProductFournisseur extends Product
                 $sql .= (empty($supplier_reputation) ? 'NULL' : "'".$this->db->escape($supplier_reputation)."'").",";
                 $sql .= (empty($barcode) ? 'NULL' : "'".$this->db->escape($barcode)."'").",";
                 $sql .= (empty($fk_barcode_type) ? 'NULL' : "'".$this->db->escape($fk_barcode_type)."'");
-				if (!empty($conf->global->PRODUCT_USE_SUPPLIER_PACKAGING)) $sql .= ", ".(empty($this->packaging) ? 1 : $this->db->escape($this->packaging));
+		if (!empty($conf->global->PRODUCT_USE_SUPPLIER_PACKAGING)) $sql .= ", ".(empty($this->packaging) ? 1 : $this->db->escape($this->packaging));
                 $sql .= ")";
 
-				$this->product_fourn_price_id = 0;
-
+                $this->product_fourn_price_id = 0;
+                
                 $resql = $this->db->query($sql);
                 if ($resql) {
                     $this->product_fourn_price_id = $this->db->last_insert_id(MAIN_DB_PREFIX."product_fournisseur_price");
@@ -661,10 +661,10 @@ class ProductFournisseur extends Product
                 $prodfourn->fourn_multicurrency_id          = $record["fk_multicurrency"];
                 $prodfourn->fourn_multicurrency_code        = $record["multicurrency_code"];
 
-				if (!empty($conf->global->PRODUCT_USE_SUPPLIER_PACKAGING)) {
-					$prodfourn->packaging = $record["packaging"];
-					if ($prodfourn->packaging < $prodfourn->fourn_qty) $prodfourn->packaging = $prodfourn->fourn_qty;
-				}
+                if (!empty($conf->global->PRODUCT_USE_SUPPLIER_PACKAGING)) {
+                        $prodfourn->packaging = $record["packaging"];
+                        if ($prodfourn->packaging < $prodfourn->fourn_qty) $prodfourn->packaging = $prodfourn->fourn_qty;
+                }
 
                 if ($conf->barcode->enabled) {
                     $prodfourn->barcode = $record["barcode"];

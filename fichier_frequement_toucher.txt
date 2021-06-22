@@ -20,7 +20,7 @@ modified:   htdocs/barcode/printsheet_okok.php
         modified:   nbproject/project.xml
         modified:   sql_add_field_qty_commander_qty_fab_prix_yuan_composition.sql
 		
-		
+		13 888,33
 		
 -------------------------------------------------------------------------------------------------------
 ------------------ 06-04-2021------------------------------------------------------------------
@@ -53,6 +53,8 @@ htdocs/product/listproduitfab.php
 htdocs/product/variant/edit.php 
 htdocs/product/document.php
 
+C:\wamp64\www\kenza\htdocs\core\class\html.formfile.class.php
+C:\wamp64\www\kenza\htdocs\core\tpl\document_actions_post_headers.tpl.php
 
 
 - (ok)  Un champ pièce jointe à côté aussi qui permettra d'uploader une image
@@ -86,7 +88,7 @@ htdocs/product/document.php
 - (ok) pouvoir joindre une pièce jointe à une couleur dans le formulaire de création / modif d'une couleur voir capture, il faut placer le champs d'upload dans la popup
 - pour le champ de saisie composition, il faut vraiment le séparer par virgule c'est la seul solution possible
 
-
+<br>- Veuillez régler ce problème ou rafraichir ce page parce que le bouton creer en bas ne fonctionne pas
 testemp /  testemp123!
 
 ci joint le video demo
@@ -100,3 +102,224 @@ voici les tâches que j'ai fait aujourd'hui
 
 /* taille etiquette prod fab*/
 3cm*8cm
+
+
+Voici les tâches fait pour ce jour, j'ai aidé Tina pour la dynamisation de statistique user:
+Création/modif/liste produit FAB :
+- dans la liste mettre les filtres : Filtre et liste (Réf, libellé, réf fab/frs, code barre, date création, Total quantité commander, pièces montant total yuan, montant total euros) doit être visible (admin et fabricant)
+- (ok) Taux Yuan 7,500 par défaut à la création de la fiche produit
+- (ok) Coté fabricant et admin de laisser le champs de saisie vide (colonne poids est prérempli 0,000)
+- pour les zones d'édition : Grisé = partie admin non modifiable, et = blanc Fabricant (à remplir)
+- (ok) Affichage totaux sur quantité fabriqué, entrer les quantité et mettre au format monétaire
+- Photo png n'est pas compatible
+
+
+--------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------
+C:\wamp64\www\kenza\htdocs\product\card.php
+C:\wamp64\www\kenza\htdocs\product\variant\edit.php
+
+
+
+
+Création/modif/liste produit FAB :
+- (ok) dans la liste mettre les filtres : Filtre et liste (Réf, libellé, réf fab/frs, code barre, date création, Total quantité commander, pièces montant total yuan, montant total euros) doit être visible (admin et fabricant)
+- (ok)  Taux Yuan 7,500 par défaut à la création de la fiche produit
+- (ok)  Coté fabricant et admin de laisser le champs de saisie vide (colonne poids est prérempli 0,000)
+- (ok dans la partie admin j'ai supprimer la partie griser vue que l'admin peux modifier tout) pour les zones d'édition : Grisé = partie admin non modifiable, et = blanc Fabricant (à remplir)
+- (ok) Affichage totaux sur quantité fabriqué, entrer les quantité et mettre au format monétaire
+- (Pour ce tâche ça marche de mon côté)Photo png n'est pas compatible
+
+---------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+
+(ok) 1/ Créer un bouton pour la saisie assisté des poids.
+
+Une fois que les déclinaisons sont faites, j'ai un bouton raccourcis -> en cliquant dessus cela ouvre une popup qui va reprendre la liste des tailles détectée dans les déclinaisons et il faudra en face de chaque taille remplir un champs "Poids" et ensuite on valide avec un bouton "Appliquer aux déclinaisons" et cela va remplir le poids qu'il faut pour toutes les déclinaisons en fonction de la taille. (car sinon on doit clique sur modifier sur chaque éléments, enregistrer, c’est long, alors que pour 1 taille donné le poids est le même pour un produit)
+----- 0 ----
+---- 48 ---- 
+-----327---
+
+
+
+
+2/ Pouvoir lors de la modification d'une fiche, avoir des raccourcis d'aide à la saisie à par exemple je double clique sur une zone de la liste de déclinaison, prix, poids, ou autre, et cela affiche le champs en édition, je sors du champs, cela sauvegarde (un peu comme dans phpmyadmin quant tu édites une valeur depuis une vue en liste directement)
+
+ 
+
+(ok) 3/ Pour la liste des fichiers / doc joint, il faut que les images qui sont rentrés en derniers, apparaissent en premier en haut (et pas en bas) ce ci afin d'éviter les déplacement d'ordre d'image.
+
+ 
+
+4/ pouvoir mettre en place un export fichier excel pour kisatz (en attente je t’envoi une trame pour cela demain)
+
+
+(ok) 5/ listbox couleur et taille dans créer et modif produit fab doit être fermé par défaut. Ca déroule que si je clique dessus (par défaut cela doit être donc fermé en mode édition surtout
+
+
+(ok) 6/ prix d'achat tarif euros à à mettre en format monétaire si c’est 5.3 à 5.30 etc.. bref utiliser le même système de formatage tel que définie à la base dans dolibar
+
+ 
+ 5.8 + (5.8 * 8.5)/100
+ 5.8 (1+8.5)
+
+7/ Régler le problème d'impression code barre ( rayé et chiffre) à pour éviter le côté « responsive de l’étiquette et ancrer au mieux les choses, voilà ce que j’ai vu avec le client : Définir un libellé étiquette qui est copie du titre produit mais limité en caractère (on peut éditer donc un champs libellé étiquette limité en nb de caractère par rapport à une ligne étiquette). idem pour le libellé de couleur et taille pour que ca puisse tenir sans retour à la ligne
+
+ 
+
+(ok) 8/ quantité commandé et fabriqué -> copier pour toutes les lignes (même couleur seulement) en plus de pour toute les lignes (comme pour modif)
+
+ 
+
+9/ Commande fournisseur > liste > a voir où s'on prise ces références : ref_7715 ? etc ? ?
+
++ visualisation du produit donne une page blanche exemple : https://manager.kenza.re/product/card.php?id=7715 -> lié au fait que c'est un produit fab et pas normal ?
+
+ 
+
+10/ A partir de la liste produit FAB qu'on sélectionne plusieurs produit -> donner en action la possibilité de créer une commande Fournisseur
+
+ ------------------------------------------------------------------------------
+
+C:\wamp64\www\kenza\htdocs\core\lib\pdf.lib.php (line 1379)
+C:\wamp64\www\kenza\htdocs\custom\kenzacustomization\core\tpl\objectline_view.tpl.php
+
+
+
+------------------------------------------
+Accès planet hoster :  https://hybrid2834.fr.ns.planethoster.net:2083/logout/?locale=fr   => kenza / n2kCzI^UROnb
+
+Accès mail kenza :  https://server151.fr.ns.planethoster.net:2096/webmaillogout.cgi  => frederic@idweb.space / tx2Yv;QBnj!#
+
+
+-----
+-----
+Export : ref fab fournisseur  (+codebarre)
+mise à jour ref_fab_fournisseur
+
+
+
+-------------------------------------------
+activation création module dolibarr
+dans module -> Outils multi-modules -> Générateur de Module et Application
+
+
+----------------------------------------------------
+id-machine client : 701545586
+mdp : tb7v4gtg
+
+
+------------------------------
+Bonjour, s'il n'y a pas d'autre tâche dans dolibarr pour le moment, je travaillerai sur la synchronisation de prestashop vers dolibarr parce qu'il y a encore ce problème si on modifie un produit dans prestashop ce produit sera envoyé directement vers dolibarr, et en plus c'est pas la bonne référence (qui ne contient pas le '0000' à la fin), et aussi ce problème quand on crée un produit dans prestashop la référence devrait contenir le '0000' pas seulement  pourque pendant la synchronisation il faut que le produit principale aie ce référence et les déclinaisons s'incrémentent automatiquement
+
+
+C:\wamp64\www\kenza\htdocs\conf\conf.php
+
+C:\wamp64\www\kenza\fichier_frequement_toucher.txt
+
+
+
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+User@DESKTOP-FNTDH58 MINGW64 /c/wamp64/www/kenza (master)
+        new file:   htdocs/barcode/printsheet_1.php
+        new file:   htdocs/barcode/printsheet_2.php
+        new file:   htdocs/barcode/printsheet_okok.php
+        new file:   htdocs/cyberoffice/server_product.inc_sauv04032021.php
+        new file:   htdocs/fourn/ajax/getProductById.php
+        new file:   htdocs/product/ajax/updateSingleVariant.php
+        new file:   htdocs/product/ajax/updatestatusvariant.php
+        new file:   htdocs/product/card_1.php
+        new file:   htdocs/product/card_2.php
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   composer.json
+        modified:   documents/fournisseur/commande/PO2101-0001/PO2101-0001.pdf
+        modified:   documents/fournisseur/commande/PO2101-0002/PO2101-0002.pdf
+        modified:   documents/fournisseur/commande/PO2101-0005/PO2101-0005.pdf
+        modified:   documents/fournisseur/commande/PO2101-0006/PO2101-0006.pdf
+        modified:   documents/fournisseur/commande/PO2101-0007/PO2101-0007.pdf
+        deleted:    documents/fournisseur/commande/PO2101-0008/PO2101-0008.pdf
+        modified:   documents/fournisseur/commande/PO2101-0009/PO2101-0009.pdf
+        modified:   documents/fournisseur/commande/PO2101-0010/PO2101-0010.pdf
+        modified:   documents/fournisseur/commande/PO2101-0011/PO2101-0011.pdf
+        modified:   documents/fournisseur/commande/PO2101-0012/PO2101-0012.pdf
+        modified:   documents/fournisseur/commande/PO2101-0013/PO2101-0013.pdf
+        modified:   documents/fournisseur/commande/PO2101-0015/PO2101-0015.pdf
+        deleted:    documents/medias/background_coder.jpg
+        modified:   documents/users/temp/CommandeStats_getAllByProductEntry_customer_fr_FR_entity.1_user1.cache
+        modified:   documents/users/temp/CommandeStats_getAmountByMonthWithPrevYear_customer_fr_FR_entity.1_user1.cache
+        modified:   documents/users/temp/CommandeStats_getAmountByMonthWithPrevYear_supplier_fr_FR_entity.1_user1.cache
+        modified:   documents/users/temp/CommandeStats_getNbByMonthWithPrevYear_customer_fr_FR_entity.1_user1.cache
+        modified:   documents/users/temp/CommandeStats_getNbByMonthWithPrevYear_supplier_fr_FR_entity.1_user1.cache
+        modified:   documents/users/temp/FactureStats_getAllByProductEntry_customer_fr_FR_entity.1_user1.cache
+        modified:   documents/users/temp/FactureStats_getAmountByMonthWithPrevYear_customer_fr_FR_entity.1_user1.cache
+        modified:   documents/users/temp/FactureStats_getAmountByMonthWithPrevYear_supplier_fr_FR_entity.1_user1.cache
+        modified:   documents/users/temp/FactureStats_getNbByMonthWithPrevYear_customer_fr_FR_entity.1_user1.cache
+        modified:   documents/users/temp/FactureStats_getNbByMonthWithPrevYear_supplier_fr_FR_entity.1_user1.cache
+        modified:   fichier_frequement_toucher.txt
+        modified:   htdocs/barcode/printsheet.php
+        modified:   htdocs/barcode/printsheet_1.php
+        modified:   htdocs/barcode/printsheet_2.php
+        modified:   htdocs/barcode/printsheet_okok.php
+        modified:   htdocs/barcodegen1d/generated/html/imageDisplayed.php
+        modified:   htdocs/core/lib/pdf.lib.php
+        modified:   htdocs/custom/kenzacustomization/core/modules/modKenzaCustomization.class.php
+        modified:   htdocs/custom/kenzacustomization/core/tpl/objectline_create.tpl.php
+        modified:   htdocs/custom/kenzacustomization/core/tpl/objectline_view.tpl.php
+        modified:   htdocs/cyberoffice/server_product.inc_sauv04032021.php
+        modified:   htdocs/fourn/class/fournisseur.product.class.php
+        modified:   htdocs/fourn/commande/card.php
+        modified:   htdocs/fourn/commande/dispatch.php
+        modified:   htdocs/main.inc.php
+        modified:   htdocs/product/card.php
+        modified:   htdocs/product/card_1.php
+        modified:   htdocs/product/card_2.php
+        modified:   htdocs/product/index.php
+        modified:   htdocs/product/listproduitfab.php
+        modified:   htdocs/variants/class/ProductCombination.class.php
+        modified:   nbproject/project.xml
+        modified:   produit_fabriquant_degany_modifffff.txt
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        array_php.php
+        composer.phar
+        dataposted_prod.php
+        dolibarr.log
+        htdocs/barcode.zip
+        htdocs/barcodegen1d.zip
+        htdocs/custom/iwsync.zip
+        htdocs/custom/iwsync/
+        htdocs/cyberoffice/ajax-loading-gif-1.gif
+        htdocs/dolibarr.log
+        htdocs/fourn/ajax/getProductInsideOrder.php
+        htdocs/imageoctes.php
+        htdocs/multicompany/
+        nbproject/private/private.xml
+        printsheet_.php
+        reqeeeeteeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.sql
+        test_addrox.html
+        test_addrox_1.html
+        vendor/

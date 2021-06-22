@@ -77,7 +77,7 @@ if ($_POST) {
                             $imgscoul        = cleanSpecialChar(cleanString(explode(".",$img_coul_posted)[0])).'.'.$extimg;
                             $target_file     = $dir."/".$imgscoul;
                             move_uploaded_file($_FILES["image_couleur"]["tmp_name"], $target_file);
-
+                            
                             $objectval->image_couleur = $imgscoul;
                             if (image_format_supported($target_file) == 1)
                             {
@@ -330,7 +330,7 @@ if ($action == 'edit') {
                                             $thumbsMini    = explode('.',$attrval->image_couleur)[0]."_mini.".explode('.',$attrval->image_couleur)[1];
                                             $thumbsSmall   = explode('.',$attrval->image_couleur)[0]."_small.".explode('.',$attrval->image_couleur)[1];
                                         ?>
-                                        <img id="blah<?php echo $attrval->id; ?>" src="<?php echo DOL_URL_ROOT.'/viewimage.php?modulepart=medias&entity=1&file=/'. strtoupper($attrval->ref).'/thumbs/'.$thumbsSmall; ?>" style="width:12%;"/>
+                                        <img id="blah<?php echo $attrval->id; ?>" src="<?php echo DOL_URL_ROOT.'/viewimage.php?modulepart=medias&entity='.$entity.'&file=/'. strtoupper($attrval->ref).'/thumbs/'.$thumbsSmall; ?>" style="width:12%;"/>
                                         <script>
                                             function readURL(input,idImg,idInput) {
                                                 if (input.files && input.files[0]) {
@@ -409,7 +409,7 @@ if ($action == 'edit') {
                                         ?>
                                     <td><?php echo dol_htmlentities($attrval->valeur_courte) ?></td>
                                     <td><?php echo dol_htmlentities($attrval->code_couleur) ?><p style="width:10px;height:10px; background-color:<?php echo dol_htmlentities($attrval->code_couleur) ?>; "></p></td>
-                                    <td><img id="blah" src="<?php echo DOL_URL_ROOT.'/viewimage.php?modulepart=medias&entity=1&file=/'. strtoupper($attrval->ref).'/thumbs/'.$thumbsSmall; ?>" style="width:12%;"/></td>
+                                    <td><img id="blah" src="<?php echo DOL_URL_ROOT.'/viewimage.php?modulepart=medias&entity='.$entity.'&file=/'. strtoupper($attrval->ref).'/thumbs/'.$thumbsSmall; ?>" style="width:12%;"/></td>
 				<?php endif;?>
                                 <?php if($object->id == 2): ?>
                                     <td><?php 

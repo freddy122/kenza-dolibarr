@@ -2550,6 +2550,7 @@ function ean13valideFromDigit($digits)
 /**
  * @author Fréderic id?web <freddyhat122@gmail.com>
  * @param type $digits
+ * @return 'fab' if query is ok, else false
  */
 function testUserFabricant()
 {
@@ -2589,6 +2590,11 @@ function testUserEmployeeFabricant()
     return $resu_fab;
 }
 
+/**
+ * @author Fréderic id?web <freddyhat122@gmail.com>
+ * @param type $text
+ * @return $text
+ */
 function cleanString($text) {
     $utf8 = array(
         '/[áàâãªä]/u'   =>   'a',
@@ -2613,6 +2619,11 @@ function cleanString($text) {
     return preg_replace(array_keys($utf8), array_values($utf8), $text);
 }
 
+/**
+ * @author Fréderic id?web <freddyhat122@gmail.com>
+ * @param type $string
+ * @return $string
+ */
 function cleanSpecialChar($string) {
    $string = str_replace(' ', '-', $string); // Replaces all spaces with hyphens.
 

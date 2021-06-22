@@ -865,7 +865,7 @@ class ProductCombination
                     }
                     
                     if(!empty($arrayOtherInformation['lib_court'])){
-                        $sqlupdateother .= " lib_court='".$arrayOtherInformation['lib_court']."', ";
+                        $sqlupdateother .= " lib_court='".str_replace("'","\'",$arrayOtherInformation['lib_court'])."', ";
                     }
                     
                     if(!empty($arrayOtherInformation['ref_tissus_couleur'])){
