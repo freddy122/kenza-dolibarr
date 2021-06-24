@@ -129,6 +129,8 @@ if (empty($reshook)) {
 				setEventMessages($langs->trans("NameNotDefined"), null, 'errors');
 				$action = "create"; // Go back to create page
 			} else {
+//                            echo "<pre>";
+//                            print_r($_POST);die();
 				$object->name	= GETPOST("nom", 'nohtml');
 				$object->note	= dol_htmlcleanlastbr(trim(GETPOST("note", 'restricthtml')));
 
@@ -144,10 +146,10 @@ if (empty($reshook)) {
 				$id = $object->create();
                                 
                                 // modif fred
-                                /*if(GETPOST('code') == 'fab'){
+                                if(GETPOST('code') == 'fab'){
                                     $sqlUpdateCode = "UPDATE llx_usergroup SET code = 'fab' where rowid = ".$id;
                                     $db->query($sqlUpdateCode);
-                                }*/
+                                }
                                 
 				if ($id > 0)
 				{
@@ -226,13 +228,13 @@ if (empty($reshook)) {
 				setEventMessages($langs->trans("GroupModified"), null, 'mesgs');
 				$db->commit();
                                 // modif fred
-                                /*if(GETPOST('code') == 'fab'){
+                                if(GETPOST('code') == 'fab'){
                                     $sqlUpdateCode = "UPDATE llx_usergroup SET code = 'fab' where rowid = ".$id;
                                     $db->query($sqlUpdateCode);
                                 }else{
                                     $sqlUpdateCode = "UPDATE llx_usergroup SET code = 'non' where rowid = ".$id;
                                     $db->query($sqlUpdateCode);
-                                }*/
+                                }
 			} else {
 				setEventMessages($object->error, $object->errors, 'errors');
 				$db->rollback();

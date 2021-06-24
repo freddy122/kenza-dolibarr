@@ -281,12 +281,12 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
                     if($longestWordLength >= 20){
                         $prodPrincipaleName = substr($prodPrincipaleName,0,20)." ".substr($prodPrincipaleName,20,$longestWordLength);
                     }
-                    $divCustomLabel = "font-size:16px;";
+                    $divCustomLabel = "font-size:15px;";
                     $divCustomUnderLabel = "font-size:13.5px;";
                     
                     if(strlen($prodPrincipaleName) >= 20 ){
                         // font-size : 17px
-                        $divCustomLabel = "font-size:16px;";
+                        $divCustomLabel = "font-size:15px;";
                     }
                     if(!empty($arrCombinationss)){
                         if(strlen(implode(', ',$arrCombinationss)) >= 30 ){
