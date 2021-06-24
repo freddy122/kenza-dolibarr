@@ -2834,7 +2834,7 @@ class Form
             $langs->load('other');
         }
 
-		$sql = "SELECT p.rowid, p.ref, p.label, p.price, p.duration, p.fk_product_type,p.price_euro,p.product_type_txt, ";
+		$sql = "SELECT p.rowid, p.ref,p.ref_fab_frs, p.label, p.price, p.duration, p.fk_product_type,p.price_euro,p.product_type_txt, ";
 		$sql .= " pfp.ref_fourn, pfp.rowid as idprodfournprice, pfp.price as fprice, pfp.quantity, pfp.remise_percent, pfp.remise, pfp.unitprice,";
 		$sql .= " pfp.fk_supplier_price_expression, pfp.fk_product, pfp.tva_tx, pfp.fk_soc, s.nom as name,";
 		$sql .= " pfp.supplier_reputation";
@@ -2958,7 +2958,7 @@ class Form
 
 				$optlabel = $objp->ref;
 				if (!empty($objp->idprodfournprice) && ($objp->ref != $objp->ref_fourn)) {
-					$optlabel .= ' <span class=\'opacitymedium\'>('.$objp->ref_fourn.')</span>';
+					$optlabel .= ' <span class=\'opacitymedium\'>('.(!empty($objp->ref_fab_frs)?$objp->ref_fab_frs:$objp->ref_fourn).')</span>';
 				}
 				if (!empty($conf->barcode->enabled) && !empty($objp->barcode)) {
 					$optlabel .= ' ('.$outbarcode.')';

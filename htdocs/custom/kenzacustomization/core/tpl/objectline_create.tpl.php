@@ -183,7 +183,7 @@ if ($nolinesbefore) {
 				echo ((GETPOST('prod_entry_mode', 'alpha') == 'free' || ! empty($conf->global->MAIN_FREE_PRODUCT_CHECKED_BY_DEFAULT)) ? ' checked' : '');
 				echo '> ';
 				// Frederic change translate
-				echo $langs->trans("CustomFreeLineOfType");
+				echo "Ligne libre de type";
 				echo '</label>';
 				echo ' ';
 			}
@@ -209,7 +209,7 @@ if ($nolinesbefore) {
                             $uriContainDraft = 'contrat';
                         }
                         
-			echo '<a class="custom_link_new_product" id="customProductclick" href="'.DOL_URL_ROOT.'/product/card.php?leftmenu=product&action=create&type=0&dataPopupNewProduct=1&commandeIdDraft='.GETPOST("id").'&pageCommande='.$uriContainDraft.'" title="'.$langs->trans("CreateProductFromCommande").'" >'.$langs->trans("CreateProductFromCommande").'</a> ';
+			echo '<a class="custom_link_new_product" id="customProductclick" href="'.DOL_URL_ROOT.'/product/card.php?leftmenu=product&action=create&type=0&dataPopupNewProduct=1&commandeIdDraft='.GETPOST("id").'&pageCommande='.$uriContainDraft.'" title="Nouveau produit" >Nouveau produit</a> ';
                         ?>
                         <script type="text/javascript">
                             $(document).ready(function(){
