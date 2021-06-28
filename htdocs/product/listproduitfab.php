@@ -455,8 +455,13 @@ if ($searchCategoryProductOperator == 1) {
     }
 }
 
+/* modif fred */
 $sql .= " AND p.product_type_txt = 'fab' ";
 
+if(!empty($user->array_options['options_ffourns_frs'])){
+    $sql .= " AND  pfp.fk_soc =  ".intval($user->array_options['options_ffourns_frs']);
+}
+/* fin modif fred */
 if(GETPOST("export_data_excel") && GETPOST("toselect")){
     $sql .= " AND p.rowid in (". implode(",", GETPOST("toselect")).") ";
 }
@@ -511,12 +516,12 @@ $reshook = $hookmanager->executeHooks('printFieldSelect', $parameters); // Note 
 $sql .= $hookmanager->resPrint;
 //if (GETPOST("toolowstock")) $sql.= " HAVING SUM(s.reel) < p.seuil_stock_alerte";    // Not used yet
 if($sortfield !== null && $sortorder !== null) {
-    //$sql .= $db->order($sortfield, $sortorder);
+    $sql .= $db->order($sortfield, $sortorder);
     //$sql .= $db->order('SUBSTRING(p.ref,1,13)', 'DESC');
-    $sql .= " ORDER BY SUBSTRING(p.ref,1,14) DESC ";
+    //$sql .= " ORDER BY SUBSTRING(p.ref,1,14) DESC ";
 }else{
     //$sql .= $db->order('SUBSTRING(p.ref,1,13)', 'DESC');
-    $sql .= "  ORDER BY SUBSTRING(p.ref,1,14) DESC  ";
+    $sql .= "  ORDER BY p.rowid DESC  ";
 }
 
 $nbtotalofrecords = '';

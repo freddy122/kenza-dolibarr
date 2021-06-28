@@ -216,7 +216,7 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
                 
                 if(!empty($resParentId)){
                     
-                    if(strlen($_POST['product_name']) > $nombre_car_nom_prod_max) {
+                    if(strlen($_POST['product_name']) > $nombre_car_nom_prod_max) { 
                         $langs->load("errors");
                         $errors[] = 'Le nom produit devrait être 20 caractrères ou moins';
                         $error++;
@@ -354,7 +354,7 @@ if(!empty($numberofsticker) && !empty(GETPOST("forbarcode")) && empty(GETPOST("s
             $htmlDataToPrint .= "<div style='margin-bottom:0mm;'>";
             
             if($producttmp->product_type_txt == "fab" && $isShowLabel != 1){
-                $htmlDataToPrint .= "<div style='width:60%;text-align:center;'>";
+                $htmlDataToPrint .= "<div style='text-align:center;'>";
                 $htmlDataToPrint .= "<img src='data:image/png;base64,".$imgDataFromPng."' style=''>";
                 $htmlDataToPrint .= "<p style='margin-top: 3px;font-family: Arial, Helvetica, sans-serif;'>Made in china</p>";
                 $htmlDataToPrint .= "<p style='margin-top: -12px;font-family: Arial, Helvetica, sans-serif;margin-bottom: 3px;'>".str_replace(',','<br>',$producttmp->composition)."</p>";

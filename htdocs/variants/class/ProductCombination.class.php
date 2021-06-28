@@ -884,7 +884,7 @@ class ProductCombination
                     $productFournisseur = new ProductFournisseur($db);
                     $productFournisseur->fetch($newproduct->id);
                     $supplierDefaultFong = new Fournisseur($db);
-                    $result = $supplierDefaultFong->fetch(19);
+                    $result = $supplierDefaultFong->fetch($arrayOtherInformation['id_fourn_prod_fab']);
                     $qtyfabfournisseur = (intval($arrayOtherInformation['quantite_fabriquer']) !== 0 ? intval($arrayOtherInformation['quantite_fabriquer']) : 1);
                     $productFournisseur->update_buyprice($qtyfabfournisseur, floatval(floatval(str_replace(",",".",$arrayOtherInformation['price_euro'])*$qtyCommCalc)), $user, "HT", $supplierDefaultFong, 0, "ref_".$newproduct->id, $arrayOtherInformation['tva_tx_fourn'], 0, 0, 0, 0, 0, "", array(), '', 0, 'HT', 1, '', "", $arrayOtherInformation['codebares'], "");
                 }

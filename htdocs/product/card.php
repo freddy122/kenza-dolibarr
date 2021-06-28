@@ -586,10 +586,9 @@ if (empty($reshook))
                                     . " product_type_txt = 'fab', "
                                     . " barcode = '".GETPOST('barcode')."', "
                                     . " description = '".GETPOST('desc')."', "
-                                    . " tobuy = 1 , "
+                                    . " tobuy = ".(GETPOST('statut_buy', 'int')?GETPOST('statut_buy', 'int'):1)." , "
                                     . " weight = ".(!empty(GETPOST('weight'))?GETPOST('weight'):0)." , "
                                     . " weight_units = ".(!empty(GETPOST('weight_units'))?GETPOST('weight_units'):0)." , "
-                                    . " tobuy = 1 , "
                                     . " lib_court = '". str_replace("'","\'",GETPOST("lib_court"))."' , "
                                     . " ref_fab_frs = '".GETPOST('ref_fab_frs')."' where rowid =  ".$id;
                             $db->query($sqlUpdateProdType);
@@ -632,6 +631,7 @@ if (empty($reshook))
                                 $arrOtherInfo["product_type_txt"] = "fab";
                                 $arrOtherInfo["sell_price"] = GETPOST('price');
                                 $arrOtherInfo["tva_tx_fourn"] = floatval(str_replace(",",".",$_POST['tva_tx_fourn']));
+                                $arrOtherInfo["id_fourn_prod_fab"] = (!empty((GETPOST("id_fourn_prod_fab")))?intval(GETPOST("id_fourn_prod_fab")):19);
                                 $prodcomb = new ProductCombination($db);
                                 $prodcomb->createProductCombination($user, $object, $arrCombi, array(), false, false, false, false,$arrOtherInfo);
                             }
@@ -656,7 +656,11 @@ if (empty($reshook))
                             /* mise à jour prix fournisseur*/
                             if(!empty(GETPOST("price_fourn_ht"))){
                                 $supplierDefaultFong = new Fournisseur($db);
-                                $result = $supplierDefaultFong->fetch(19);
+                                if(!empty((GETPOST("id_fourn_prod_fab")))){
+                                    $result = $supplierDefaultFong->fetch(intval(GETPOST("id_fourn_prod_fab")));
+                                }else{
+                                    $result = $supplierDefaultFong->fetch(19);
+                                }
                                 $qtyfabfournisseur = (intval($totalQuantitefab) !== 0 ? intval($totalQuantitefab) : 1);
                                 $productFournisseur->update_buyprice($qtyfabfournisseur, floatval($qtyfabfournisseur*floatval(str_replace(',','.',GETPOST("price_fourn_ht")))), $user, $_POST["price_base_type_achat"], $supplierDefaultFong, 0, "ref_".$id, floatval(str_replace(",",".",$_POST['tva_tx_fourn'])), 0, 0, 0, 0, 0, "", array(), '', 0, 'HT', 1, '', "", GETPOST('barcode'), "");
                             }
@@ -909,18 +913,9 @@ if (empty($reshook))
                         $arrOtherInfo["product_type_txt"] = "fab";
                         $arrOtherInfo["sell_price"] = GETPOST('price');
                         $arrOtherInfo["tva_tx_fourn"] = floatval(str_replace(",",".",$_POST['tva_tx_fourn']));
+                        $arrOtherInfo["id_fourn_prod_fab"] = (!empty((GETPOST("id_fourn_prod_fab")))?intval(GETPOST("id_fourn_prod_fab")):19);
                         $prodcomb = new ProductCombination($db);
                         $prodcomb->createProductCombination($user, $object, $arrCombi, array(), false, false, false, false,$arrOtherInfo);
-                    }
-                    
-                    /* gestion stock */
-                    $sqlCheckStock =  "SELECT fk_product from ".MAIN_DB_PREFIX."product_stock where fk_product = ".$id;
-                    $rescheckstock  = $db->query($sqlCheckStock);
-                    $resustock = $db->fetch_object($rescheckstock);
-                    if(empty($resustock->fk_product)){
-                        $curdt = date('Y-m-d H:i:s');
-                        $sqlUpdateStock = "INSERT INTO ".MAIN_DB_PREFIX."product_stock (tms,fk_product,fk_entrepot,reel) values ('".$curdt."',".$id.",1,".$totalQtyfab.")";
-                        $db->query($sqlUpdateStock);
                     }
                 }
     	        // Set barcode_type_xxx from barcode_type id
@@ -969,7 +964,7 @@ if (empty($reshook))
                                 . " description='".GETPOST('desc')."', "
                                 . " ref_fab_frs = '".GETPOST('ref_fab_frs')."', "
                                 . " lib_court = '".str_replace("'","\'",GETPOST('lib_court'))."', "
-                                . " tobuy = 1 , "
+                                . " tobuy = ".(GETPOST('statut_buy', 'int'))." , "
                                 . " weight = ".floatval(str_replace(',','.',GETPOST('weight')))." , "
                                 . " weight_units = ".GETPOST('weight_units')." , "
                                 . " price = ". price2num(GETPOST('price')) .", "
@@ -1006,6 +1001,7 @@ if (empty($reshook))
                                     $sqlUpdatePriceFourn = "UPDATE ".MAIN_DB_PREFIX."product_fournisseur_price "
                                             . " set price = ".floatval($qtyfabcalc*floatval(str_replace('','', GETPOST("price_fourn_ht")))).", "
                                             . " quantity = ".$qtyfabcalc.", "
+                                            . " fk_soc = ".(!empty((GETPOST("id_fourn_prod_fab")))?intval(GETPOST("id_fourn_prod_fab")):19).", "
                                             . " unitprice=".floatval(str_replace(',','.', GETPOST("price_fourn_ht")))." "
                                             . " where fk_product = ".$resuFourns[0]->fk_product;
                                     $db->query($sqlUpdatePriceFourn);
@@ -1014,7 +1010,13 @@ if (empty($reshook))
                                     $productFournisseur = new ProductFournisseur($db);
                                     $productFournisseur->fetch($reChil->fk_product_child);
                                     $supplierDefaultFong = new Fournisseur($db);
-                                    $result = $supplierDefaultFong->fetch(19);
+                                    //$result = $supplierDefaultFong->fetch(19);
+                                    if(!empty((GETPOST("id_fourn_prod_fab")))){
+                                        $result = $supplierDefaultFong->fetch(intval(GETPOST("id_fourn_prod_fab")));
+                                    }else{
+                                        $result = $supplierDefaultFong->fetch(19);
+                                    }
+                                    
                                     $qtyfabfournisseur = (!empty($prodChildUpdate->quantite_fabriquer)? intval($prodChildUpdate->quantite_fabriquer) : 1);
                                     $productFournisseur->update_buyprice($qtyfabfournisseur, floatval($qtyfabfournisseur*floatval(str_replace(',','.',GETPOST("price_fourn_ht")))), $user, $_POST["price_base_type_achat"], $supplierDefaultFong, 0, "ref_".$reChil ->fk_product_child, floatval(str_replace(",",".",$_POST['tva_tx_fourn'])), 0, 0, 0, 0, 0, "", array(), '', 0, 'HT', 1, '', "", $prodChildUpdate->barcode, "");
                                 }
@@ -1039,6 +1041,21 @@ if (empty($reshook))
                         . " where rowid =  ".intval($object->id);
                         $db->query($sqlUpdateMontantTotal);
                         
+                        /* gestion stock */
+                        $sqlCheckStock =  "SELECT fk_product from ".MAIN_DB_PREFIX."product_stock where fk_product = ".$object->id;
+                       
+                        $rescheckstock  = $db->query($sqlCheckStock);
+                        $resustock = $db->fetch_object($rescheckstock);
+                        $curdt = date('Y-m-d H:i:s');
+                        if(empty($resustock->fk_product)){
+                            $sqlUpdateStock = "INSERT INTO ".MAIN_DB_PREFIX."product_stock (tms,fk_product,fk_entrepot,reel) values ('".$curdt."',".$object->id.",1,".$totalQuantiteFab.")";
+                            $db->query($sqlUpdateStock);
+                        }else{
+                            $sqlUpdateStock = "UPDATE ".MAIN_DB_PREFIX."product_stock SET tms = '".$curdt."', reel  = ".$totalQuantiteFab." where fk_product = ".$object->id;
+                            $db->query($sqlUpdateStock);
+                        }
+                        
+                        /* prix fournisseur */
                         if(!empty(GETPOST("price_fourn_ht"))){
                             $sqlGetfrsPriceParent = "SELECT fk_product from ".MAIN_DB_PREFIX."product_fournisseur_price where fk_product = ".intval($object->id);
                             $resuFournsParent = $db->getRows($sqlGetfrsPriceParent);
@@ -1047,6 +1064,7 @@ if (empty($reshook))
                                 $sqlUpdatePriceFournParent = "UPDATE ".MAIN_DB_PREFIX."product_fournisseur_price "
                                         . " set price = ".floatval($totalQuantiteFabCalc*floatval(str_replace('','', GETPOST("price_fourn_ht")))).", "
                                         . " quantity = ".$totalQuantiteFabCalc.", "
+                                        . " fk_soc = ".(!empty((GETPOST("id_fourn_prod_fab")))?intval(GETPOST("id_fourn_prod_fab")):19).", "
                                         . " unitprice=".floatval(str_replace(',','.', GETPOST("price_fourn_ht")))." "
                                         . " where fk_product = ".intval($object->id);
                                 $db->query($sqlUpdatePriceFournParent);
@@ -1054,7 +1072,12 @@ if (empty($reshook))
                                 $productFournisseur = new ProductFournisseur($db);
                                 $productFournisseur->fetch($object->id);
                                 $supplierDefaultFong = new Fournisseur($db);
-                                $result = $supplierDefaultFong->fetch(19);
+                                //$result = $supplierDefaultFong->fetch(19);
+                                if(!empty(intval(GETPOST("id_fourn_prod_fab")))){
+                                    $result = $supplierDefaultFong->fetch(intval(GETPOST("id_fourn_prod_fab")));
+                                }else{
+                                    $result = $supplierDefaultFong->fetch(19);
+                                }
                                 $qtyfabfournisseur = (!empty($totalQuantiteFab)? intval($totalQuantiteFab) : 1);
                                 $productFournisseur->update_buyprice($qtyfabfournisseur, floatval($qtyfabfournisseur*floatval(str_replace(',','.',GETPOST("price_fourn_ht")))), $user, $_POST["price_base_type_achat"], $supplierDefaultFong, 0, "ref_".$object->id, floatval(str_replace(",",".",$_POST['tva_tx_fourn'])), 0, 0, 0, 0, 0, "", array(), '', 0, 'HT', 1, '', "", $object->barcode, "");
                             }
@@ -1658,7 +1681,7 @@ else
         /*if($datapopup == 1)
         {*/
         if($status_product && $status_product == "produitfab") { 
-            
+           
         }else{
             print '<tr><td class="">Nombre produit en stock</td><td colspan="3"><input name="nombre_produit_en_stock" type="number" class="minwidth300 maxwidth400onsmartphone" maxlength="255" value="'.GETPOST('nombre_produit_en_stock').'"></td></tr>';
             //}
@@ -1901,6 +1924,11 @@ else
             if($status_product && $status_product == "produitfab") { 
                 // Price
                 print '<table>';
+                
+                // Fournisseur
+                print '<tr><td>'.$langs->trans("SupplierOfProduct").'</td><td>';
+                print $form->select_company( (GETPOST("id_fourn_prod_fab")?intval(GETPOST("id_fourn_prod_fab")):19), 'id_fourn_prod_fab', 'fournisseur=1', 'SelectThirdParty', 0, 0);
+                print '</td></tr>';
                 
                 print '<tr>';
                 print '<td >'.$langs->trans("BuyingPrice").'(HT) </td>';
@@ -3201,7 +3229,21 @@ else
                 . '<input name="ref_fab_frs" class="minwidth300 maxwidth400onsmartphone"  maxlength="255" value="'.dol_escape_htmltag($object->ref_fab_frs).'"></td></tr>';
             }
             if($status_product && $status_product == "produitfab") {
-                
+                // Status To Buy
+                print '<tr><td>'.$langs->trans("Status").' ('.$langs->trans("Buy").')</td><td colspan="3">';
+                print '<select class="flat" name="statut_buy">';
+                if ($object->status_buy)
+                {
+                    print '<option value="1" selected>'.$langs->trans("ProductStatusOnBuy").'</option>';
+                    print '<option value="0">'.$langs->trans("ProductStatusNotOnBuy").'</option>';
+                }
+                else
+                {
+                    print '<option value="1">'.$langs->trans("ProductStatusOnBuy").'</option>';
+                    print '<option value="0" selected>'.$langs->trans("ProductStatusNotOnBuy").'</option>';
+                }
+                print '</select>';
+                print '</td></tr>';
             }else{
                 // Status To sell
                 print '<tr><td class="fieldrequired">'.$langs->trans("Status").' ('.$langs->trans("Sell").')</td><td colspan="3">';
@@ -3568,9 +3610,27 @@ else
                 $resu_fab = testUserFabricant();
                 if($resu_fab !== "fab"){
                     print '<table class="border allwidth">';
-                    
-                    $sqlMinFournPrice   = "SELECT fk_product,min(unitprice) as min_price_frs FROM `llx_product_fournisseur_price` WHERE fk_product = ".$object->id;
+                    if(!empty($object->array_options['options_theme']) || !empty($object->array_options['options_marque'])){
+                       
+                        if($object->array_options['options_theme']){
+                            print '<tr><td>Thème</td><td>';
+                            print ' '.$object->array_options['options_theme'].' ';
+                            print '</td></tr>';
+                        }
+                        // Marque
+                        if($object->array_options['options_marque']){
+                            print '<tr><td>Marque</td><td>';
+                            print ' '.$object->array_options['options_marque'].' ';
+                            print '</td></tr>';
+                        }
+                    }
+                    $sqlMinFournPrice   = "SELECT fk_product,min(unitprice) as min_price_frs,fk_soc FROM `llx_product_fournisseur_price` WHERE fk_product = ".$object->id;
                     $resuMinFournPrice  = $db->getRows($sqlMinFournPrice);
+                    
+                    // Fournisseur
+                    print '<tr><td>'.$langs->trans("SupplierOfProduct").'</td><td>';
+                    print $form->select_company( ($resuMinFournPrice[0]->fk_soc?$resuMinFournPrice[0]->fk_soc:""), 'id_fourn_prod_fab', 'fournisseur=1', 'SelectThirdParty', 0, 0);
+                    print '</td></tr>';
                     
                     print '<tr>';
                     print '<td style="width:15.5%;">'.$langs->trans("BuyingPrice").' (HT)</td>';
