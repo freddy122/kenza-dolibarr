@@ -380,7 +380,6 @@ if ($action == 'dispatch' && $user->rights->fournisseur->commande->receptionner)
                         WHERE cfd.fk_commande = ".$object->id." and cfd.fk_product not in (".implode(',',$arrFkCommDet).")
                         GROUP BY fk_commandefourndet";
                 
-                print_r($sqlAllChild);
                 $resAllChild = $db->getRows($sqlAllChild);
                 $resss = $db->query($sqlAllChild);
                 $nums = $db->num_rows($resss);
@@ -390,13 +389,8 @@ if ($action == 'dispatch' && $user->rights->fournisseur->commande->receptionner)
                         $objds = $db->fetch_object($resss);
                         $sqlCheckexistDispatch = "SELECT fk_product,qty FROM ".MAIN_DB_PREFIX."commande_fournisseur_dispatch where fk_commande = ".$object->id." and fk_commandefourndet = ".$objds->cmddet." and fk_product =  ".$objds->fk_product_parent;
                         $resCheckexistd = $db->getRows($sqlCheckexistDispatch);
-
                         if(!empty($resCheckexistd)){
-                            //if($objds->sum_qty <=   )
-                            /*print_r($objds);
-                            print_r($resCheckexistd);*/
                             $sqlUpdateParentProdQty = "UPDATE ".MAIN_DB_PREFIX."commande_fournisseur_dispatch SET qty  = ".$objds->sum_qty." where fk_commande = ".$object->id." and fk_commandefourndet = ".$objds->cmddet." and fk_product =  ".$objds->fk_product_parent;
-                            //print_r($sqlUpdateParentProdQty);
                             $db->query($sqlUpdateParentProdQty);
                         }else{
                             $result = $object->dispatchProduct($user, $objds->fk_product_parent, $objds->sum_qty, $objds->fk_entrepot, 0, GETPOST('comment'), '', '', '', $objds->cmddet , $notrigger);
@@ -404,7 +398,22 @@ if ($action == 'dispatch' && $user->rights->fournisseur->commande->receptionner)
                         $is++;
                     }
                 }
-                //die();
+                
+                /* Modifier à toutes les produits reçue quand toutes les produits seront reçus */
+                $sqlGetTotCom    = "SELECT fk_commande,qty from  llx_commande_fournisseurdet where fk_commande = ".$object->id;
+                $resGetTotCom    = $db->getRows($sqlGetTotCom);
+                $sumQtyVentiler  = 0;
+                $sumQtyCommander = 0;
+                foreach($resAllChild as $resChild){
+                    $sumQtyVentiler += $resChild->sum_qty;
+                }
+                foreach($resGetTotCom as $resChild){
+                    $sumQtyCommander += $resChild->qty;
+                }
+                if((intval($sumQtyVentiler) == intval($sumQtyCommander)) && (GETPOST('closeopenorder'))){
+                    $sqlUpdateStatus = "UPDATE ".MAIN_DB_PREFIX."commande_fournisseur set fk_statut  = 5 where rowid  = ".$object->id; 
+                    $db->query($sqlUpdateStatus);
+                }
 		header("Location: dispatch.php?id=".$id);
 		exit();
 	} else {
@@ -946,7 +955,7 @@ if ($id > 0 || !empty($ref)) {
 
 							print '</td>';
 						}
-                                                
+
 						// Qty to dispatch
 						print '<td class="right">';
                                                 $inputOnInput = "";
@@ -961,9 +970,10 @@ if ($id > 0 || !empty($ref)) {
                                                     $disabled = "readonly";
                                                     $classOfPrincipaleInput = "prod_".$objp->fk_product;
                                                 }
-						print '<input id="qty'.$suffix.'" name="qty'.$suffix.'" type="text" '.$disabled.' class="width50 right '.$classOfPrincipaleInput.' '.$classChild.'" '.$inputOnInput.' value="'.(GETPOSTISSET('qty'.$suffix) ? GETPOST('qty'.$suffix, 'int') : (empty($conf->global->SUPPLIER_ORDER_DISPATCH_FORCE_QTY_INPUT_TO_ZERO) ? $remaintodispatch : 0)).'">';
+                                                $valQtyAventiler = (GETPOSTISSET('qty'.$suffix) ? GETPOST('qty'.$suffix, 'int') : (empty($conf->global->SUPPLIER_ORDER_DISPATCH_FORCE_QTY_INPUT_TO_ZERO) ? $remaintodispatch : 0));
+                                                $readOnlyQtyAventiler = (intval($valQtyAventiler) == 0 ? "readonly" :  "" );
+						print '<input id="qty'.$suffix.'" name="qty'.$suffix.'" type="text" '.$disabled.' class="width50 right '.$classOfPrincipaleInput.' '.$classChild.'" '.$inputOnInput.' value="'.$valQtyAventiler.'" '.$readOnlyQtyAventiler.'>';
 						print '</td>';
-                                                
 						print '<td>';
 						if (!empty($conf->productbatch->enabled) && $objp->tobatch == 1) {
 						    $type = 'batch';

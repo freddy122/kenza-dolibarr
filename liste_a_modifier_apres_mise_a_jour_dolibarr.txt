@@ -152,4 +152,10 @@ toutes les paramètres pour le nouveau société sont réinitialisé, donc il fa
 --------------------------------------------------------------------------------------------------------
 \kenzapresta\modules\cyberoffice\cyberoffice.php
 
+---------------
+
+
+
+$supplierDefaultFong->fetch(19)
+
  
