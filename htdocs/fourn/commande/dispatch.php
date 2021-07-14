@@ -228,6 +228,7 @@ if ($action == 'dispatch' && $user->rights->fournisseur->commande->receptionner)
 
 	$pos = 0;
         $arrFkCommDet = [];
+        $arrQty = []; 
 	foreach ($_POST as $key => $value)
 	{
 		// without batch module enabled
@@ -347,7 +348,7 @@ if ($action == 'dispatch' && $user->rights->fournisseur->commande->receptionner)
 			}
 		}
 	}
-              
+        
 	if (!$error) {
             $result = $object->calcAndSetStatusDispatch($user, GETPOST('closeopenorder') ? 1 : 0, GETPOST('comment'));
             if ($result < 0) {
@@ -380,22 +381,25 @@ if ($action == 'dispatch' && $user->rights->fournisseur->commande->receptionner)
                         WHERE cfd.fk_commande = ".$object->id." and cfd.fk_product not in (".implode(',',$arrFkCommDet).")
                         GROUP BY fk_commandefourndet";
                 
+                $resAllChilds = $db->getRows($sqlAllChild);
+                
                 $resAllChild = $db->getRows($sqlAllChild);
-                $resss = $db->query($sqlAllChild);
-                $nums = $db->num_rows($resss);
-                $is = 0;
-                if ($nums) {
-                    while ($is < $nums) {
-                        $objds = $db->fetch_object($resss);
+                if(!empty($resAllChild)){
+                    foreach($resAllChild as $objds){
                         $sqlCheckexistDispatch = "SELECT fk_product,qty FROM ".MAIN_DB_PREFIX."commande_fournisseur_dispatch where fk_commande = ".$object->id." and fk_commandefourndet = ".$objds->cmddet." and fk_product =  ".$objds->fk_product_parent;
                         $resCheckexistd = $db->getRows($sqlCheckexistDispatch);
                         if(!empty($resCheckexistd)){
                             $sqlUpdateParentProdQty = "UPDATE ".MAIN_DB_PREFIX."commande_fournisseur_dispatch SET qty  = ".$objds->sum_qty." where fk_commande = ".$object->id." and fk_commandefourndet = ".$objds->cmddet." and fk_product =  ".$objds->fk_product_parent;
                             $db->query($sqlUpdateParentProdQty);
+                            
+                            /* Mise à jour quantité produit */
+                            $getTotalQtycom = "select total_quantite_commander from ".MAIN_DB_PREFIX."product where rowid = ".$objds->fk_product_parent;
+                            $restotqtycom = $db->getRows($getTotalQtycom);
+                            $sqlUpdateQtyParent = "UPDATE ".MAIN_DB_PREFIX."product_stock SET reel = ".(intval($restotqtycom[0]->total_quantite_commander) - intval($objds->sum_qty))." WHERE fk_entrepot = ".$objds->fk_entrepot." AND fk_product = ".$objds->fk_product_parent;
+                            $db->query($sqlUpdateQtyParent);
                         }else{
                             $result = $object->dispatchProduct($user, $objds->fk_product_parent, $objds->sum_qty, $objds->fk_entrepot, 0, GETPOST('comment'), '', '', '', $objds->cmddet , $notrigger);
                         }
-                        $is++;
                     }
                 }
                 
@@ -414,8 +418,9 @@ if ($action == 'dispatch' && $user->rights->fournisseur->commande->receptionner)
                     $sqlUpdateStatus = "UPDATE ".MAIN_DB_PREFIX."commande_fournisseur set fk_statut  = 5 where rowid  = ".$object->id; 
                     $db->query($sqlUpdateStatus);
                 }
-		header("Location: dispatch.php?id=".$id);
-		exit();
+                //echo "<script>  location.reload(); </script>";
+		header("Location: ".DOL_URL_ROOT."/fourn/commande/dispatch.php?id=".$id);
+		exit;
 	} else {
 		$db->rollback();
 	}

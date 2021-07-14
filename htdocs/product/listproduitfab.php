@@ -42,6 +42,10 @@ require_once DOL_DOCUMENT_ROOT.'/core/class/html.formother.class.php';
 if (!empty($conf->categorie->enabled)){
 	require_once DOL_DOCUMENT_ROOT.'/categories/class/categorie.class.php';
 }
+require_once DOL_DOCUMENT_ROOT.'/includes/phpoffice/phpexcel/Classes/PHPExcel.php';
+require_once DOL_DOCUMENT_ROOT.'/variants/class/ProductCombination.class.php';
+require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.product.class.php';
+require_once DOL_DOCUMENT_ROOT.'/categories/class/categorie.class.php';
 // Load translation files required by the page
 $langs->loadLangs(array('products', 'stocks', 'suppliers', 'companies'));
 if (!empty($conf->productbatch->enabled)) $langs->load("productbatch");
@@ -277,6 +281,15 @@ if($massaction == "add_cart_supplier"){
     //exit;
 }
 
+
+if($massaction == "print_all_barcode"){
+    $prdIds = GETPOST("toselect");
+    
+    print '<script>';
+    print 'window.open("'.DOL_URL_ROOT.'/barcode/printsheet.php?prodIds='.implode(',',$prdIds).'","_blank");';
+    print '</script>';
+}
+
 $parameters = array();
 $reshook = $hookmanager->executeHooks('doActions', $parameters, $object, $action); // Note that $action and $object may have been modified by some hooks
 if ($reshook < 0) setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
@@ -461,8 +474,7 @@ $sql .= " AND p.product_type_txt = 'fab' ";
 if(!empty($user->array_options['options_ffourns_frs'])){
     $sql .= " AND  pfp.fk_soc =  ".intval($user->array_options['options_ffourns_frs']);
 }
-/* fin modif fred */
-if(GETPOST("export_data_excel") && GETPOST("toselect")){
+if((GETPOST("export_data_excel") || GETPOST("export_data_csv")) && GETPOST("toselect")){
     $sql .= " AND p.rowid in (". implode(",", GETPOST("toselect")).") ";
 }
 /*$sql_user_group = "select fk_user,fk_usergroup from ".MAIN_DB_PREFIX."usergroup_user where fk_user = ".$user->id."";
@@ -538,16 +550,17 @@ if (empty($conf->global->MAIN_DISABLE_FULL_SCANLIST))
 
 $sql .= $db->plimit($limit + 1, $offset);
 
+
+/* echo "<pre>";
+print_r($sql);
+echo "</pre>"; */
+
 $resql = $db->query($sql);
 
 if ($resql)
 {
         /*Export excel*/
         if(GETPOST("export_data_excel")){
-            require_once DOL_DOCUMENT_ROOT.'/includes/phpoffice/phpexcel/Classes/PHPExcel.php';
-            require_once DOL_DOCUMENT_ROOT.'/variants/class/ProductCombination.class.php';
-            require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.product.class.php';
-            require_once DOL_DOCUMENT_ROOT.'/categories/class/categorie.class.php';
             $objPHPExcel = new PHPExcel();
             $objPHPExcel->setActiveSheetIndex(0);
             $arrColumn = array("A","B","C","D","E","F","G","H","I","J");
@@ -609,7 +622,6 @@ if ($resql)
                     $resuName = $db->getRows($sqlParentName);
                     $nameProd = $resuName[0]->label;
                     $priceSell = $resuName[0]->price_ttc;
-                    
                     /*get info child*/
                     $sqlChildss = "select quantite_fabriquer from ".MAIN_DB_PREFIX."product where rowid = ".$datae->rowid;
                     $resuChilds = $db->getRows($sqlChildss);
@@ -685,9 +697,115 @@ if ($resql)
             $objWriter->save('php://output');
             exit;
         }
-        
         /*Fin export excel*/
         
+        /* Export csv */
+        if(GETPOST("export_data_csv")){
+            $arrDataCsv = [];
+            $comptcsv = 0;
+            foreach($db->getRows($sql) as $datae) {
+                $arrDataCsv[$comptcsv]["CODE_INTERNE"] = strval($datae->ref_fab_frs);
+                $sqlParentId = "SELECT fk_product_parent FROM  ".MAIN_DB_PREFIX."product_attribute_combination WHERE fk_product_child = ".$datae->rowid;
+                $prntId = $db->getRows($sqlParentId);
+                $nameProd = $datae->label;
+                $priceSell = $datae->price_ttc;
+                $colorProd = "";
+                $tailleProd = "";
+                $qtyProducts = $datae->total_quantite_commander;
+                /* category_id_product */
+                $id_prod_categ = $datae->rowid;
+                if(!empty($prntId)){
+                    $sqlCombinationss = "SELECT "
+                            . " pacv.fk_prod_attr, "
+                            . " pacv.fk_prod_attr_val  "
+                            . " FROM ".MAIN_DB_PREFIX."product_attribute_combination2val pacv "
+                            . " left join ".MAIN_DB_PREFIX."product_attribute_combination pac on pac.rowid = pacv.fk_prod_combination "
+                            . " WHERE pac.fk_product_child = ".$datae->rowid."  and pac.fk_product_parent = ".$prntId[0]->fk_product_parent." order by pacv.fk_prod_attr asc";
+                    $resuCombinationss = $db->getRows($sqlCombinationss);
+                    $prodcombi = new ProductCombination($db);
+                    foreach($resuCombinationss as $rescomb) {
+                        $attributes = $prodcombi->getAttributeById($rescomb->fk_prod_attr);
+                        $attributesValue = $prodcombi->getAttributeValueById($rescomb->fk_prod_attr_val);
+                        if($attributes['label'] == "Couleur"){
+                            $colorProd = $attributesValue['value'];
+                        }else{
+                            $tailleProd = $attributesValue['value'];
+                        }
+                    }
+                    /*get parent name*/
+                    $sqlParentName = "select label,price_ttc from ".MAIN_DB_PREFIX."product where rowid = ".$prntId[0]->fk_product_parent;
+                    $resuName = $db->getRows($sqlParentName);
+                    $nameProd = $resuName[0]->label;
+                    $priceSell = $resuName[0]->price_ttc;
+                    /*get info child*/
+                    $sqlChildss = "select quantite_fabriquer from ".MAIN_DB_PREFIX."product where rowid = ".$datae->rowid;
+                    $resuChilds = $db->getRows($sqlChildss);
+                    if(!empty($resuChilds[0]->quantite_fabriquer)){
+                        $qtyProducts = $resuChilds[0]->quantite_fabriquer;
+                    }
+                    /* category_id_product */
+                    $id_prod_categ = $prntId[0]->fk_product_parent;
+                }
+                /*get fournisseur nom*/
+                $frs = new ProductFournisseur($db);
+                $c = new Categorie($db);
+                $cats = $c->containing($id_prod_categ, Categorie::TYPE_PRODUCT);
+                $categPrincipale = "";
+                $categChild = "";
+                $arrCateg = [];
+                if(is_array($cats)){
+                    $toprint = [];
+                    foreach($cats as $ctegories){
+                        $ways = $ctegories->print_all_ways(' &gt;&gt; ', '', 0, 1);
+                        $allways = $ctegories->get_all_ways(); // Load array of categories
+                        $restoPrint = [];
+                        foreach ($allways as $way)
+                        {
+                            $w = array();
+                            foreach ($way as $cat)
+                            {
+                                if(!strpos($cat->label, 'kenza') && !strpos($cat->label, 'ccueil') && !strpos($cat->label, 'ome')){
+                                    $w[] = utf8_decode(html_entity_decode($cat->label));
+                                }
+                            }
+                        }
+                        if(!empty($w)){
+                            $toprint[] = $w;
+                        }
+                    }
+                    $arrCategPrincipale = [];
+                    $arrCategChild = [];
+                    foreach($toprint as $prints){
+                        $principaleCateg = array_shift(array_values($prints));
+                        $arrCategPrincipale[] = $principaleCateg;
+                        if(count($prints) > 1){
+                            array_shift($prints);
+                            $arrCategChild[] = implode(',',$prints);
+                        }
+                    }
+                    $categPrincipale = implode(",",array_unique($arrCategPrincipale));
+                    $categChild = str_replace("&#039;","'",(implode(",",array_unique($arrCategChild))));
+                }
+                $res_frs = $frs->list_product_fournisseur_price($datae->rowid);
+                $arrDataCsv[$comptcsv]["CODE-BARRE"] = "'".strval($datae->barcode)."'";
+                $arrDataCsv[$comptcsv]["LIBELLE"] = utf8_decode($nameProd);
+                $arrDataCsv[$comptcsv]["LIBELLE_ATTR"] = utf8_decode($nameProd." ".strval($colorProd)." ".strval($tailleProd));
+                $arrDataCsv[$comptcsv]["FOURNISSEUR_NOM"] = $res_frs[0]->fourn_name;
+                $arrDataCsv[$comptcsv]["PAHTBRUT"] = number_format(($res_frs[0]->fourn_unitprice),2);
+                $arrDataCsv[$comptcsv]["PVTTC"] = number_format(($priceSell),2);
+                $arrDataCsv[$comptcsv]["CARTE_METISSE"] = number_format((floor($priceSell*0.95*10)/10),2);
+                $arrDataCsv[$comptcsv]["COULEUR"] = strval($colorProd);
+                $arrDataCsv[$comptcsv]["TAILLE"] = strval($tailleProd);
+                $arrDataCsv[$comptcsv]["FAMILLE"] = $categPrincipale;
+                $arrDataCsv[$comptcsv]["SS_FAMILLE"] = $categChild;
+                $arrDataCsv[$comptcsv]["STOCK"] = $qtyProducts;
+                $comptcsv ++;
+            }
+            download_send_headers("produit_fab_" . date("Ymdhis") . ".csv");
+            echo array2csv($arrDataCsv);
+            die();
+        }
+        /* Fin export csv */
 	$num = $db->num_rows($resql);
 
 	$arrayofselected = is_array($toselect) ? $toselect : array();
@@ -758,7 +876,8 @@ if ($resql)
 	// List of mass actions available
 	$arrayofmassactions = array(
 		'generate_doc'=>$langs->trans("ReGeneratePDF"),
-                'add_cart_supplier' => 'Créer une commande fournisseur à partir du produit selectionné'
+                'add_cart_supplier' => 'Créer une commande fournisseur à partir du produit selectionné',
+                'print_all_barcode' => 'Imprimer toutes les codes-barres (toutes les déclinaisons)'
                 //'builddoc'=>$langs->trans("PDFMerge"),
                 //'presend'=>$langs->trans("SendByMail"),
 	);
@@ -778,12 +897,12 @@ if ($resql)
             $params = array();
             if ($type === "") $params['forcenohideoftext'] = 1;
             if ($type === "") {
-                    $newcardbutton .= dolGetButtonTitle($langs->trans('NewProduct'), '', 'fa fa-plus-circle', DOL_URL_ROOT.'/product/card.php?action=create&type=0', '', 1, $params);
+                    $newcardbutton .= dolGetButtonTitle($langs->trans('NewProduct'), '', 'fa fa-plus-circle', DOL_URL_ROOT.'/product/card.php?leftmenu=product&action=create&type=0&status_product=produitfab&idmenu=36', '', 1, $params);
                     $type = Product::TYPE_SERVICE;
             }
             $label = 'NewProduct';
             if ($type == Product::TYPE_SERVICE) $label = 'NewService';
-            $newcardbutton .= dolGetButtonTitle($langs->trans($label), '', 'fa fa-plus-circle', DOL_URL_ROOT.'/product/card.php?action=create&type='.$type, '', 1, $params);
+            $newcardbutton .= dolGetButtonTitle($langs->trans($label), '', 'fa fa-plus-circle', DOL_URL_ROOT.'/product/card.php?leftmenu=product&action=create&type=0&status_product=produitfab&idmenu=36', '', 1, $params);
             $type = $oldtype;
         }
         
@@ -865,6 +984,7 @@ if ($resql)
                 $checked = intval($conf->global->SHOW_OR_NOT_DECLINAISON) == 1 ? "checked" : "";
                 $moreforfilter .= '<input type="checkbox" id="show_or_not_declinaison" '.$checked.' value="'.intval($conf->global->SHOW_OR_NOT_DECLINAISON).'" style="cursor:pointer"><label for="show_or_not_declinaison" style="cursor:pointer">Afficher les variantes de produits</label>';
                 $moreforfilter .= '&nbsp;&nbsp;&nbsp;<button type="submit"  class="button" name="export_data_excel" value="1"><i class="fa fa-file-excel-o" aria-hidden="true"></i>&nbsp;&nbsp;Export Excel</a>';
+                $moreforfilter .= '&nbsp;&nbsp;&nbsp;<button type="submit"  class="button" name="export_data_csv" value="1"><i class="fa fa-file-excel-o" aria-hidden="true"></i>&nbsp;&nbsp;Export csv</a>';
                 $moreforfilter .= '</div>';
 	}
 
